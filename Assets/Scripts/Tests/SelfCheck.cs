@@ -2435,6 +2435,33 @@ namespace Sinbinder.Tests
                 Check(call.Contains(Loc.Name("Проба Наш")) && call.Contains(Loc.Name("Проба Павший")),
                       "оклик называет обидчика и павшего по имени");
                 Check(Survivors.Scar("Проба Наш").Contains(Loc.Name("Проба Наш")), "раненый называет того, кто ранил");
+
+                // Бой отряда без Греховода с выжившими места — по записи AOS (п.1в, авто-вылазки).
+                const string spot = "expedition:roadside-chapel";
+                Survivors.Restore(new List<SavedSurvivor>
+                {
+                    new SavedSurvivor { Name = "Проба Страж А", Place = spot, Meetings = 1 },
+                    new SavedSurvivor { Name = "Проба Страж Б", Place = spot, Meetings = 1 },
+                    new SavedSurvivor { Name = "Проба Страж В", Place = spot, Meetings = 1 },
+                });
+                var rec = new Sinbinder.AOS.BattleRecord();
+                rec.AddEvent(new Sinbinder.AOS.BattleEvent { ActorName = "Проба Страж А", TargetName = "Проба Боец", DamageDealt = 9f, TargetKilled = true });
+                rec.AddEvent(new Sinbinder.AOS.BattleEvent { ActorName = "Проба Командир", TargetName = "Проба Страж Б", DamageDealt = 12f, TargetKilled = true });
+                rec.AddEvent(new Sinbinder.AOS.BattleEvent { ActorName = "Проба Командир", TargetName = "Проба Страж А", DamageDealt = 4f });
+                int fell = Survivors.AfterAutoBattle(spot, new List<string> { "Проба Страж А", "Проба Страж Б" },
+                    new List<string> { "Проба Командир", "Проба Боец" }, rec);
+                var left = Survivors.At(spot);
+                var a = left.Find(s => s.Name == "Проба Страж А");
+                var v = left.Find(s => s.Name == "Проба Страж В");
+                Check(fell == 1 && left.Count == 2 && left.Find(s => s.Name == "Проба Страж Б") == null,
+                      "павший в бою без Греховода забыт, уцелевшие — на месте");
+                Check(a != null && a.Meetings == 2 && v != null && v.Meetings == 1,
+                      "встреча засчитана тем, кто был в бою, а не всем на месте");
+                Check(a != null && a.Grudges.Exists(g => !g.Ours && g.Who == "Проба Командир" && g.Victim == "Проба Страж Б")
+                      && a.Grudges.Exists(g => g.Ours && g.Who == "Проба Боец" && g.Victim == "Проба Боец")
+                      && a.Grudges.Exists(g => g.Ours && g.Who == "Проба Командир" && g.Victim == "Проба Боец"),
+                      "счёты по записи AOS: командир убил товарища; страж убил бойца — помнят все, и сам павший");
+                Check(v != null && v.Grudges.Count == 0, "кого в бою не было, тот счетов не завёл");
             }
             finally
             {

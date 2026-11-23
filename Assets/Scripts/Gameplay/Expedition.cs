@@ -114,8 +114,11 @@ namespace Sinbinder.Gameplay
             public int CompletedRounds => _session != null ? _session.CompletedRounds : 0;
             public BattleRecord Record => _record;
 
+            /// <param name="foeNames">Выжившие этого места (Survivors) — по имени и греху, в порядке
+            /// встречи; остальные — «Чужой N». Имена закреплены за походом: снимок раунда сверяет их.</param>
             public CombatEncounter(List<SquadRoster.Member> away, int foeCount,
-                                   ExpeditionBattleCheckpoint checkpoint = null)
+                                   ExpeditionBattleCheckpoint checkpoint = null,
+                                   IList<string> foeNames = null, IList<int> foeSins = null)
             {
                 if(away==null || away.Count==0)
                     throw new System.ArgumentException("Combat requires outgoing warriors.");
@@ -140,8 +143,9 @@ namespace Sinbinder.Gameplay
                     }
                     for(int i=0;i<count;i++)
                     {
-                        var sin=(SinType)(i%7);
-                        var foe=Make(_holder,"Чужой "+(i+1),sin,MoralType.Vicious,
+                        bool known=foeNames!=null && i<foeNames.Count && !string.IsNullOrEmpty(foeNames[i]);
+                        var sin=known && foeSins!=null && i<foeSins.Count ? (SinType)foeSins[i] : (SinType)(i%7);
+                        var foe=Make(_holder,known ? foeNames[i] : "Чужой "+(i+1),sin,MoralType.Vicious,
                             40f+i*5f,50f,false,Team.Enemy,relations);
                         _originalFoes.Add(foe);
                         _foes.Add(foe);

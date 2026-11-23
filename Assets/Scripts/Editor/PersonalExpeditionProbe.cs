@@ -134,6 +134,54 @@ namespace Sinbinder.EditorTools
             return $"счёты: {at[0].Name} ← {names[0]}; {second} ← {at[at.Count > 1 ? 1 : 0].Name}";
         }
 
+        /// <summary>
+        /// Отряд без Греховода — в ту же часовню (MissionBoard.Send, всё настоящее: путь,
+        /// раунды AOS, итог). Потом AutoState: кого встретили и что запомнили.
+        /// </summary>
+        public static string AutoChapel()
+        {
+            if (!EditorApplication.isPlaying || CryptMap.Board == null) return "нужен склеп в игре";
+            Mission chapel = default; bool found = false;
+            foreach (var m in CryptMap.Board.Missions) if (m.Name == "Придорожная часовня") { chapel = m; found = true; }
+            if (!found) return "нет часовни";
+            string commander = null;
+            foreach (var m in SquadRoster.Members) if (SquadRoster.CanGo(m)) { commander = m.Name; break; }
+            if (commander == null) return "некого послать";
+            Write($"=== ОТРЯД БЕЗ ГРЕХОВОДА: {commander} ведёт к часовне; там ждут: {Names(Survivors.At("expedition:roadside-chapel"))}");
+            string said = CryptMap.Board.Send(chapel, commander);
+            Write("  доска: " + said);
+            return said;
+        }
+
+        public static string AutoState()
+        {
+            var sb = new StringBuilder();
+            foreach (var j in MissionBoard.SnapshotJourneys())
+            {
+                if (j.MissionName != "Придорожная часовня") continue;
+                sb.Append($"фаза {j.Phase}, бой {(j.EncounterResolved ? "решён" : "идёт")}, враги: {string.Join(", ", j.FoeNames)}; ");
+            }
+            if (sb.Length == 0) sb.Append("похода к часовне нет; ");
+            sb.Append("у часовни: ");
+            foreach (var s in Survivors.At("expedition:roadside-chapel"))
+            {
+                sb.Append($"{s.Name} (встреч {s.Meetings}{(string.IsNullOrEmpty(s.Killed) ? "" : ", убил " + s.Killed)}");
+                if (s.Grudges != null)
+                    foreach (var g in s.Grudges) sb.Append(g.Ours ? $"; наш {g.Who}: {(g.Victim == "" ? "ранен им" : "убил " + g.Victim)}"
+                                                                  : $"; помнит {g.Who}: {(g.Victim == "" ? "ранил" : "убил " + g.Victim)}");
+                sb.Append(") ");
+            }
+            Write("  " + sb);
+            return sb.ToString();
+        }
+
+        private static string Names(List<SavedSurvivor> list)
+        {
+            var n = new List<string>();
+            foreach (var s in list) n.Add(s.Name);
+            return n.Count > 0 ? string.Join(", ", n) : "никого";
+        }
+
         /// <summary>Кого каждый страж и каждый наш выбрал бы целью сейчас (AOSWarriorWrapper.FindBestTarget).</summary>
         public static string Targets()
         {

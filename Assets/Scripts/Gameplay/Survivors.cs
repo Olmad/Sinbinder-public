@@ -206,6 +206,50 @@ namespace Sinbinder.Gameplay
         public static string CallOut(string target, string victim)
             => Loc.F("{0}! {1} лежит из-за тебя.", Loc.Name(target), Loc.Name(victim));
 
+        /// <summary>
+        /// Бой отряда без Греховода (MissionBoard) с выжившими этого места — в память, по
+        /// записи AOS: кто кого убил и ранил. Павшие стражи забыты, уцелевшие запомнены
+        /// (встреч +1). Отряд мал, бой один — свидетели все, кто в нём был. Вернёт, сколько
+        /// выживших пало.
+        /// </summary>
+        public static int AfterAutoBattle(string place, IList<string> foes, IList<string> party, AOS.BattleRecord record)
+        {
+            if (string.IsNullOrEmpty(place) || foes == null || party == null || record == null || record.Events == null) return 0;
+            var here = At(place);
+            var met = new Dictionary<string, SavedSurvivor>();
+            foreach (var s in here) if (foes.Contains(s.Name)) met[s.Name] = s;
+            if (met.Count == 0) return 0;
+            var fallen = new HashSet<string>();
+            foreach (var ev in record.Events)
+            {
+                if (ev == null || string.IsNullOrEmpty(ev.ActorName) || string.IsNullOrEmpty(ev.TargetName)) continue;
+                bool foeActs = met.TryGetValue(ev.ActorName, out var actor) && party.Contains(ev.TargetName);
+                bool oursActs = party.Contains(ev.ActorName) && met.TryGetValue(ev.TargetName, out _);
+                if (ev.TargetKilled && foeActs)
+                {
+                    actor.Killed = string.IsNullOrEmpty(actor.Killed) ? Loc.Name(ev.TargetName) : actor.Killed + ", " + Loc.Name(ev.TargetName);
+                    foreach (var p in party) Grudge(actor, p, ev.TargetName, true);   // и сам павший
+                }
+                else if (ev.TargetKilled && oursActs)
+                {
+                    fallen.Add(ev.TargetName);
+                    foreach (var kv in met)
+                        if (kv.Key != ev.TargetName && !fallen.Contains(kv.Key)) Grudge(kv.Value, ev.ActorName, ev.TargetName, false);
+                }
+                else if (ev.DamageDealt > 0f && foeActs) Grudge(actor, ev.TargetName, "", true);
+                else if (ev.DamageDealt > 0f && oursActs) Grudge(met[ev.TargetName], ev.ActorName, "", false);
+            }
+            var alive = new List<SavedSurvivor>();
+            foreach (var s in here)
+            {
+                if (fallen.Contains(s.Name)) continue;
+                if (met.ContainsKey(s.Name)) s.Meetings++;
+                alive.Add(s);
+            }
+            Settle(place, alive);
+            return fallen.Count;
+        }
+
         /// <summary>Поднятый узнал того, кто его убил.</summary>
         public static string Murderer(string target)
             => Loc.F("{0}! Ты убил меня. Я вернулся.", Loc.Name(target));

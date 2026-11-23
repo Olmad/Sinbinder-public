@@ -48,6 +48,17 @@ namespace Sinbinder.Gameplay
         public static string CurrentMapKey => _active != null && _active._plan != null
             ? _active._plan.Id : SceneManager.GetActiveScene().name;
 
+        /// <summary>
+        /// Отряд без Греховода (MissionBoard) убил здесь стражей — на личной карте их столько же
+        /// меньше; все пали — место зачищено с этого похода (Sorties), не разграблено.
+        /// </summary>
+        public static void GuardsFellElsewhere(string placeId,int fallen)
+        {
+            if(fallen<=0 || string.IsNullOrEmpty(placeId) || !Progress.TryGetValue(placeId,out var state)) return;
+            state.EnemiesRemaining=Mathf.Max(0,state.EnemiesRemaining-fallen);
+            if(state.EnemiesRemaining==0 && state.ClearedAt<0) state.ClearedAt=Sorties.Count;
+        }
+
         public static List<SavedPersonalExpedition> SnapshotProgress()
         {
             var list = new List<SavedPersonalExpedition>();

@@ -57,6 +57,10 @@ namespace Sinbinder.Crypt
         public int FoesFallen;
         public string BattleSummary;
         public ExpeditionReplayData EncounterTrace;
+        // Выжившие места, которых встретил этот поход (Survivors, план 69 §7 п.1в):
+        // имена закреплены при встрече — снимок каждого раунда сверяет их.
+        public List<string> FoeNames = new List<string>();
+        public List<int> FoeSins = new List<int>();
     }
 
     public class MissionBoard : MonoBehaviour
@@ -127,7 +131,9 @@ namespace Sinbinder.Crypt
                 SurvivorHealth=CopyHealth(item.SurvivorHealth),
                 TakenCoins=item.TakenCoins, FoesFallen=item.FoesFallen,
                 BattleSummary=item.BattleSummary ?? "",
-                EncounterTrace=CopyTrace(item.EncounterTrace)
+                EncounterTrace=CopyTrace(item.EncounterTrace),
+                FoeNames=item.FoeNames==null ? new List<string>() : new List<string>(item.FoeNames),
+                FoeSins=item.FoeSins==null ? new List<int>() : new List<int>(item.FoeSins)
             };
 
         private static List<ExpeditionSurvivorHealth> CopyHealth(
@@ -455,9 +461,19 @@ namespace Sinbinder.Crypt
                 return true;
             }
 
+            // У этого места есть выжившие прошлых встреч — отряд встречает их, а не безымянных.
+            journey.FoeNames=new List<string>();
+            journey.FoeSins=new List<int>();
+            var place=ExpeditionMapPlan.ForName(mission.Name);
+            if(place!=null)
+                foreach(var s in Gameplay.Survivors.At(place.Id))
+                    if(journey.FoeNames.Count<Mathf.Max(mission.Guards,1))
+                    { journey.FoeNames.Add(s.Name); journey.FoeSins.Add(s.Sin); }
+
             try
             {
-                using(var combat=new Expedition.CombatEncounter(away,mission.Guards))
+                using(var combat=new Expedition.CombatEncounter(away,mission.Guards,null,
+                    journey.FoeNames,journey.FoeSins))
                 {
                     // This is the BEFORE-first-round world state.
                     var initial=combat.Snapshot();
@@ -534,7 +550,7 @@ namespace Sinbinder.Crypt
             try
             {
                 using(var combat=new Expedition.CombatEncounter(away,mission.Guards,
-                    journey.BattleCheckpoint))
+                    journey.BattleCheckpoint,journey.FoeNames,journey.FoeSins))
                 {
                     AOS.AutoBattleResolver.SquadGold=0; // no fictitious bribe wallet
                     combat.StepRound();
@@ -605,6 +621,13 @@ namespace Sinbinder.Crypt
             journey.ChosenAction=chosen.HasValue ? (int)chosen.Value : 0;
             journey.BattleSummary=Retelling.Tell(fight.Record);
             journey.EncounterResolved=true;
+            // Кто именно кого — в память места: выжившие этого боя и личные счёты (п.1в).
+            var place=ExpeditionMapPlan.ForName(journey.MissionName);
+            if(fought && place!=null && journey.FoeNames!=null && journey.FoeNames.Count>0)
+            {
+                int fell=Gameplay.Survivors.AfterAutoBattle(place.Id,journey.FoeNames,journey.Party,fight.Record);
+                if(fell>0) Gameplay.PersonalExpedition.GuardsFellElsewhere(place.Id,fell);
+            }
         }
 
         /// <summary>Recall the selected squad before contact, without combat or loot.</summary>
