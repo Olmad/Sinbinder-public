@@ -14748,53 +14748,53 @@ msgid "Была бы горбушка — поделился бы. Наверн�
 msgstr "If I had some bread, I'd share it. Probably."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: верность не выбрала сторону."
-msgstr "I abstain: loyalty did not take a side."
+msgid "Воздерживаюсь: верности недостало веса для вердикта."
+msgstr "I abstain: loyalty lacked the weight to decide."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: страх не выбрал сторону."
-msgstr "I abstain: fear did not take a side."
+msgid "Воздерживаюсь: страх слишком тих, чтобы склонить чашу."
+msgstr "I abstain: fear was too faint to tip the scales."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: память не выбрала сторону."
-msgstr "I abstain: memory did not take a side."
+msgid "Воздерживаюсь: память не дала решающего перевеса."
+msgstr "I abstain: memory did not provide a decisive advantage."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: совесть не выбрала сторону."
-msgstr "I abstain: conscience did not take a side."
+msgid "Воздерживаюсь: совесть не достигла порога суда."
+msgstr "I abstain: conscience fell below the court's threshold."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: добродетель не выбрала сторону."
-msgstr "I abstain: virtue did not take a side."
+msgid "Воздерживаюсь: добродетель не придала чаше решающего веса."
+msgstr "I abstain: virtue did not give the scales decisive weight."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: терпение не выбрало сторону."
-msgstr "I abstain: patience did not take a side."
+msgid "Воздерживаюсь: терпение не дотянуло до перевеса."
+msgstr "I abstain: patience fell short of tipping the scales."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: жадность не выбрала сторону."
-msgstr "I abstain: greed did not take a side."
+msgid "Воздерживаюсь: жадность не выторговала перевеса."
+msgstr "I abstain: greed could not bargain for a deciding advantage."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: гордыня не выбрала сторону."
-msgstr "I abstain: pride did not take a side."
+msgid "Воздерживаюсь: гордыня не добилась перевеса."
+msgstr "I abstain: pride could not claim the deciding weight."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: гнев не выбрал сторону."
-msgstr "I abstain: wrath did not take a side."
+msgid "Воздерживаюсь: гнев не продавил вердикт."
+msgstr "I abstain: wrath could not force the verdict."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: зависть не выбрала сторону."
-msgstr "I abstain: envy did not take a side."
+msgid "Воздерживаюсь: зависть не перетянула весы."
+msgstr "I abstain: envy could not pull the scales its way."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: страсть не выбрала сторону."
-msgstr "I abstain: desire did not take a side."
+msgid "Воздерживаюсь: страсть не склонила чашу до порога."
+msgstr "I abstain: desire could not tip the scales far enough."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: чревоугодие не выбрало сторону."
-msgstr "I abstain: gluttony did not take a side."
+msgid "Воздерживаюсь: чревоугодию недостало веса."
+msgstr "I abstain: gluttony lacked the weight to decide."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: уныние не выбрало сторону."
-msgstr "I abstain: sloth did not take a side."
+msgid "Воздерживаюсь: уныние не потянуло чашу достаточно сильно."
+msgstr "I abstain: sloth could not pull the scales far enough."
