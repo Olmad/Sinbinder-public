@@ -470,6 +470,7 @@ namespace Sinbinder.AOS
             var leash = GetComponent<EventGuard>();   // страж события — на привязи у места
             Damageable best = null;
             float bestScore = float.MinValue;
+            var memories = MemoryProcessor.Instance != null ? MemoryProcessor.Instance.GetMemories(_warrior) : null;
             foreach (var w in enemies)
             {
                 if (w == null || w.IsDead) continue;
@@ -481,11 +482,34 @@ namespace Sinbinder.AOS
                 // цели и шёл грабить.
                 if (dist < CombatDecisionContext.SightRadius)
                 {
-                    float score = -dist + (1f - w.HP / w.MaxHP) * 50f;
+                    float score = -dist + (1f - w.HP / w.MaxHP) * 50f + Grudge(memories, w);
                     if (score > bestScore) { bestScore = score; best = w; }
                 }
             }
             return best;
+        }
+
+        /// <summary>
+        /// Личный счёт в выборе цели (автор, 23.11: «убили брата, атаковали его»).
+        /// Видит того, кто убил его товарища или его самого, — тянется к нему,
+        /// и тем сильнее, чем больше в душе гнева; ранивший — слабее убийцы.
+        /// Не приказ «бей его»: ближний и раненый по-прежнему тоже весят.
+        /// </summary>
+        public float Grudge(List<MemoryRecord> memories, Damageable target)
+        {
+            if (memories == null || target == null || target.Warrior == null || _warrior == null) return 0f;
+            string id = target.Warrior.Id;
+            float pull = 0f;
+            foreach (var m in memories)
+            {
+                if (m == null || m.TargetID != id) continue;
+                if (m.EventType == "EnemyKilledAlly" || m.EventType == "MurderedMe") pull = Mathf.Max(pull, 1f);
+                else if (m.EventType == "WoundedMe") pull = Mathf.Max(pull, 0.4f);
+            }
+            if (pull <= 0f) return 0f;
+            float wrath = _warrior.Soul != null ? Mathf.Clamp01(_warrior.Soul.Get(Core.SinType.Wrath) / 100f) : 0f;
+            // 20…60: убийца в 20 м перетягивает ближнего; раненный наполовину (+25) — уже спор.
+            return pull * (20f + 40f * wrath);
         }
 
         /// <summary>

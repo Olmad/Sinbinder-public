@@ -12,6 +12,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
+using Sinbinder.AOS;
 using Sinbinder.Crypt;
 using Sinbinder.Gameplay;
 
@@ -56,7 +57,14 @@ namespace Sinbinder.EditorTools
             if (PersonalExpedition.Active) return "экспедиция уже идёт";
             var memory = new StringBuilder("в памяти: ");
             foreach (var s in Survivors.All)
-                memory.Append($"{s.Name} при {s.Place}, {s.Health:P0}, встреч {s.Meetings}{(string.IsNullOrEmpty(s.Killed) ? "" : ", убил " + s.Killed)}{(s.Fled ? ", бежал" : "")}; ");
+            {
+                memory.Append($"{s.Name} при {s.Place}, {s.Health:P0}, встреч {s.Meetings}{(string.IsNullOrEmpty(s.Killed) ? "" : ", убил " + s.Killed)}{(s.Fled ? ", бежал" : "")}");
+                if (s.Grudges != null)
+                    foreach (var g in s.Grudges)
+                        memory.Append(g.Ours ? $" [наш {g.Who} помнит: {(g.Victim == "" ? "ранил его" : "убил " + g.Victim)}]"
+                                             : $" [помнит нашего {g.Who}: {(g.Victim == "" ? "ранил" : "убил " + g.Victim)}]");
+                memory.Append("; ");
+            }
             if (Survivors.All.Count == 0) memory.Append("никого");
             Write("=== ВТОРОЙ ВХОД: " + memory);
             Mission chapel = default; bool found = false;
@@ -80,6 +88,18 @@ namespace Sinbinder.EditorTools
                 var at = first.transform.position + (hero.transform.position - first.transform.position).normalized * 13f;
                 var agent = hero.GetComponent<NavMeshAgent>();
                 if (agent != null && agent.isOnNavMesh) agent.Warp(at); else hero.transform.position = at;
+                // Отряд — рядом с Греховодом: личные счёты узнают в лицо с 20 м.
+                var side = Vector3.Cross(Vector3.up, (first.transform.position - at).normalized);
+                int k = 0;
+                foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                {
+                    // Только вошедшие: жители склепа остаются в склепе.
+                    if (w == null || w.IsDead || w.Team != Team.Player || w is SinbinderPlayer || !names.Contains(w.DisplayName)) continue;
+                    var spot = at + side * (k % 2 == 0 ? 2f : -2f) * (1 + k / 2);
+                    var a = w.GetComponent<NavMeshAgent>();
+                    if (a != null && a.isOnNavMesh) a.Warp(spot); else w.transform.position = spot;
+                    k++;
+                }
                 var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
                 if (cam != null)
                 {
@@ -89,6 +109,54 @@ namespace Sinbinder.EditorTools
                 Write($"  Греховод поставлен в 13 м от {first.DisplayName}, лицом к нему");
             }
             return "второй вход: " + memory;
+        }
+
+        /// <summary>
+        /// Счёты на живых воинов отряда — как если бы бой прошёл так (запись, не бой; встреча
+        /// и выбор цели потом — настоящие): первый страж помнит, что первый наш убил его
+        /// товарища; второй наш помнит, что второй страж убил Вейна Тихого.
+        /// </summary>
+        public static string SeedGrudges()
+        {
+            var at = Survivors.At("expedition:roadside-chapel");
+            if (at.Count == 0) return "у часовни никого — сначала Begin";
+            Mission chapel = default;
+            foreach (var m in CryptMap.Board.Missions) if (m.Name == "Придорожная часовня") chapel = m;
+            var names = new List<string>();
+            foreach (var m in SquadRoster.Members) if (names.Count < chapel.Squad - 1 && SquadRoster.CanGo(m)) names.Add(m.Name);
+            if (names.Count == 0) return "в отряде никого";
+            Survivors.Grudge(at[0], names[0], "Прохор Немытый", false);
+            string second = names.Count > 1 ? names[1] : names[0];
+            Survivors.Grudge(at[at.Count > 1 ? 1 : 0], second, "Вейн Тихий", true);
+            Write($"=== СЧЁТЫ: {at[0].Name} помнит нашего {names[0]} (убил Прохора Немытого); наш {second} помнит {at[at.Count > 1 ? 1 : 0].Name} (убил Вейна Тихого)");
+            return $"счёты: {at[0].Name} ← {names[0]}; {second} ← {at[at.Count > 1 ? 1 : 0].Name}";
+        }
+
+        /// <summary>Кого каждый страж и каждый наш выбрал бы целью сейчас (AOSWarriorWrapper.FindBestTarget).</summary>
+        public static string Targets()
+        {
+            var sb = new StringBuilder();
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (w == null || w.IsDead || w is SinbinderPlayer) continue;
+                var mind = w.GetComponent<AOSWarriorWrapper>();
+                var t = mind != null ? mind.FindBestTarget() : null;
+                if (t == null) continue;
+                sb.Append($"{w.DisplayName} → {t.Warrior?.DisplayName ?? t.name}; ");
+                if (w.Team != Team.Enemy || CombatManager.Instance == null) continue;
+                var mem = MemoryProcessor.Instance != null ? MemoryProcessor.Instance.GetMemories(w) : null;
+                var parts = new StringBuilder();
+                foreach (var e in CombatManager.Instance.GetEnemies(w.gameObject))
+                {
+                    if (e == null || e.IsDead) continue;
+                    float d = Vector3.Distance(w.transform.position, e.transform.position);
+                    if (d > CombatDecisionContext.SightRadius) continue;
+                    parts.Append($"{e.Warrior?.DisplayName}: {d:F0} м, ранен {(1f - e.HP / e.MaxHP) * 50f:F0}, счёт {mind.Grudge(mem, e):F0}; ");
+                }
+                Write($"  {w.DisplayName} взвешивает: {parts}");
+            }
+            Write("  цели: " + sb);
+            return sb.Length > 0 ? sb.ToString() : "целей нет";
         }
 
         /// <summary>

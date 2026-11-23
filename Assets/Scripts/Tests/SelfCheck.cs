@@ -2414,6 +2414,27 @@ namespace Sinbinder.Tests
                 var friends = Survivors.BringFriends(at, Return.Later);
                 Check(friends.Count == 1 && friends[0].Name == "Проба Беглец", "бежавший живой возвращается не один, покойник — нет");
                 Check(Survivors.BringFriends(at, Return.Later).Count == 0, "подмогу приводят один раз");
+
+                // Личные счёты (автор, 23.11): не «отряд вообще», а кто именно — и они в сохранении.
+                var foe = new SavedSurvivor { Name = "Проба Счёт", Place = "expedition:roadside-chapel", Id = "id-проба" };
+                Survivors.Grudge(foe, "Проба Наш", "Проба Павший", false);
+                Survivors.Grudge(foe, "Проба Наш", "Проба Павший", false);
+                Survivors.Grudge(foe, "Проба Свидетель", "Проба Свой", true);
+                Survivors.Grudge(foe, "", "Проба Павший", false);
+                Check(foe.Grudges.Count == 2, "одна смерть — один счёт; без имени счёта нет");
+                Survivors.Grudge(foe, "Проба Наш", null, false);
+                Check(foe.Grudges.Count == 3 && foe.Grudges[2].Victim == "", "рана — тоже счёт, без павшего");
+                foe.Grudges.RemoveAt(2);
+                Survivors.Restore(new List<SavedSurvivor> { foe });
+                var copy = Survivors.Snapshot();
+                foe.Grudges.Clear();
+                Check(copy.Count == 1 && copy[0].Id == "id-проба" && copy[0].Grudges.Count == 2
+                      && copy[0].Grudges[1].Ours && copy[0].Grudges[1].Who == "Проба Свидетель",
+                      "сохранение несёт личность и счёты, копией");
+                string call = Survivors.CallOut("Проба Наш", "Проба Павший");
+                Check(call.Contains(Loc.Name("Проба Наш")) && call.Contains(Loc.Name("Проба Павший")),
+                      "оклик называет обидчика и павшего по имени");
+                Check(Survivors.Scar("Проба Наш").Contains(Loc.Name("Проба Наш")), "раненый называет того, кто ранил");
             }
             finally
             {

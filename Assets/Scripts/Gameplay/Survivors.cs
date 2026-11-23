@@ -23,6 +23,25 @@ namespace Sinbinder.Gameplay
         public bool Fled;
         /// <summary>Почему он здесь: «bound» — покойник места, «caravan» — охрана обоза, «order» — дозор Ордена.</summary>
         public string Reason = "";
+        /// <summary>
+        /// Постоянная личность (Warrior.Id). С ней память AOS о нём — у наших и его о наших —
+        /// снова находит адресата при следующей встрече, а не указывает на исчезнувший номер.
+        /// </summary>
+        public string Id = "";
+        /// <summary>Личные счёты: не «отряд вообще», а кто именно что сделал (автор, 23.11).</summary>
+        public List<SavedGrudge> Grudges = new List<SavedGrudge>();
+    }
+
+    /// <summary>
+    /// Счёт между выжившим и одним из наших. Ours=false — он помнит нашего Who, убившего
+    /// его товарища Victim; Ours=true — наш Who видел, как он убил нашего Victim.
+    /// </summary>
+    [Serializable]
+    public sealed class SavedGrudge
+    {
+        public string Who;
+        public string Victim;
+        public bool Ours;
     }
 
     /// <summary>
@@ -169,6 +188,32 @@ namespace Sinbinder.Gameplay
             return list;
         }
 
+        /// <summary>Записать счёт один раз: та же пара и та же смерть дважды не считаются.</summary>
+        public static void Grudge(SavedSurvivor s, string who, string victim, bool ours)
+        {
+            // victim пуст — счёт за рану: «ранил», не «убил».
+            if (s == null || string.IsNullOrEmpty(who)) return;
+            victim ??= "";
+            if (s.Grudges == null) s.Grudges = new List<SavedGrudge>();
+            if (s.Grudges.Exists(g => g.Who == who && g.Victim == victim && g.Ours == ours)) return;
+            s.Grudges.Add(new SavedGrudge { Who = who, Victim = victim, Ours = ours });
+        }
+
+        /// <summary>
+        /// Оклик при встрече — от того, кто помнит, тому, кого помнит. Имя павшего —
+        /// в именительном и без рода: «Вейн Тихий лежит из-за тебя» верно и для Марги.
+        /// </summary>
+        public static string CallOut(string target, string victim)
+            => Loc.F("{0}! {1} лежит из-за тебя.", Loc.Name(target), Loc.Name(victim));
+
+        /// <summary>Поднятый узнал того, кто его убил.</summary>
+        public static string Murderer(string target)
+            => Loc.F("{0}! Ты убил меня. Я вернулся.", Loc.Name(target));
+
+        /// <summary>Оклик раненого тому, кто его ранил.</summary>
+        public static string Scar(string target)
+            => Loc.F("{0}! Я помню твой удар.", Loc.Name(target));
+
         /// <summary>Строка журнала: бежавший вернулся с подмогой.</summary>
         public static string Friends(SavedSurvivor s)
             => Loc.F("{0} бежал от вас в прошлый раз — и вернулся не один.", Loc.Name(s.Name));
@@ -242,7 +287,10 @@ namespace Sinbinder.Gameplay
             var list = new List<SavedSurvivor>();
             foreach (var s in _all)
                 list.Add(new SavedSurvivor { Name = s.Name, Place = s.Place, Sin = s.Sin, Undead = s.Undead,
-                    Health = s.Health, Meetings = s.Meetings, Killed = s.Killed ?? "", Fled = s.Fled, Reason = s.Reason ?? "" });
+                    Health = s.Health, Meetings = s.Meetings, Killed = s.Killed ?? "", Fled = s.Fled, Reason = s.Reason ?? "",
+                    Id = s.Id ?? "",
+                    Grudges = s.Grudges == null ? new List<SavedGrudge>()
+                        : s.Grudges.ConvertAll(g => new SavedGrudge { Who = g.Who, Victim = g.Victim, Ours = g.Ours }) });
             return list;
         }
 

@@ -389,7 +389,9 @@ namespace Sinbinder.Gameplay
                 string name=was!=null ? was.Name : Survivors.NameFor(order ? "order" : undead ? "bound" : "caravan",taken);
                 taken.Add(name);
                 var sin=was!=null ? (SinType)was.Sin : (SinType)(i%7);
-                w.Initialize(new SoulData(name,sin,MoralType.Vicious,1,55f),shell,relations,false,disposition);
+                // Прежняя личность — прежний номер: память AOS наших о нём снова находит адресата.
+                w.Initialize(new SoulData(name,sin,MoralType.Vicious,1,55f),shell,relations,false,disposition,
+                    was!=null && !string.IsNullOrEmpty(was.Id) ? was.Id : null);
                 WarriorRig.Attach(go);
                 WarriorLook.Build(go,shell,1.65f,1f,1f);
                 sceneSetup?.SetupWarrior(go);
@@ -397,6 +399,7 @@ namespace Sinbinder.Gameplay
                 var record=was ?? new SavedSurvivor{Name=name,Sin=(int)sin,Undead=undead};
                 record.Undead=undead;
                 if(record.Reason!="guide") record.Reason=order ? "order" : undead ? "bound" : "caravan";
+                record.Id=w.Id;
                 _met[w]=record;
                 if(was!=null)
                 {
@@ -432,6 +435,8 @@ namespace Sinbinder.Gameplay
                 var mind=g.GetComponent<AOS.AOSWarriorWrapper>();
                 if(mind!=null && mind.LastDecisionDetail.Action.ToString()=="Flee") rec.Fled=true;
                 // Узнал — один раз за поход, и только тот, кто уже встречал Греховода.
+                // Личный счёт — раньше общего «опять ты»: кто именно убил, кто именно ранил.
+                if(!_greeted.Contains(g) && rec.Grudges!=null && rec.Grudges.Count>0 && CallOut(g,rec)) { _greeted.Add(g); continue; }
                 if(hero!=null && rec.Meetings>0 && !_greeted.Contains(g) && Dist(g.transform.position,hero.transform.position)<14f)
                 {
                     _greeted.Add(g);
@@ -443,14 +448,91 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>Кто видел смерть и запомнил убийцу — тот же радиус, что у свидетелей AOS (AOSEventHub).</summary>
+        private const float Witness=15f;
+        /// <summary>С какого расстояния узнают того, с кем счёт.</summary>
+        private const float Recognize=20f;
+        private readonly HashSet<Warrior> _spoke=new();
+
         private void OnDeath(Damageable killed,GameObject killer)
         {
             var dead=killed!=null ? killed.Warrior : null;
+            if(dead==null || killer==null) return;
+            var by=killer.GetComponentInParent<Warrior>();
+            if(by==null) return;
+            // Пал страж от руки нашего — товарищи рядом запомнили, кто именно (и Греховода тоже).
+            if(_met.TryGetValue(dead,out var fallen))
+            {
+                if(by.Team!=Team.Player) return;
+                foreach(var kv in _met)
+                    if(kv.Key!=null && kv.Key!=dead && !kv.Key.IsDead &&
+                       Dist(kv.Key.transform.position,dead.transform.position)<Witness)
+                        Survivors.Grudge(kv.Value,by.DisplayName,fallen.Name,false);
+                return;
+            }
             // Греховод пал — это конец игры, а не строка в памяти врага.
-            if(dead==null || dead.Team!=Team.Player || dead is SinbinderPlayer || killer==null) return;
-            var by=killer.GetComponent<Warrior>();
-            if(by==null || !_met.TryGetValue(by,out var rec)) return;
+            if(dead.Team!=Team.Player || dead is SinbinderPlayer || !_met.TryGetValue(by,out var rec)) return;
             rec.Killed=string.IsNullOrEmpty(rec.Killed) ? Loc.Name(dead.DisplayName) : rec.Killed+", "+Loc.Name(dead.DisplayName);
+            // И сам павший помнит, кто его убил: поднимет его некромант — узнает убийцу (MurderedMe).
+            Survivors.Grudge(rec,dead.DisplayName,dead.DisplayName,true);
+            // Наши рядом видели, кто именно убил. Греховод — сам игрок: за него помнит игрок.
+            foreach(var w in Squad())
+                if(w!=dead && Dist(w.transform.position,dead.transform.position)<Witness)
+                    Survivors.Grudge(rec,w.DisplayName,dead.DisplayName,true);
+        }
+
+        /// <summary>Удар в личный счёт: наш ранил стража или страж — нашего (Греховода не считаем).</summary>
+        private void NoteHit(Warrior victim,GameObject attacker)
+        {
+            var by=attacker.GetComponentInParent<Warrior>();
+            if(by==null || by is SinbinderPlayer || victim is SinbinderPlayer) return;
+            if(_met.TryGetValue(victim,out var hurt) && by.Team==Team.Player)
+                Survivors.Grudge(hurt,by.DisplayName,"",false);
+            else if(victim.Team==Team.Player && _met.TryGetValue(by,out var striker))
+                Survivors.Grudge(striker,victim.DisplayName,"",true);
+        }
+
+        private static List<Warrior> Squad()
+        {
+            var list=new List<Warrior>();
+            foreach(var w in UnityEngine.Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if(w!=null && !w.IsDead && w.Team==Team.Player && !(w is SinbinderPlayer)) list.Add(w);
+            return list;
+        }
+
+        /// <summary>
+        /// Встреча со своим обидчиком: стражник окликает нашего, который убил его товарища
+        /// или ранил его, — или наш окликает стражника. Убийство важнее раны. Память AOS
+        /// получает адресата: в бою говоривший тянется к тому, с кем счёт (AOSWarriorWrapper.Grudge).
+        /// </summary>
+        private bool CallOut(Warrior guard,SavedSurvivor rec)
+        {
+            SavedGrudge best=null; Warrior other=null; Warrior hero=SinbinderPlayer.Exists ? SinbinderPlayer.Instance : null;
+            var squad=Squad();
+            if(hero!=null && !hero.IsDead) squad.Add(hero);
+            foreach(var g in rec.Grudges)
+            {
+                if(g==null) continue;
+                if(best!=null && !string.IsNullOrEmpty(best.Victim)) break;
+                var w=squad.Find(x => x.DisplayName==g.Who);
+                if(w==null || Dist(w.transform.position,guard.transform.position)>Recognize) continue;
+                if(g.Ours && (w is SinbinderPlayer || _spoke.Contains(w))) continue;
+                if(best==null || (string.IsNullOrEmpty(best.Victim) && !string.IsNullOrEmpty(g.Victim))) { best=g; other=w; }
+            }
+            if(best==null) return false;
+            bool kill=!string.IsNullOrEmpty(best.Victim);
+            bool me=kill && best.Ours && best.Victim==best.Who;   // поднятый узнал своего убийцу
+            var speaker=best.Ours ? other : guard;
+            var target=best.Ours ? guard : other;
+            string line=me ? Survivors.Murderer(target.DisplayName)
+                : kill ? Survivors.CallOut(target.DisplayName,best.Victim) : Survivors.Scar(target.DisplayName);
+            UI.SpeechBubbles.Say(speaker,line,5f);
+            UnityEngine.Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F("{0}: «{1}»",Loc.Name(speaker.DisplayName),line));
+            AOS.MemoryProcessor.Instance?.CreateMemory(speaker,me ? "MurderedMe" : kill ? "EnemyKilledAlly" : "WoundedMe",target.Id,
+                AOS.EmotionType.Anger,kill ? 0.8f : 0.5f);
+            _spoke.Add(speaker);
+            Debug.Log("[ВЫЖИВШИЕ] счёт: "+speaker.DisplayName+" → "+target.DisplayName+" — "+line);
+            return true;
         }
 
         /// <summary>Итог встречи в память: кто из стражи жив — запомнен, павшие забыты.</summary>
@@ -582,6 +664,7 @@ namespace Sinbinder.Gameplay
         public static void OnGuardAttacked(Warrior victim, GameObject attacker)
         {
             var expedition=_active;
+            if(expedition!=null && victim!=null && attacker!=null && !expedition._exiting) expedition.NoteHit(victim,attacker);
             if(expedition==null || victim==null || attacker==null ||
                expedition._plan==null ||
                expedition._plan.Kind!=ExpeditionMapKind.SaltRoad ||
