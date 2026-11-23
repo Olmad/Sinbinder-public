@@ -7,4 +7,5 @@
 <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionReplayData.cs" Link="ExpeditionReplayData.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionCombatFacts.cs" Link="ExpeditionCombatFacts.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionReplayArchive.cs" Link="ExpeditionReplayArchive.cs"/>
+<Compile Include="../../Assets/Scripts/Core/Loc.cs" Link="Loc.cs"/>
 </ItemGroup></Project>
