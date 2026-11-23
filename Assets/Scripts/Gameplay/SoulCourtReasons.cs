@@ -39,8 +39,10 @@ namespace Sinbinder.Gameplay
         /// </summary>
         /// <summary>
         /// A judge abstains when its rival/order net is below SoulCourt.Audible.
-        /// This only proves the voice has not chosen a visible side.
-        /// It does NOT prove there is no danger, loot, debt or memory.
+        /// A net under the audible threshold may still be nonzero:
+        /// the voice has not acquired enough NET weight to be seated.
+        /// It does NOT prove an equal tie or the absence of danger, loot,
+        /// debts or memories.
         /// Keep the thirteen distinct voices without inventing world facts.
         /// </summary>
         public static string Idle(string module, Warrior w)
@@ -48,19 +50,19 @@ namespace Sinbinder.Gameplay
             if (w == null) return Loc.T("Воздерживаюсь.");
             switch (module)
             {
-                case "Loyalty": return Loc.T("Воздерживаюсь: верность не выбрала сторону.");
-                case "Fear": return Loc.T("Воздерживаюсь: страх не выбрал сторону.");
-                case "Memory": return Loc.T("Воздерживаюсь: память не выбрала сторону.");
-                case "Morality": return Loc.T("Воздерживаюсь: совесть не выбрала сторону.");
-                case "Virtue": return Loc.T("Воздерживаюсь: добродетель не выбрала сторону.");
-                case "Patience": return Loc.T("Воздерживаюсь: терпение не выбрало сторону.");
-                case "Greed": return Loc.T("Воздерживаюсь: жадность не выбрала сторону.");
-                case "Pride": return Loc.T("Воздерживаюсь: гордыня не выбрала сторону.");
-                case "Wrath": return Loc.T("Воздерживаюсь: гнев не выбрал сторону.");
-                case "Envy": return Loc.T("Воздерживаюсь: зависть не выбрала сторону.");
-                case "Lust": return Loc.T("Воздерживаюсь: страсть не выбрала сторону.");
-                case "Gluttony": return Loc.T("Воздерживаюсь: чревоугодие не выбрало сторону.");
-                case "Sloth": return Loc.T("Воздерживаюсь: уныние не выбрало сторону.");
+                case "Loyalty": return Loc.T("Воздерживаюсь: верности недостало веса для вердикта.");
+                case "Fear": return Loc.T("Воздерживаюсь: страх слишком тих, чтобы склонить чашу.");
+                case "Memory": return Loc.T("Воздерживаюсь: память не дала решающего перевеса.");
+                case "Morality": return Loc.T("Воздерживаюсь: совесть не достигла порога суда.");
+                case "Virtue": return Loc.T("Воздерживаюсь: добродетель не придала чаше решающего веса.");
+                case "Patience": return Loc.T("Воздерживаюсь: терпение не дотянуло до перевеса.");
+                case "Greed": return Loc.T("Воздерживаюсь: жадность не выторговала перевеса.");
+                case "Pride": return Loc.T("Воздерживаюсь: гордыня не добилась перевеса.");
+                case "Wrath": return Loc.T("Воздерживаюсь: гнев не продавил вердикт.");
+                case "Envy": return Loc.T("Воздерживаюсь: зависть не перетянула весы.");
+                case "Lust": return Loc.T("Воздерживаюсь: страсть не склонила чашу до порога.");
+                case "Gluttony": return Loc.T("Воздерживаюсь: чревоугодию недостало веса.");
+                case "Sloth": return Loc.T("Воздерживаюсь: уныние не потянуло чашу достаточно сильно.");
                 default: return Loc.T("Воздерживаюсь.");
             }
         }
