@@ -71,6 +71,7 @@ namespace Sinbinder.Tests
                 Geometry();
                 Narration();
                 ReturnRules();
+                SaveCoverage();
                 Voting();
                 Commanding();
                 Epilogue();
@@ -2381,6 +2382,118 @@ namespace Sinbinder.Tests
         }
 
         // ================= место не обновляется (Survivors, план 69 §7 п.1б) =================
+
+        // ── Сторож сохранений (автор, 23.11: «полную проверку все и везде где нужно и как нужно
+        // сохранять»). Запись — список, который пишут руками; система, написанная без шага
+        // «в SaveGame и SaveSystem», жила до закрытия игры, и это находилось через недели.
+        // Теперь у каждой статической коллекции игры — пометка, что с ней при записи.
+        // Новая без пометки роняет проверку: решать надо сразу. Пометки:
+        //   запись — пишется в SaveGame;   сцена — живёт одну сцену/бой, строится заново;
+        //   кэш — справочник, звуки, таблицы;   партия — «Перетягивание», до конца партии;
+        //   раз — «уже сказано/показано», после загрузки может повториться (некритично).
+        private static readonly Dictionary<string, string> StateKinds = Kinds(
+            // запись: SaveGame / SaveSystem (или PlayerPrefs — помечено)
+            ("запись", "AOS.MemoryProcessor._pending Crypt.CryptUpgrades._brought Crypt.CryptUpgrades._installed " +
+                       "Crypt.MissionBoard.ActiveJourneys Gameplay.ExpeditionMemoryLedger.Entries Gameplay.ExpeditionReplayArchive.Entries " +
+                       "Gameplay.PersonalExpedition.Progress Gameplay.SquadRoster._members Gameplay.Survivors._all Gameplay.Lesson._given " +
+                       "Gameplay.TrophyChest._restoreContents Gameplay.FallenBag.Live Core.Satchel._jars " +
+                       "Core.Records._have"),   // пластинки — PlayerPrefs, навсегда; тайники забываются новой игрой
+            // сцена: живые объекты, бой, разговор — строятся заново
+            ("сцена", "AOS.AOSStats._actions AOS.AOSStats._voices AOS.RumourManager._rumours Core.LocationManager._offscreenTags " +
+                      "Dev.InputHush.Holders Dev.InputHush.Was Gameplay.AltarVisualEnhancer.Decorated Gameplay.Bodyguard.Watched " +
+                      "Gameplay.BuildSite.Live Gameplay.CampLife.Chosen Gameplay.CampLife._tents Gameplay.CampYard.Residents " +
+                      "Gameplay.CryptDoor.Live Gameplay.DreamTutorialDirector.FallenAt Gameplay.DreamTutorialDirector._timeline " +
+                      "Gameplay.EscapeZone._escapedNames Gameplay.Gift.Live Gameplay.Gramophone.Live Gameplay.HiddenRecord.Live " +
+                      "Gameplay.Hostility.Foes Gameplay.Hostility.Friends Gameplay.Inspectable.Live Gameplay.IzbaThing.Live " +
+                      "Gameplay.LogSeat.Live Gameplay.LordPurse.Live Gameplay.MapEvent.Live Gameplay.PrologueCampSpawner.Squad " +
+                      "Gameplay.Provocation.Answered Gameplay.Provocation.Taunting Gameplay.RatFamilyActor.Live Gameplay.RavenFlight.Live " +
+                      "Gameplay.RearguardMoment.Strikes Gameplay.RecordShelf.Live Gameplay.RivalLord.Live Gameplay.Scryer.All " +
+                      "Gameplay.TentInterior.Live Gameplay.TowerPost.Live Gameplay.WarriorAnimation._everyone Gameplay.WeaponPickup.Live " +
+                      "Gameplay.WeaponPickup._worn Gameplay.Whisper.Last Gameplay.Whisper.Until UI.CommandPanel.Picked UI.GearPanel.Targets " +
+                      "UI.Letterbox._hits UI.Modal.Dimmed UI.OverheadWord.Lit UI.ScalesOverhead.NextFor UI.SpeechBubbles.Hits " +
+                      "UI.SalaryPanelUI.Owed UI.OverheadUIPool._pool"),
+            // партия «Перетягивание»: до конца партии, партия в запись не идёт
+            ("партия", "Core.Allegiance.Toward Core.MapSession.<Seats>k__BackingField Gameplay.Favor.GiftedAt Gameplay.Favor.Gifts " +
+                       "Gameplay.Favor.Groups Gameplay.Favor.Purses Gameplay.Favor.SaidAt Gameplay.Remains.Stock Gameplay.Trophies.Got " +
+                       "Gameplay.Hostility.Blows Gameplay.Hostility.Killers Gameplay.Hostility.Marks"),
+            // раз: «уже сказано/показано» — после загрузки может прозвучать снова
+            ("раз", "Gameplay.CampfireStoke.Said Gameplay.Signature.Greeted Gameplay.Signature.Born Gameplay.SoulCourt.Decided " +
+                    "UI.HintArrival.Flown"),
+            // кэш: справочники, таблицы, звуки
+            ("кэш", "AOS.AOSWarriorWrapper._iconCache AOS.Counterfactual.Order AOS.Counterfactual.VoiceOrder AOS.PerkResolver._warned " +
+                    "AOS.SkillCatalog.Diligence AOS.SkillCatalog.Gluttony AOS.SkillCatalog.Lust AOS.SkillCatalog.None " +
+                    "AOS.SkillCatalog.Patience AOS.SkillCatalog.Sloth AOS.SkillCatalog.Wrath AOS.TemptationResolver.Pull " +
+                    "AOS.TitleDatabase.Granted AOS.TitleDatabase.Rules Audio.DeathVoice.VowelFormants Audio.Music.Clips Audio.Music.Told " +
+                    "Audio.Sfx.Calls Audio.Sfx.Clips Audio.Sfx.Told Audio.VoiceGenerator.Formants Audio.VoiceGenerator._clips " +
+                    "Core.Cost.Spent Core.Grammar.HerEn Core.Grammar.Preposition Core.Loc.LatinOf Core.Loc.Table Core.LocSetup.Languages " +
+                    "Core.Preferences.MusicSteps Core.Preferences.Steps Core.Records.All Core.SaveSystem.Slots Core.ShellLibrary._cache " +
+                    "Core.Trades.Bias Core.Trades.Names Core.WarriorGenerator.Marks Core.WarriorGenerator.Names " +
+                    "Core.WarriorGenerator.OrderNames Core.WarriorGenerator.Ours Core.WarriorGenerator.Ranks Crypt.WarriorForge.Faith " +
+                    "Crypt.WarriorForge.ShellList Crypt.WarriorForge.Strength Crypt.WarriorForge.TradeList Dev.CheatConsole.Commands " +
+                    "Dialogue.CampLines.EpithetFirst Dialogue.CampLines.EpithetFirstEn Dialogue.DialogueCameraController.Bodies " +
+                    "Dialogue.DialogueCameraController.FrameAngles Dialogue.DialogueCameraController.GazeAngles " +
+                    "Dialogue.DialogueCameraController.Lifts Dialogue.DialogueCameraController.PairAngles Dialogue.EncounterLines.AboutCraft " +
+                    "Dialogue.EncounterLines.AboutLegend Dialogue.EncounterLines.Against Dialogue.EncounterLines.Alone " +
+                    "Dialogue.EncounterLines.Brothers Dialogue.VillageDialogueRules.LordReplies Dialogue.VillageDialogueRules.SinReplies " +
+                    "Gameplay.CampLife.Voices Gameplay.CampWell.Rings Gameplay.CampfireStoke.Lines Gameplay.Champions.Legends " +
+                    "Gameplay.Champions.Titles Gameplay.DreamRoad.ForestTrail Gameplay.DreamRoad.Glades Gameplay.DreamRoad.Lanes " +
+                    "Gameplay.DreamRoad.River Gameplay.DreamRoad.Route Gameplay.ExpeditionBook.All Gameplay.ExpeditionBook.Cargo " +
+                    "Gameplay.ExpeditionBook.Proud Gameplay.ExpeditionBook.Schemes Gameplay.ExpeditionBook.Selfish Gameplay.Fallen._names " +
+                    "Gameplay.HunterSquadSpawner.Epithets Gameplay.HunterSquadSpawner.Kinds Gameplay.HunterSquadSpawner.Names " +
+                    "Gameplay.InspectTexts.AxeTree Gameplay.InspectTexts.Bed Gameplay.InspectTexts.Jars Gameplay.InspectTexts.Map " +
+                    "Gameplay.InspectTexts.Pawn Gameplay.MapEditor.Palette Gameplay.RatFamilyActor.Lines Gameplay.RatFamilyActor.Names " +
+                    "Gameplay.RatFamilyActor.Prompts Gameplay.RatFamilyVisual.BodyLength Gameplay.RatFamilyVisual.Coats " +
+                    "Gameplay.RatFamilyVisual.Models Gameplay.RatFamilyVisual.Palette Gameplay.RatFamilyVisual.Sizes " +
+                    "Gameplay.RavenFlight.Perches Gameplay.Signature.Table Gameplay.SoulCourt.Voices Gameplay.SoulCourt._sunbeam " +
+                    "Gameplay.SquadGear.Slots Gameplay.SquadOrders.InDemo Gameplay.Survivors._dead Gameplay.Survivors._living " +
+                    "Gameplay.Survivors._order Gameplay.TugBench.Markers Gameplay.TugBench.Shells Gameplay.TugTutorial.Lessons " +
+                    "Gameplay.TugTutorial.Objectives Gameplay.Wardrobe.Hands Gameplay.Wardrobe.Hollows Gameplay.Wardrobe.Soft " +
+                    "Gameplay.Wardrobe.SoftMeshes Gameplay.Wardrobe.Worn UI.ScalesOverhead.Corners UI.SpeechBubbles.Corners " +
+                    "UI.SquadStrategyUI.Keys"));
+
+        private static Dictionary<string, string> Kinds(params (string kind, string keys)[] groups)
+        {
+            var d = new Dictionary<string, string>();
+            foreach (var (kind, keys) in groups)
+                foreach (var k in keys.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)) d[k] = kind;
+            return d;
+        }
+
+        /// <summary>Статические коллекции игры без пометки в <see cref="StateKinds"/>.</summary>
+        public static List<string> UnclassifiedState()
+        {
+            var missing = new List<string>();
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Static
+                | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic
+                | System.Reflection.BindingFlags.DeclaredOnly;
+            foreach (var t in typeof(SelfCheck).Assembly.GetTypes())
+            {
+                string ns = t.Namespace ?? "";
+                if (!ns.StartsWith("Sinbinder") || ns.StartsWith("Sinbinder.Tests") || ns.StartsWith("Sinbinder.EditorTools")) continue;
+                if (t.IsDefined(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute), false)) continue;
+                foreach (var f in t.GetFields(flags))
+                {
+                    if (f.IsLiteral || f.Name.StartsWith("<") && !f.Name.EndsWith("k__BackingField")) continue;
+                    var ft = f.FieldType;
+                    bool collection = ft.IsArray || ft.IsGenericType && (
+                        ft.GetGenericTypeDefinition() == typeof(List<>) || ft.GetGenericTypeDefinition() == typeof(Dictionary<,>)
+                        || ft.GetGenericTypeDefinition() == typeof(HashSet<>) || ft.GetGenericTypeDefinition() == typeof(Queue<>)
+                        || ft.GetGenericTypeDefinition() == typeof(Stack<>));
+                    if (!collection) continue;
+                    string key = t.FullName.Substring("Sinbinder.".Length).Replace('+', '.') + "." + f.Name;
+                    if (!StateKinds.ContainsKey(key)) missing.Add(key);
+                }
+            }
+            missing.Sort(System.StringComparer.Ordinal);
+            return missing;
+        }
+
+        private static void SaveCoverage()
+        {
+            var missing = UnclassifiedState();
+            Check(missing.Count == 0, "у долгоживущего состояния нет пометки, пишется ли оно в запись (SelfCheck.StateKinds): "
+                                      + string.Join(", ", missing.GetRange(0, Math.Min(6, missing.Count))));
+        }
 
         private static void ReturnRules()
         {
