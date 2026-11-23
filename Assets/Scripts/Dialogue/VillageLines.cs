@@ -67,7 +67,7 @@ namespace Sinbinder.Dialogue
 
         private static string OrderAnswer(Warrior b) => b.Soul.Sin switch
         {
-            SinType.Wrath => Loc.T("Пусть приходят. Топор наточен."),
+            SinType.Wrath => Loc.T("Пусть приходят. Встретим как следует."),
             SinType.Pride => Loc.T("Мы им не дичь."),
             SinType.Sloth => Loc.T("Придут — тогда и встанем."),
             SinType.Greed => Loc.T("С охотника снять есть что."),
