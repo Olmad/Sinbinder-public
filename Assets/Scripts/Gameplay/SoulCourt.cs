@@ -868,10 +868,13 @@ namespace Sinbinder.Gameplay
         /// «Весы: за приказ — Верность, Страх · против — Память». Имена — цветами голосов,
         /// стороны — цветами сторон весов, как в зале. Пусто — приказа не было или голоса молчат.
         /// </summary>
-        public static string ScalesLine(Warrior w, Decision d, DecisionContext c, int most = 3)
+        public static string ScalesLine(Warrior w, Decision d, DecisionContext c, int most = 3,
+            IReadOnlyList<Vote> originalVotes = null)
         {
             if (w == null || c == null || !c.HasCommand) return null;
-            var sum = Sums(w, d, c);
+            // Historical UI must show the captured vote, not a second
+            // tally after an AOS refusal changed memories and emotions.
+            var sum = Sums(w, d, c, originalVotes);
             var pro = new List<KeyValuePair<string, float>>();
             var con = new List<KeyValuePair<string, float>>();
             foreach (var kv in sum)
@@ -1025,7 +1028,8 @@ namespace Sinbinder.Gameplay
         /// </list>
         /// Вне боя одной новизны мало: нужен ещё повод. <paramref name="why"/> — поводы словами, для журнала.
         /// </summary>
-        public static float Importance(Warrior w, Decision d, DecisionContext c, out string why)
+        public static float Importance(Warrior w, Decision d, DecisionContext c, out string why,
+            IReadOnlyList<Vote> originalVotes = null)
         {
             why = "";
             if (w == null || c == null || !c.HasCommand || !d.RefusedCommand) return 0f;
@@ -1040,10 +1044,13 @@ namespace Sinbinder.Gameplay
             if (!string.IsNullOrEmpty(SquadRoster.CommanderName) && w.DisplayName == SquadRoster.CommanderName)
             { score += 0.15f; parts.Add("старший"); }
 
-            // Как решила душа — те же голоса, что сядут за кафедру.
+            // IMPORTANT: AOSEventHub records refusal memories and changes
+            // emotions BEFORE notifying CourtCaller. Re-balloting here can
+            // attribute the changed soul to its earlier decision.
+            // Prefer the same immutable snapshot that the court will show.
             var rival = Rival(d);
             var net = new Dictionary<string, float>();
-            foreach (var v in new BehaviourResolver().Ballot(w, c))
+            foreach (var v in originalVotes ?? (IReadOnlyList<Vote>)new BehaviourResolver().Ballot(w, c))
             {
                 if (v.Action != ActionType.ObeyCommand && v.Action != rival) continue;
                 net.TryGetValue(v.Module, out float was);
