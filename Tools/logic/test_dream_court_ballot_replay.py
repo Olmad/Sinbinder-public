@@ -110,12 +110,27 @@ class DreamCourtBallotReplayTests(unittest.TestCase):
                         wrapper.index("AOSEventHub.Instance?.OnCommandRefused"))
         self.assertIn("new List<Vote>(mind.LastDecisionBallot)", caller)
         self.assertIn("Importance(w, d, c, out string why, originalVotes)", caller)
-        self.assertIn("Convene(w, d, c.Copy(), originalVotes: originalVotes)", caller)
+        self.assertIn("given: mind.LastDecisionOrderKind, originalVotes: originalVotes)", caller)
+        self.assertIn("LastDecisionOrderKind = cmd.Kind;", wrapper)
+        self.assertIn("OrderWords(given ?? w.Command.Kind)", court)
         importance = court.split("public static float Importance(", 1)[1].split(
             "private static ActionType Rival(", 1)[0]
         self.assertIn("IReadOnlyList<Vote> originalVotes = null", importance)
         self.assertIn("originalVotes ?? (IReadOnlyList<Vote>)new BehaviourResolver().Ballot(w, c)",
                       importance)
+
+    def test_automatic_court_keeps_original_order_during_camera_wait(self):
+        caller = (ROOT / "Assets/Scripts/Gameplay/CourtCaller.cs").read_text(encoding="utf-8")
+        wrapper = (ROOT / "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs").read_text(encoding="utf-8")
+        court = (ROOT / "Assets/Scripts/Gameplay/SoulCourt.cs").read_text(encoding="utf-8")
+        self.assertIn("LastDecisionOrderKind = cmd.Kind;", wrapper)
+        self.assertIn("given: mind.LastDecisionOrderKind, originalVotes: originalVotes", caller)
+        self.assertIn("yield return camera.WaitUntilFree(15f);", court)
+        self.assertIn("Summon(w, d, given)", court)
+        self.assertIn("OrderWords(given ?? w.Command.Kind)", court)
+        missing = caller.replace("given: mind.LastDecisionOrderKind, ",
+                                 "")
+        self.assertNotIn("given: mind.LastDecisionOrderKind, ", missing)
 
     def test_refusal_event_rejects_same_valued_stale_decisions(self):
         # Two ticks may produce exactly the same Decision on one command.
