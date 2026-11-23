@@ -73,8 +73,7 @@ namespace Sinbinder.Gameplay
             // Never resimulate historical voices from this changed warrior.
             // A real player AOS decision has already captured its ballot.
             var mind = w.GetComponent<AOSWarriorWrapper>();
-            if (mind == null || !mind.HasCurrentCommandDecision ||
-                !mind.LastDecisionDetail.Equals(d) ||
+            if (mind == null || !mind.IsSourceOfLastCommandDecision(d, c) ||
                 mind.LastDecisionBallot == null || mind.LastDecisionBallot.Count == 0)
             {
                 Debug.LogWarning("[СУД] Исторические голоса отказа недоступны; "
