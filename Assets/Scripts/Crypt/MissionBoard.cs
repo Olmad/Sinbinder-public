@@ -720,12 +720,15 @@ namespace Sinbinder.Crypt
             if(place!=null) foreach(var rumour in Gameplay.PersonalExpedition.SendHunters(place.Id)) Hear(rumour);
         }
 
-        /// <summary>Слух, принесённый в склеп: в отчёт карты и в журнал.</summary>
+        /// <summary>
+        /// Слух, принесённый в склеп, — в отчёт карты у шара (заголовок меню экспедиций), не в журнал:
+        /// перемены мира говорит меню (автор, 23.11). Охотник стоит на карте отдельной строкой.
+        /// </summary>
         public void Hear(string rumour)
         {
             if(string.IsNullOrEmpty(rumour)) return;
             LastReport=string.IsNullOrEmpty(LastReport) ? rumour : LastReport+"\n"+rumour;
-            Log(rumour);
+            Debug.Log("[СЛУХ] "+rumour);
         }
 
 

@@ -288,11 +288,48 @@ namespace Sinbinder.Gameplay
             visit.enabled = true;
             visit.Announce(Loc.F("Экспедиция «{0}»: доберитесь до отмеченной цели и вернитесь к бирюзовому знаку.",
                 Loc.T(plan.Title)));
-            // Почему выжившие здесь — после приветствия: журнал держит последние строки,
-            // и написанное раньше приветствия уходило из виду (кадр 23.11).
-            var log=UnityEngine.Object.FindFirstObjectByType<UI.BattleLogUI>();
-            foreach(var line in visit._why) log?.Write(line);
+            // Перемены места журнал при входе не объявляет (автор, 23.11: «пусть не журнал говорит
+            // об изменениях, а меню экспедиций»): их читают в карточке у шара (KnownAbout), а здесь
+            // стражи узнают Греховода сами. Объяснения — только в журнал разработчика.
+            foreach(var line in visit._why) Debug.Log("[ВЫЖИВШИЕ] "+line);
             return true;
+        }
+
+        /// <summary>
+        /// Что известно о месте — для карточки экспедиции у шара. Имена — только встреченных
+        /// (автор, 23.11: «я имел в виду конкретные имена. А узнать, что там по слухам Орден, — более
+        /// чем логично»): что сделали мы сами, кого видели, и слух о новых хозяевах — без имён.
+        /// Без чисел: их игрок не видит (MissionCatalog).
+        /// </summary>
+        public static List<string> KnownAbout(ExpeditionMapPlan plan)
+        {
+            var lines=new List<string>();
+            if(plan==null || string.IsNullOrEmpty(plan.Id)) return lines;
+            string placeId=plan.Id;
+            Progress.TryGetValue(placeId,out var state);
+            var known=Survivors.KnownAt(placeId);
+            bool been=state!=null && state.Visits>0;
+            if(!been && known.Count==0) return lines;
+            if(been)
+            {
+                bool tonight=state.LeftAt>=0 && Sorties.Count<=state.LeftAt;
+                lines.Add(tonight ? Loc.T("Вы ушли отсюда этой ночью: стража не успела залечить раны.")
+                                  : Loc.T("Вы здесь уже были; с тех пор прошло время."));
+                if(state.CargoTaken && !state.CaravanPassed) lines.Add(Loc.T("Обоз разграблен — охрана ушла на дорогу."));
+                else if(state.CaravanPassed) lines.Add(Loc.T("Обоз вы пропустили с миром."));
+                if(state.SecretTaken) lines.Add(Loc.T("Тайник взят."));
+            }
+            if(known.Exists(s => s.Reason=="order"))
+                lines.Add(Loc.T("Место стережёт дозор Ордена: слух о разграблении дошёл до них."));
+            if(known.Count>0)
+                foreach(var s in known) lines.Add(Survivors.Known(s));
+            else if(been && state.EnemiesRemaining==0)
+                lines.Add(Loc.T("Когда вы уходили, стражи там не осталось."));
+            // Новые хозяева — по слуху, без имён: их ещё никто не видел (Survivors.OnReturn).
+            if(been && plan.Kind==ExpeditionMapKind.Chapel && state.Occupant!=1 &&
+               Survivors.OnReturn(state.LeftAt,state.ClearedAt,state.SecretTaken,state.EnemiesRemaining,Sorties.Count)==Return.Reoccupied)
+                lines.Add(Loc.T("По слухам, разграбленную часовню занял дозор Ордена."));
+            return lines;
         }
 
         private ExpeditionMapPlan _plan;
@@ -400,7 +437,10 @@ namespace Sinbinder.Gameplay
             // Выжившие прошлых встреч стоят первыми — с прежним именем, грехом и ранами (Survivors).
             var known=Survivors.At(_plan.Id);
             if(_return==Return.SameNight && known.Count>0) _why.Insert(0,Survivors.SameNight());
+            // Имена отряда — тоже заняты: поднятый охотник пролога в отряде и страж с тем же именем
+            // читались бы одним человеком.
             var taken=new List<string>();
+            foreach(var m in SquadRoster.Members) if(!string.IsNullOrEmpty(m.Name)) taken.Add(m.Name);
             for(int i=0;i<remaining;i++)
             {
                 Vector3 at=ExpeditionMapBuilder.Point(_plan,(i%2==0?-1f:1f)*(5f+i*2f),
@@ -425,8 +465,12 @@ namespace Sinbinder.Gameplay
                 string name=was!=null ? was.Name : Survivors.NameFor(order ? "order" : undead ? "bound" : "caravan",taken);
                 taken.Add(name);
                 var sin=was!=null ? (SinType)was.Sin : (SinType)(i%7);
+                // Страж Ордена — с чином, как охотник пролога: «Готфрид Инквизитор»; чин помнит запись.
+                var rank=was!=null && was.Trade!=0 ? (Trade)was.Trade : order ? Survivors.OrderRank(i) : Trade.None;
+                var soul=new SoulData(name,sin,MoralType.Vicious,1,55f);
+                if(rank!=Trade.None) soul.SetTrade(rank);
                 // Прежняя личность — прежний номер: память AOS наших о нём снова находит адресата.
-                w.Initialize(new SoulData(name,sin,MoralType.Vicious,1,55f),shell,relations,false,disposition,
+                w.Initialize(soul,shell,relations,false,disposition,
                     was!=null && !string.IsNullOrEmpty(was.Id) ? was.Id : null);
                 WarriorRig.Attach(go);
                 WarriorLook.Build(go,shell,1.65f,1f,1f);
@@ -434,6 +478,7 @@ namespace Sinbinder.Gameplay
                 _guards.Add(w);
                 var record=was ?? new SavedSurvivor{Name=name,Sin=(int)sin,Undead=bones};
                 record.Undead=bones;
+                record.Trade=(int)rank;
                 if(record.Reason!="guide" && !hunter) record.Reason=order ? "order" : undead ? "bound" : "caravan";
                 record.Id=w.Id;
                 _met[w]=record;
@@ -589,6 +634,7 @@ namespace Sinbinder.Gameplay
                 if(g==null || g.IsDead || !_met.TryGetValue(g,out var rec)) continue;
                 rec.Health=g.MaxHP>0f ? Mathf.Clamp01(g.HP/g.MaxHP) : 1f;
                 rec.Meetings++;
+                rec.SeenAt=_plan.Id;   // видели его здесь — меню назовёт его здесь
                 alive.Add(rec);
             }
             // Обоз разграблен — охранять больше нечего: выжившая охрана уходит на дорогу

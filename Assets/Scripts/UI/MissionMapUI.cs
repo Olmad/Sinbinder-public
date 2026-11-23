@@ -52,6 +52,9 @@ namespace Sinbinder.UI
         private bool _pickingCommander;
         private Mission _chosen;
 
+        /// <summary>Открыта карточка экспедиции (между картой и выбором старшего).</summary>
+        private bool _card;
+
         /// <summary>
         /// Шаг сбора отряда: старший выбран, игрок решает, кого он возьмёт.
         /// До 16 октября шага не было — спутников подбирал список по порядку
@@ -136,7 +139,8 @@ namespace Sinbinder.UI
         private void Back()
         {
             if (_gathering) { PickCommander(_chosen); return; }
-            if (_pickingCommander) { ShowMissions(); return; }
+            if (_pickingCommander) { ShowCard(_chosen); return; }
+            if (_card) { ShowMissions(); return; }
 
             Close();
         }
@@ -170,6 +174,7 @@ namespace Sinbinder.UI
             _personal = false;
             _pickingCommander = false;
             _gathering = false;
+            _card = false;
 
             if (_title != null)
                 _title.text = string.IsNullOrEmpty(_board.LastReport)
@@ -182,6 +187,11 @@ namespace Sinbinder.UI
                     ? Loc.T("Время вылазок остановлено, пока открыта карта.") : "",
                 "", Close, 68f));
             y -= 76f;
+
+            // Карта окрестностей с точками экспедиций (автор, 23.11: «открывается небольшая карта
+            // с точками интереса… нажимает на точку — описание, выйти и продолжить, как в This Is
+            // the Police»). До 23.11 здесь был список строк в конце прокрутки.
+            y -= MapBlock(y) + 8f;
 
             // Ongoing operations take precedence over archived reports.
             // A commander remains away until the real resolver finishes on return.
@@ -285,41 +295,65 @@ namespace Sinbinder.UI
                 y-=86f;
             }
 
+        }
+
+        /// <summary>Можно ли сюда идти: есть кому вести, или Греховод пойдёт сам (личная карта).</summary>
+        private bool CanGo(Mission m)
+        {
+            // The Sinbinder himself is a valid one-person party.
+            // No roster soldiers is NOT a reason to disable a personally
+            // visitable expedition. Automatic dispatch still requires
+            // an available commander.
+            bool personalPossible = ExpeditionMapPlan.ForName(m.Name) != null &&
+                                    SinbinderPlayer.Exists && !SinbinderPlayer.Instance.IsDead;
+            return _board.Ready() > 0 || personalPossible;
+        }
+
+        /// <summary>
+        /// Карточка экспедиции: слух, опасность и добыча словами, что известно о месте, —
+        /// и два выхода: «Выйти» (к карте) и «Продолжить» (выбрать, кто поведёт). О противниках —
+        /// только встреченное (автор, 23.11: «знать о противниках экспедиции только после того,
+        /// как узнали их»): что сделали мы и кого видели (PersonalExpedition.KnownAbout).
+        /// </summary>
+        private void ShowCard(Mission m)
+        {
+            _personal = false;
+            _pickingCommander = false;
+            _gathering = false;
+            _card = true;
+            _chosen = m;
+
+            if (_title != null) _title.text = Loc.Name(m.Name) + Loc.T("  Esc — назад");
+            Rows(out float y);
+
+            // Людей меньше, чем советуют, — не запрет (с 16 октября):
+            // послать можно и одного. Строка говорит, сколько советуют
+            // и сколько есть, а решает игрок.
             int ready = _board.Ready();
+            string facts = $"{MissionCatalog.Danger(m)} {MissionCatalog.Riches(m.Prize)} "
+                         + MissionCatalog.Promise(m.Spoils);
+            // Сколько советуют — уже в строке опасности (MissionCatalog.Danger).
+            if (ready < m.Squad)
+                facts += " " + Loc.F("У вас сейчас только {0}.", Leadership.Collective(ready));
+            y -= TextBlock(y, Loc.T("Слух"), m.Rumour + "\n" + facts) + 8f;
 
-            foreach (var mission in _board.Missions)
-            {
-                var m = mission;
+            var plan = ExpeditionMapPlan.ForName(m.Name);
+            var known = PersonalExpedition.KnownAbout(plan);
+            y -= TextBlock(y, Loc.T("Что известно"), known.Count > 0 ? string.Join("\n", known)
+                : Loc.T("Здесь ещё никто из ваших не был. Кто там — узнаете на месте.")) + 8f;
 
-                // Людей меньше, чем советуют, — не запрет (с 16 октября):
-                // послать можно и одного. Строка говорит, сколько советуют
-                // и сколько есть, а решает игрок.
-                string facts = $"{MissionCatalog.Danger(m)} {MissionCatalog.Riches(m.Prize)} "
-                             + MissionCatalog.Promise(m.Spoils);
-                // Сколько советуют — уже в строке опасности (MissionCatalog.Danger).
-                if (ready < m.Squad)
-                    facts += " " + Loc.F("У вас сейчас только {0}.", Leadership.Collective(ready));
-
-                // The Sinbinder himself is a valid one-person party.
-                // No roster soldiers is NOT a reason to disable a personally
-                // visitable expedition. Automatic dispatch still requires
-                // an available commander.
-                bool personalPossible = ExpeditionMapPlan.ForName(m.Name) != null &&
-                                        SinbinderPlayer.Exists && !SinbinderPlayer.Instance.IsDead;
-                bool enabled = ready > 0 || personalPossible;
-                _spawned.Add(Row(y, enabled,
-                    Loc.Name(m.Name),
-                    m.Rumour,
-                    facts,
-                    enabled ? () => PickCommander(m) : (System.Action)null));
-
-                y -= 150f;
-            }
+            bool can = CanGo(m);
+            Buttons(y, (Loc.T("Выйти"), true, ShowMissions),
+                       (Loc.T("Продолжить"), can, () => PickCommander(m)));
+            if (!can)
+                _spawned.Add(Row(y - 84f, false, Loc.T("Вести некому"),
+                    Loc.T("Все бойцы в пути или не могут идти."), "", null, 68f));
         }
 
         private void PickCommander(Mission mission)
         {
             _personal = false;
+            _card = false;
             _chosen = mission;
             _pickingCommander = true;
             _gathering = false;
@@ -744,6 +778,246 @@ namespace Sinbinder.UI
             Label(rt, third, 20, new Vector2(18f, -76f), 58f, bright);
 
             return go;
+        }
+
+        // ── Карта окрестностей (автор, 23.11) ──
+
+        // Где точка на карте: доли ширины и высоты. Порядок и места постоянны — карта, которая
+        // тасуется, отняла бы у игрока сравнение (MissionCatalog). Склеп — дом, слева.
+        private static readonly Dictionary<string, Vector2> Spots = new()
+        {
+            ["Соляной обоз"] = new Vector2(0.24f, 0.30f),
+            ["Придорожная часовня"] = new Vector2(0.40f, 0.68f),
+            ["Затопленная каменоломня"] = new Vector2(0.60f, 0.30f),
+            ["Сожжённая застава"] = new Vector2(0.64f, 0.80f),
+            ["Старый гарнизон"] = new Vector2(0.86f, 0.62f),
+            ["Костяная топь"] = new Vector2(0.87f, 0.22f),
+        };
+        private static readonly Vector2 Home = new Vector2(0.07f, 0.52f);
+        private static readonly string[][] Roads =
+        {
+            new[] { "", "Соляной обоз" }, new[] { "", "Придорожная часовня" },
+            new[] { "Придорожная часовня", "Сожжённая застава" }, new[] { "Соляной обоз", "Затопленная каменоломня" },
+            new[] { "Затопленная каменоломня", "Костяная топь" }, new[] { "Сожжённая застава", "Старый гарнизон" },
+        };
+
+        private static Vector2 SpotOf(string name)
+            => string.IsNullOrEmpty(name) ? Home : Spots.TryGetValue(name, out var p) ? p : new Vector2(0.5f, 0.5f);
+
+        /// <summary>Карта с точками: дороги, склеп, места. Нажатие на место — его карточка. Вернёт высоту.</summary>
+        private float MapBlock(float y)
+        {
+            const float height = 440f;
+            var go = new GameObject("Карта окрестностей", typeof(RectTransform));
+            go.transform.SetParent(_rows, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = new Vector2(1f, 1f); rt.pivot = new Vector2(0f, 1f);
+            rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, height);
+            rt.anchoredPosition = new Vector2(0f, y);
+            Grow(y, height);
+            go.AddComponent<Image>().color = new Color(0.14f, 0.12f, 0.09f, 0.95f);
+            _spawned.Add(go);
+            Label(rt, Loc.T("Окрестности склепа. Нажмите на место, чтобы прочесть о нём."), 20, new Vector2(18f, -10f), 28f, false);
+
+            var area = new GameObject("Поле карты", typeof(RectTransform));
+            area.transform.SetParent(rt, false);
+            var field = (RectTransform)area.transform;
+            field.anchorMin = Vector2.zero; field.anchorMax = Vector2.one;
+            field.offsetMin = new Vector2(40f, 40f); field.offsetMax = new Vector2(-40f, -60f);
+            float w = Mathf.Max(1f, field.rect.width), h = Mathf.Max(1f, field.rect.height);
+
+            var road = new Color(0.42f, 0.36f, 0.27f, 0.85f);
+            foreach (var pair in Roads) Line(field, SpotOf(pair[0]), SpotOf(pair[1]), w, h, road);
+
+            Point(field, Home, Loc.T("Склеп"), "", new Color(0.55f, 0.75f, 0.85f), true, null);
+            foreach (var mission in _board.Missions)
+            {
+                var m = mission;
+                bool can = CanGo(m);
+                var plan = ExpeditionMapPlan.ForName(m.Name);
+                bool known = plan != null && Survivors.KnownAt(plan.Id).Count > 0;
+                bool been = plan != null && PersonalExpedition.KnownAbout(plan).Count > 0;
+                string note = known ? Loc.T("там ждут знакомые") : been ? Loc.T("вы там были") : "";
+                var colour = known ? new Color(0.85f, 0.32f, 0.25f) : new Color(0.86f, 0.70f, 0.36f);
+                Point(field, SpotOf(m.Name), Loc.Name(m.Name), note, colour, can, () => ShowCard(m));
+            }
+
+            // Кто ищет Греховода сам — известно по слуху, принесённому в склеп; места у него нет —
+            // он там, куда пойдёте вы. Строка внизу карты, а не под ней: под картой её не видно.
+            var hunters = Survivors.Hunters();
+            if (hunters.Count > 0)
+            {
+                var names = new List<string>();
+                foreach (var hunter in hunters) names.Add(Survivors.Shown(hunter));
+                var line = Caption(rt, Loc.F("Ищет Греховода: {0}. Куда пойдёте вы, туда придёт и он.",
+                    string.Join(", ", names)), 19, -(height - 34f), true);
+                var lt = (RectTransform)line.transform;
+                lt.offsetMin = new Vector2(18f, lt.offsetMin.y);
+                lt.offsetMax = new Vector2(-18f, lt.offsetMax.y);
+                line.color = new Color(0.85f, 0.32f, 0.25f);
+            }
+            return height;
+        }
+
+        /// <summary>Дорога между двумя точками карты — тонкая полоса под углом.</summary>
+        private static void Line(RectTransform field, Vector2 a, Vector2 b, float w, float h, Color colour)
+        {
+            var go = new GameObject("Дорога", typeof(RectTransform));
+            go.transform.SetParent(field, false);
+            var rt = (RectTransform)go.transform;
+            Vector2 pa = new Vector2(a.x * w, a.y * h), pb = new Vector2(b.x * w, b.y * h);
+            Vector2 mid = (pa + pb) * 0.5f, d = pb - pa;
+            rt.anchorMin = rt.anchorMax = Vector2.zero;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(d.magnitude, 4f);
+            rt.anchoredPosition = mid;
+            rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+            var img = go.AddComponent<Image>();
+            img.color = colour;
+            img.raycastTarget = false;
+        }
+
+        /// <summary>Точка карты: ромб, имя под ним и строка о том, что известно. Нажатие — карточка.</summary>
+        private void Point(RectTransform field, Vector2 at, string title, string note, Color colour, bool bright, System.Action onClick)
+        {
+            var go = new GameObject(title, typeof(RectTransform));
+            go.transform.SetParent(field, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = rt.anchorMax = at;
+            rt.pivot = new Vector2(0.5f, 0.75f);
+            rt.sizeDelta = new Vector2(240f, 96f);
+            rt.anchoredPosition = Vector2.zero;
+            // Прозрачная плашка ловит нажатие по всей подписи, а не только по ромбу.
+            var hit = go.AddComponent<Image>();
+            hit.color = new Color(0f, 0f, 0f, 0.001f);
+            if (onClick != null && bright)
+            {
+                var button = go.AddComponent<Button>();
+                button.targetGraphic = hit;
+                var tint = button.colors; tint.highlightedColor = new Color(1f, 1f, 1f, 0.12f); button.colors = tint;
+                button.onClick.AddListener(() => onClick());
+            }
+
+            var mark = new GameObject("Ромб", typeof(RectTransform));
+            mark.transform.SetParent(rt, false);
+            var mt = (RectTransform)mark.transform;
+            mt.anchorMin = mt.anchorMax = new Vector2(0.5f, 0.75f);
+            mt.sizeDelta = new Vector2(22f, 22f);
+            mt.anchoredPosition = Vector2.zero;
+            mt.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            var img = mark.AddComponent<Image>();
+            img.color = bright ? colour : colour * 0.5f;
+            img.raycastTarget = false;
+
+            var name = Caption(rt, title, 22, -42f, bright);
+            name.alignment = TextAnchor.UpperCenter;
+            if (!string.IsNullOrEmpty(note))
+            {
+                var line = Caption(rt, note, 16, -70f, bright);
+                line.alignment = TextAnchor.UpperCenter;
+                line.color = new Color(colour.r, colour.g, colour.b, bright ? 1f : 0.5f);
+            }
+        }
+
+        private Text Caption(RectTransform parent, string text, int size, float top, bool bright)
+        {
+            var go = new GameObject("Подпись", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = new Vector2(1f, 1f); rt.pivot = new Vector2(0.5f, 1f);
+            rt.sizeDelta = new Vector2(0f, size + 8f);
+            rt.anchoredPosition = new Vector2(0f, top);
+            var label = go.AddComponent<Text>();
+            label.font = _font; label.fontSize = size; label.text = text; label.raycastTarget = false;
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            label.verticalOverflow = VerticalWrapMode.Overflow;
+            label.color = bright ? new Color(0.91f, 0.89f, 0.85f) : new Color(0.55f, 0.52f, 0.48f);
+            return label;
+        }
+
+        /// <summary>Плашка с заголовком и текстом любой длины. Вернёт высоту.</summary>
+        private float TextBlock(float y, string title, string body)
+        {
+            var go = new GameObject(title, typeof(RectTransform));
+            go.transform.SetParent(_rows, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = new Vector2(1f, 1f); rt.pivot = new Vector2(0f, 1f);
+            rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+            rt.anchoredPosition = new Vector2(0f, y);
+            go.AddComponent<Image>().color = new Color(0.10f, 0.09f, 0.08f, 0.92f);
+            _spawned.Add(go);
+            Label(rt, title, 26, new Vector2(18f, -10f), 34f, true);
+
+            // Высота текста — по ширине плашки: строки переносятся, плашка растёт под них.
+            float width = Mathf.Max(200f, (_rows != null ? _rows.rect.width : 900f) - 36f);
+            var probe = new GameObject("Текст", typeof(RectTransform));
+            probe.transform.SetParent(rt, false);
+            var pt = (RectTransform)probe.transform;
+            pt.anchorMin = new Vector2(0f, 1f); pt.anchorMax = new Vector2(1f, 1f); pt.pivot = new Vector2(0f, 1f);
+            pt.offsetMin = new Vector2(18f, 0f); pt.offsetMax = new Vector2(-18f, 0f);
+            var text = probe.AddComponent<Text>();
+            text.font = _font; text.fontSize = 21; text.text = body; text.raycastTarget = false;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap; text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.color = new Color(0.86f, 0.84f, 0.80f);
+            text.lineSpacing = 1.1f;
+            float textHeight = text.cachedTextGeneratorForLayout.GetPreferredHeight(body,
+                text.GetGenerationSettings(new Vector2(width, 0f))) / Mathf.Max(0.01f, text.pixelsPerUnit);
+            pt.sizeDelta = new Vector2(pt.sizeDelta.x, textHeight + 4f);
+            pt.anchoredPosition = new Vector2(18f, -50f);
+
+            float height = 50f + textHeight + 20f;
+            rt.sizeDelta = new Vector2(0f, height);
+            Grow(y, height);
+            return height;
+        }
+
+        /// <summary>Ряд кнопок поровну по ширине: «Выйти» и «Продолжить».</summary>
+        private void Buttons(float y, params (string label, bool enabled, System.Action onClick)[] buttons)
+        {
+            const float height = 76f;
+            var go = new GameObject("Кнопки", typeof(RectTransform));
+            go.transform.SetParent(_rows, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = new Vector2(1f, 1f); rt.pivot = new Vector2(0f, 1f);
+            rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, height);
+            rt.anchoredPosition = new Vector2(0f, y);
+            Grow(y, height);
+            _spawned.Add(go);
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                var (label, enabled, onClick) = buttons[i];
+                var b = new GameObject(label, typeof(RectTransform));
+                b.transform.SetParent(rt, false);
+                var bt = (RectTransform)b.transform;
+                bt.anchorMin = new Vector2((float)i / buttons.Length, 0f);
+                bt.anchorMax = new Vector2((float)(i + 1) / buttons.Length, 1f);
+                bt.offsetMin = new Vector2(i == 0 ? 0f : 6f, 0f);
+                bt.offsetMax = new Vector2(i == buttons.Length - 1 ? 0f : -6f, 0f);
+                var plate = b.AddComponent<Image>();
+                bool primary = i == buttons.Length - 1;
+                plate.color = !enabled ? new Color(0.07f, 0.06f, 0.06f, 0.80f)
+                    : primary ? new Color(0.30f, 0.22f, 0.10f, 0.95f) : new Color(0.12f, 0.11f, 0.10f, 0.95f);
+                if (enabled && onClick != null)
+                {
+                    var button = b.AddComponent<Button>();
+                    button.targetGraphic = plate;
+                    var act = onClick;
+                    button.onClick.AddListener(() => act());
+                }
+                var text = Caption(bt, label, 28, -20f, enabled);
+                text.alignment = TextAnchor.UpperCenter;
+            }
+        }
+
+        /// <summary>Прокрутка должна знать настоящую высоту содержимого, иначе низ не достать.</summary>
+        private void Grow(float y, float height)
+        {
+            if (_missionScroll == null || _rows == null) return;
+            float required = -y + height + 12f;
+            if (required > _rows.rect.height)
+                _rows.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, required);
         }
 
         private void Label(RectTransform parent, string text, int size,

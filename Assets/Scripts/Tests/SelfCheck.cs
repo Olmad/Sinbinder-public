@@ -2446,9 +2446,10 @@ namespace Sinbinder.Tests
                     "Gameplay.RatFamilyVisual.Models Gameplay.RatFamilyVisual.Palette Gameplay.RatFamilyVisual.Sizes " +
                     "Gameplay.RavenFlight.Perches Gameplay.Signature.Table Gameplay.SoulCourt.Voices Gameplay.SoulCourt._sunbeam " +
                     "Gameplay.SquadGear.Slots Gameplay.SquadOrders.InDemo Gameplay.Survivors._dead Gameplay.Survivors._living " +
-                    "Gameplay.Survivors._order Gameplay.TugBench.Markers Gameplay.TugBench.Shells Gameplay.TugTutorial.Lessons " +
+                    "Gameplay.Survivors._order Gameplay.Survivors._ranks Gameplay.TugBench.Markers Gameplay.TugBench.Shells Gameplay.TugTutorial.Lessons " +
                     "Gameplay.TugTutorial.Objectives Gameplay.Wardrobe.Hands Gameplay.Wardrobe.Hollows Gameplay.Wardrobe.Soft " +
-                    "Gameplay.Wardrobe.SoftMeshes Gameplay.Wardrobe.Worn UI.ScalesOverhead.Corners UI.SpeechBubbles.Corners " +
+                    "Gameplay.Wardrobe.SoftMeshes Gameplay.Wardrobe.Worn UI.MissionMapUI.Roads UI.MissionMapUI.Spots " +
+                    "UI.ScalesOverhead.Corners UI.SpeechBubbles.Corners " +
                     "UI.SquadStrategyUI.Keys"));
 
         private static Dictionary<string, string> Kinds(params (string kind, string keys)[] groups)
@@ -2656,6 +2657,28 @@ namespace Sinbinder.Tests
                       && a.Grudges.Exists(g => g.Ours && g.Who == "Проба Командир" && g.Victim == "Проба Боец"),
                       "счёты по записи AOS: командир убил товарища; страж убил бойца — помнят все, и сам павший");
                 Check(v != null && v.Grudges.Count == 0, "кого в бою не было, тот счетов не завёл");
+
+                // Меню экспедиций (автор, 23.11): имена — только встреченных; пришедший без нас — неизвестен.
+                Survivors.Restore(new List<SavedSurvivor>
+                {
+                    new SavedSurvivor { Name = "Проба Виденный", Place = spot, SeenAt = spot, Meetings = 1, Killed = "Проба Павший" },
+                    new SavedSurvivor { Name = "Проба Проводник", Place = spot, SeenAt = "expedition:salt-road", Meetings = 1, Reason = "guide" },
+                    new SavedSurvivor { Name = "Проба Новичок", Place = spot, Reason = "order" },
+                    new SavedSurvivor { Name = "Проба Старый", Place = spot, Meetings = 2 },
+                    new SavedSurvivor { Name = "Проба Ловец", Place = Survivors.Hunt, Killed = "Проба Павший" },
+                });
+                var seen = Survivors.KnownAt(spot);
+                Check(seen.Count == 2 && seen.Exists(s => s.Name == "Проба Виденный") && seen.Exists(s => s.Name == "Проба Старый"),
+                      "карточка называет встреченных здесь; ушедший сюда без нас и новый дозор — без имён");
+                Check(Survivors.Known(seen.Find(s => s.Name == "Проба Виденный")).Contains("Проба Павший"),
+                      "о встреченном сказано, что на нём");
+                Check(Survivors.Hunters().Count == 1, "охотник известен по слуху — на карте отдельной строкой");
+
+                // Чин Ордена (автор, 23.11: германские имена и чины, как у охотников пролога).
+                var knight = new SavedSurvivor { Name = Survivors.NameFor("order", new List<string>()), Trade = (int)Survivors.OrderRank(0) };
+                Check(Survivors.Shown(knight) != Loc.Name(knight.Name) && Survivors.Shown(knight).Contains(Loc.Name(knight.Name)),
+                      "страж Ордена — с чином: имя и чин");
+                Check(!Survivors.NameFor("order", new List<string>()).StartsWith("Брат"), "у Ордена нет «братьев» — это из чужого канона");
             }
             finally
             {

@@ -31,6 +31,14 @@ namespace Sinbinder.Gameplay
         /// снова находит адресата при следующей встрече, а не указывает на исчезнувший номер.
         /// </summary>
         public string Id = "";
+        /// <summary>Чин (Trade): у стражей Ордена — как у охотников пролога; у прочих — нет (0).</summary>
+        public int Trade;
+        /// <summary>
+        /// Где его видели наши в последний раз. Меню экспедиций называет врага только там, где
+        /// его встретили (автор, 23.11: «знать о противниках экспедиции только после того, как
+        /// узнали их»): ушедший с места или пришедший туда без нас — неизвестен, пока не встретят.
+        /// </summary>
+        public string SeenAt = "";
         /// <summary>Личные счёты: не «отряд вообще», а кто именно что сделал (автор, 23.11).</summary>
         public List<SavedGrudge> Grudges = new List<SavedGrudge>();
     }
@@ -98,12 +106,25 @@ namespace Sinbinder.Gameplay
             Loc.N("Малюта Быстрый"), Loc.N("Любим Кистень"),
         };
 
-        // Дозор Ордена — братья, не наёмники обоза: «Тихон Соляной» у алтаря читался чужим (кадр 23.11).
+        // Дозор Ордена — охотники Ордена, как в прологе: германское имя и чин в душе — на экране
+        // «Готфрид Инквизитор» (решение автора 16.10: у Ордена своя культура, чужая отряду).
+        // «Брат Евсей» (23.11) был ошибкой: русское монашеское имя, да ещё рядом с нашим Братом Хальдом.
+        // Имена — из списка охотников, которых пролог не выводит (там Ансельм, Бертрам, Ульрих и вторая
+        // волна с Эберхарда): поднятый «Бертрам Следопыт» и страж «Бертрам Охотник» читались бы одним.
         private static readonly string[] _order =
         {
-            Loc.N("Брат Евсей"), Loc.N("Брат Корнил"), Loc.N("Брат Игнат"), Loc.N("Брат Аким"),
-            Loc.N("Брат Пимен"), Loc.N("Брат Варлаам"), Loc.N("Брат Сысой"), Loc.N("Брат Феогност"),
+            Loc.N("Готфрид"), Loc.N("Кунрад"), Loc.N("Ортвин"), Loc.N("Вольфрам"),
+            Loc.N("Лотар"), Loc.N("Фолькмар"), Loc.N("Зигфрид"),
         };
+
+        // Чины дозора: первым — Инквизитор, «командир охотников и ловчих» (00-GDD / 45-REVIEW).
+        private static readonly Trade[] _ranks = { Trade.Inquisitor, Trade.OrderHunter, Trade.Tracker, Trade.Catcher };
+
+        /// <summary>Чин стража Ордена на этом месте дозора.</summary>
+        public static Trade OrderRank(int index) => _ranks[(index < 0 ? 0 : index) % _ranks.Length];
+
+        /// <summary>Как его называть в журнале: с чином, если он есть, — как на экране.</summary>
+        public static string Shown(SavedSurvivor s) => Loc.Name(Naming.Full(s.Name, (Trade)s.Trade, null, null));
 
         /// <summary>Имя по тому, кто он: «bound», «caravan» или «order».</summary>
         public static string NameFor(string reason, ICollection<string> taken)
@@ -225,7 +246,42 @@ namespace Sinbinder.Gameplay
         /// <summary>Слух в склепе — до похода, где охотник появится.</summary>
         public static string Rumour(SavedSurvivor s)
             => Loc.F("Слух: {0} ищет Греховода сам — от его руки погибли ваши: {1}. Куда пойдёте вы, туда придёт и он.",
-                     Loc.Name(s.Name), s.Killed);
+                     Shown(s), s.Killed);
+
+        // ── Что известно о месте (меню экспедиций) — только встреченное ──
+
+        /// <summary>Видели ли его наши на этом месте. Старые записи (без отметки) — там, где стоят.</summary>
+        public static bool SeenHere(SavedSurvivor s, string place)
+            => s != null && s.Place == place && (s.SeenAt == place
+               || string.IsNullOrEmpty(s.SeenAt) && s.Meetings > 0 && s.Reason != Hunt && s.Reason != "guide");
+
+        /// <summary>Кого наши видели здесь — в порядке, в каком запомнили.</summary>
+        public static List<SavedSurvivor> KnownAt(string place)
+        {
+            var list = new List<SavedSurvivor>();
+            foreach (var s in _all) if (SeenHere(s, place)) list.Add(s);
+            return list;
+        }
+
+        /// <summary>Строка меню о встреченном: кто он и что на нём. Без чисел — их игрок не видит.</summary>
+        public static string Known(SavedSurvivor s)
+        {
+            string who = Shown(s);
+            if (!string.IsNullOrEmpty(s.Killed)) return Loc.F("{0} — от его руки пали: {1}.", who, s.Killed);
+            if (s.Reason == "guide") return Loc.F("{0} — охранял обоз, теперь служит Ордену.", who);
+            if (s.Fled) return Loc.F("{0} — бежал от отряда.", who);
+            if (s.Undead && s.Health < 0.999f) return Loc.F("{0} — кости с прошлой встречи не срослись.", who);
+            if (s.Reason == "order") return Loc.F("{0} — из дозора Ордена.", who);
+            return Loc.F("{0} — видел Греховода и остался жив.", who);
+        }
+
+        /// <summary>Кто ищет Греховода сам — слух уже был в склепе, значит, известно.</summary>
+        public static List<SavedSurvivor> Hunters()
+        {
+            var list = new List<SavedSurvivor>();
+            foreach (var s in _all) if (s.Place == Hunt) list.Add(s);
+            return list;
+        }
 
         /// <summary>Записать счёт один раз: та же пара и та же смерть дважды не считаются.</summary>
         public static void Grudge(SavedSurvivor s, string who, string victim, bool ours)
@@ -286,6 +342,7 @@ namespace Sinbinder.Gameplay
                 if (met.ContainsKey(s.Name))
                 {
                     s.Meetings++;
+                    s.SeenAt = place;   // отряд видел его здесь — и рассказал
                     if (health != null && health.TryGetValue(s.Name, out float h)) s.Health = Math.Max(0f, Math.Min(1f, h));
                 }
                 alive.Add(s);
@@ -304,7 +361,7 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Строка журнала: бежавший вернулся с подмогой.</summary>
         public static string Friends(SavedSurvivor s)
-            => Loc.F("{0} бежал от вас в прошлый раз — и вернулся не один.", Loc.Name(s.Name));
+            => Loc.F("{0} бежал от вас в прошлый раз — и вернулся не один.", Shown(s));
 
         /// <summary>Через сколько походов разграбленную часовню займут снова.</summary>
         public const int ReoccupyAfter = 3;
@@ -333,16 +390,16 @@ namespace Sinbinder.Gameplay
         public static string Why(SavedSurvivor s, float maxHp)
         {
             if (s.Reason == Hunt)
-                return Loc.F("{0} пришёл не за добычей, а за вами: слух в склепе не врал.", Loc.Name(s.Name))
+                return Loc.F("{0} пришёл не за добычей, а за вами: слух в склепе не врал.", Shown(s))
                        + " " + Deed(s, maxHp);
             if (s.Reason == "guide")
-                return Loc.F("{0} пришёл с дозором Ордена: обоз, который он охранял, разграбили, и теперь он служит Ордену — он знает вас в лицо.", Loc.Name(s.Name));
+                return Loc.F("{0} пришёл с дозором Ордена: обоз, который он охранял, разграбили, и теперь он служит Ордену — он знает вас в лицо.", Shown(s));
             if (s.Reason == "order")
-                return Loc.F("{0} — из дозора Ордена: часовню стерегут с тех пор, как её разграбили.", Loc.Name(s.Name))
+                return Loc.F("{0} — из дозора Ордена: часовню стерегут с тех пор, как её разграбили.", Shown(s))
                        + " " + Deed(s, maxHp);
             string why = s.Undead
-                ? Loc.F("{0} ждёт здесь: покойник не может уйти от места, где его подняли.", Loc.Name(s.Name))
-                : Loc.F("{0} снова в охране: обоз ходит той же дорогой и с теми же людьми.", Loc.Name(s.Name));
+                ? Loc.F("{0} ждёт здесь: покойник не может уйти от места, где его подняли.", Shown(s))
+                : Loc.F("{0} снова в охране: обоз ходит той же дорогой и с теми же людьми.", Shown(s));
             return why + " " + Deed(s, maxHp);
         }
 
@@ -379,7 +436,7 @@ namespace Sinbinder.Gameplay
             foreach (var s in _all)
                 list.Add(new SavedSurvivor { Name = s.Name, Place = s.Place, Sin = s.Sin, Undead = s.Undead,
                     Health = s.Health, Meetings = s.Meetings, Killed = s.Killed ?? "", Fled = s.Fled, Reason = s.Reason ?? "",
-                    Id = s.Id ?? "",
+                    Id = s.Id ?? "", Trade = s.Trade, SeenAt = s.SeenAt ?? "",
                     Grudges = s.Grudges == null ? new List<SavedGrudge>()
                         : s.Grudges.ConvertAll(g => new SavedGrudge { Who = g.Who, Victim = g.Victim, Ours = g.Ours }) });
             return list;

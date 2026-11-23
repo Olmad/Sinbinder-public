@@ -33,6 +33,50 @@ namespace Sinbinder.EditorTools
         /// <summary>Откуда и куда снимать карту сверху (для shot верстака).</summary>
         public static string Overview { get; private set; } = "";
 
+        /// <summary>
+        /// Меню экспедиций (23.11): заселить места тем, что могло случиться, — часовня разграблена три
+        /// похода назад (слух об Ордене), на обозе встречен страж, убивший нашего, охотник ищет Греховода.
+        /// Затем: call ...PersonalExpeditionProbe.Card "Придорожная часовня".
+        /// </summary>
+        public static string SeedMenu()
+        {
+            int now = Mathf.Max(4, Sorties.Count);
+            Sorties.Restore(now);
+            PersonalExpedition.RestoreProgress(new List<SavedPersonalExpedition>
+            {
+                new SavedPersonalExpedition { Id = "expedition:roadside-chapel", Visits = 1, LeftAt = now - 3, ClearedAt = now - 3,
+                    SecretTaken = true, EnemiesRemaining = 0 },
+                new SavedPersonalExpedition { Id = "expedition:salt-road", Visits = 2, LeftAt = now - 1, CargoTaken = true,
+                    CaravanAssaulted = true, EnemiesRemaining = 1 },
+            });
+            Survivors.Restore(new List<SavedSurvivor>
+            {
+                new SavedSurvivor { Name = "Мирон Звонарь", Place = "expedition:salt-road", SeenAt = "expedition:salt-road",
+                    Meetings = 2, Reason = "caravan", Killed = "Вейн Тихий", Health = 0.6f },
+                new SavedSurvivor { Name = "Готфрид", Trade = (int)Survivors.OrderRank(0), Place = "expedition:roadside-chapel",
+                    Reason = "order", Health = 1f },
+                new SavedSurvivor { Name = "Неждан Хмурый", Place = Survivors.Hunt, Reason = Survivors.Hunt, Killed = "Пол", Meetings = 1 },
+            });
+            Object.FindFirstObjectByType<UI.MissionMapUI>()?.Open();
+            return "места заселены: часовня (слух об Ордене), обоз (Мирон), охотник (Неждан)";
+        }
+
+        /// <summary>Открыть карточку места, как будто на точку нажали.</summary>
+        public static string Card(string mission)
+        {
+            var ui = Object.FindFirstObjectByType<UI.MissionMapUI>();
+            var board = Object.FindFirstObjectByType<MissionBoard>();
+            if (ui == null || board == null) return "нет карты или доски";
+            foreach (var m in board.Missions)
+                if (m.Name == mission)
+                {
+                    typeof(UI.MissionMapUI).GetMethod("ShowCard", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                        ?.Invoke(ui, new object[] { m });
+                    return "карточка: " + mission;
+                }
+            return "нет такого места: " + mission;
+        }
+
         public static string Begin()
         {
             if (!EditorApplication.isPlaying) return "нужен режим игры (play)";
