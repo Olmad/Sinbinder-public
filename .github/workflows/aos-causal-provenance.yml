@@ -32,3 +32,15 @@ jobs:
           python-version: '3.11'
       - name: Execute both real repository unittest modules
         run: python -m unittest Tools.logic.test_dream_court_ballot_replay Tools.logic.test_text_causality_regressions -v
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Compile Roslyn C# syntax checker
+        run: dotnet build Tools/tutorial/SyntaxChecks.csproj -c Release
+      - name: Parse actual Unity gameplay C# sources
+        run: dotnet run --no-build -c Release --project Tools/tutorial/SyntaxChecks.csproj -- Assets/Scripts
+      - name: Compile production-linked AOS order regression suite
+        run: dotnet build Tools/aos/AOSIntegrityTests.csproj -c Release
+      - name: Run production-linked AOS order regression suite
+        run: dotnet run --no-build -c Release --project Tools/aos/AOSIntegrityTests.csproj -- .
+
