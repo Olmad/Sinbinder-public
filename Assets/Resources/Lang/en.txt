@@ -14746,3 +14746,55 @@ msgstr "If I had a heel of bread, it wouldn't last until evening."
 #: Dialogue/stage1-fact-review
 msgid "Была бы горбушка — поделился бы. Наверное."
 msgstr "If I had some bread, I'd share it. Probably."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: верность не выбрала сторону."
+msgstr "I abstain: loyalty did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: страх не выбрал сторону."
+msgstr "I abstain: fear did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: память не выбрала сторону."
+msgstr "I abstain: memory did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: совесть не выбрала сторону."
+msgstr "I abstain: conscience did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: добродетель не выбрала сторону."
+msgstr "I abstain: virtue did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: терпение не выбрало сторону."
+msgstr "I abstain: patience did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: жадность не выбрала сторону."
+msgstr "I abstain: greed did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: гордыня не выбрала сторону."
+msgstr "I abstain: pride did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: гнев не выбрал сторону."
+msgstr "I abstain: wrath did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: зависть не выбрала сторону."
+msgstr "I abstain: envy did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: страсть не выбрала сторону."
+msgstr "I abstain: desire did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: чревоугодие не выбрало сторону."
+msgstr "I abstain: gluttony did not take a side."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: уныние не выбрало сторону."
+msgstr "I abstain: sloth did not take a side."
