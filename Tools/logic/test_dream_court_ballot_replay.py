@@ -76,5 +76,53 @@ class DreamCourtBallotReplayTests(unittest.TestCase):
         self.assertNotRegex(mutated,
             r"ScalesOverhead\.Show\(_zombie, d, c, force: true,\s*originalVotes: originalVotes\)")
 
+    def test_tooltip_uses_captured_ballot_not_current_soul(self):
+        tooltip = (ROOT / "Assets/Scripts/UI/WarriorTooltipUI.cs").read_text(encoding="utf-8")
+        court = (ROOT / "Assets/Scripts/Gameplay/SoulCourt.cs").read_text(encoding="utf-8")
+        self.assertIn("originalVotes: wrapper.LastDecisionBallot", tooltip)
+        self.assertIn("Sums(w, d, c, originalVotes)", court)
+        self.assertRegex(court,
+            r"ScalesLine\(Warrior w, Decision d, DecisionContext c, int most = 3,\s*IReadOnlyList<Vote> originalVotes = null\)")
+
+    def test_automatic_court_uses_same_vote_for_importance_and_seats(self):
+        caller = (ROOT / "Assets/Scripts/Gameplay/CourtCaller.cs").read_text(encoding="utf-8")
+        court = (ROOT / "Assets/Scripts/Gameplay/SoulCourt.cs").read_text(encoding="utf-8")
+        hub = (ROOT / "Assets/Scripts/AOS Engine/AOSEventHub.cs").read_text(encoding="utf-8")
+        wrapper = (ROOT / "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs").read_text(encoding="utf-8")
+
+        # The original vote is recorded before a refusal's anger/memory events.
+        self.assertLess(wrapper.index("LastDecisionBallot = ballot;"),
+                        wrapper.index("AOSEventHub.Instance?.OnCommandRefused"))
+        event = hub.split("public void OnCommandRefused(", 1)[1].split(
+            "public const float RefusalCooldown", 1)[0]
+        self.assertLess(event.index("TriggerEmotion(warrior"),
+                        event.index("OnRefusal?.Invoke"))
+        self.assertLess(event.index('CreateMemory(\n                warrior, "RefusedCommand"'),
+                        event.index("OnRefusal?.Invoke"))
+
+        # A mismatched or unavailable historical ballot must not be faked.
+        self.assertIn("mind.HasCurrentCommandDecision", caller)
+        self.assertIn("mind.LastDecisionDetail.Equals(d)", caller)
+        self.assertIn("new List<Vote>(mind.LastDecisionBallot)", caller)
+        self.assertIn("Importance(w, d, c, out string why, originalVotes)", caller)
+        self.assertIn("Convene(w, d, c.Copy(), originalVotes: originalVotes)", caller)
+        importance = court.split("public static float Importance(", 1)[1].split(
+            "private static ActionType Rival(", 1)[0]
+        self.assertIn("IReadOnlyList<Vote> originalVotes = null", importance)
+        self.assertIn("originalVotes ?? (IReadOnlyList<Vote>)new BehaviourResolver().Ballot(w, c)",
+                      importance)
+
+    def test_causal_regressions_detect_missing_provenance(self):
+        caller = (ROOT / "Assets/Scripts/Gameplay/CourtCaller.cs").read_text(encoding="utf-8")
+        tooltip = (ROOT / "Assets/Scripts/UI/WarriorTooltipUI.cs").read_text(encoding="utf-8")
+        self.assertIn("Importance(w, d, c, out string why, originalVotes)", caller)
+        self.assertNotIn("Importance(w, d, c, out string why, originalVotes)",
+                         caller.replace("Importance(w, d, c, out string why, originalVotes)",
+                                        "Importance(w, d, c, out string why)"))
+        self.assertIn("originalVotes: wrapper.LastDecisionBallot", tooltip)
+        self.assertNotIn("originalVotes: wrapper.LastDecisionBallot",
+                         tooltip.replace("originalVotes: wrapper.LastDecisionBallot",
+                                         "originalVotes: null"))
+
 if __name__ == "__main__":
     unittest.main()
