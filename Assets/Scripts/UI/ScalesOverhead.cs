@@ -64,13 +64,27 @@ namespace Sinbinder.UI
         /// мимо паузы между показами: сон показывает их перед судом всегда, даже если отказ
         /// в мире только что уже показал их (прогон 06.11: показ перед судом съела пауза).
         /// </summary>
-        public static void Show(Warrior w, Decision d, DecisionContext c, bool force = false)
+        public static void Show(Warrior w, Decision d, DecisionContext c, bool force = false,
+            IReadOnlyList<Vote> originalVotes = null)
         {
             if (w == null || w.IsDead || SoulCourt.Sitting) return;
             if (!force && !Transparency.Shows(Detail.Moments)) return;
             float now = Time.unscaledTime;
             if (!force && NextFor.TryGetValue(w, out float next) && now < next) return;
-            if (!SoulCourt.Lean(w, d, c, out float lean, out string voice, out Color colour)) return;
+
+            // The wrapper already captured the exact thirteen-voice ballot.
+            // Only reuse it when BOTH the decision and context match:
+            // an old verdict must never borrow a newer order's votes.
+            if (originalVotes == null)
+            {
+                var mind = w.GetComponent<AOSWarriorWrapper>();
+                if (mind != null && object.ReferenceEquals(mind.LastContext, c)
+                    && mind.LastDecisionDetail.Equals(d))
+                    originalVotes = mind.LastDecisionBallot;
+            }
+
+            if (!SoulCourt.Lean(w, d, c, out float lean, out string voice, out Color colour,
+                originalVotes)) return;
             NextFor[w] = now + Cooldown;
 
             string label = d.Hesitated
