@@ -1331,7 +1331,8 @@ namespace Sinbinder.Gameplay
             // Миг на его слово и малые весы над головой — потом суд, который их объяснит.
             // В лагере игрок узнает эти весы над отказавшим (63-TEACHING, п. 3).
             // Во сне — при любом решении: суд разбирает любое (в лагере — только отказ).
-            if (_zombie != null) UI.ScalesOverhead.Show(_zombie, d, c, force: true);
+            if (_zombie != null) UI.ScalesOverhead.Show(_zombie, d, c, force: true,
+                originalVotes: originalVotes);
             yield return new WaitForSecondsRealtime(1.8f);
             // Первый суд во сне — всегда полный: это урок. Второй (у рычага после суда над
             // «догнать») — коротко, как суды по делу потом.
