@@ -1,4 +1,5 @@
 // Assets/Scripts/Gameplay/CourtCaller.cs
+using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.AOS;
 using Sinbinder.Core;
@@ -68,13 +69,26 @@ namespace Sinbinder.Gameplay
             if (now < _nextAt || now < _nextLook || Busy()) return;
             _nextLook = now + Throttle;
 
-            float weight = SoulCourt.Importance(w, d, c, out string why);
+            // AOSEventHub raises OnRefusal AFTER applying anger and memories.
+            // Never resimulate historical voices from this changed warrior.
+            // A real player AOS decision has already captured its ballot.
+            var mind = w.GetComponent<AOSWarriorWrapper>();
+            if (mind == null || !mind.HasCurrentCommandDecision ||
+                !mind.LastDecisionDetail.Equals(d) ||
+                mind.LastDecisionBallot == null || mind.LastDecisionBallot.Count == 0)
+            {
+                Debug.LogWarning("[СУД] Исторические голоса отказа недоступны; "
+                    + "автоматический Суд не пересчитывает чужое решение.");
+                return;
+            }
+            var originalVotes = new List<Vote>(mind.LastDecisionBallot);
+            float weight = SoulCourt.Importance(w, d, c, out string why, originalVotes);
             if (weight < Threshold) return;
 
             _nextAt = now + Cooldown;
             Last = $"{w.DisplayName}: важность {weight:F2} ({why})";
             Debug.Log("[СУД ПО ДЕЛУ] " + Last);
-            StartCoroutine(SoulCourt.Convene(w, d, c.Copy()));
+            StartCoroutine(SoulCourt.Convene(w, d, c.Copy(), originalVotes: originalVotes));
         }
 
         /// <summary>Экран занят другим: сцена, окно, урок, шар, заставка — суд подождёт следующего повода.</summary>
