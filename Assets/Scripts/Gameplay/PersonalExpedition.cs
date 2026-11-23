@@ -194,6 +194,14 @@ namespace Sinbinder.Gameplay
                 visit._state.Occupant = 1;
                 visit._state.ClearedAt = -1;
                 visit._why.Add(Survivors.Reoccupied());
+                // С дозором — тот, кто знает Греховода в лицо: охранник разграбленного обоза (п.2).
+                Survivors.Guide(plan.Id);
+            }
+            // Бежавший живой возвращается не один — если с прошлого раза прошло время.
+            foreach (var fled in Survivors.BringFriends(Survivors.At(plan.Id), visit._return))
+            {
+                if (visit._state.EnemiesRemaining < 4) visit._state.EnemiesRemaining++;
+                visit._why.Add(Survivors.Friends(fled));
             }
 
             visit._mapRoot = ExpeditionMapBuilder.Build(plan);
@@ -388,7 +396,7 @@ namespace Sinbinder.Gameplay
                 _guards.Add(w);
                 var record=was ?? new SavedSurvivor{Name=name,Sin=(int)sin,Undead=undead};
                 record.Undead=undead;
-                record.Reason=order ? "order" : undead ? "bound" : "caravan";
+                if(record.Reason!="guide") record.Reason=order ? "order" : undead ? "bound" : "caravan";
                 _met[w]=record;
                 if(was!=null)
                 {
@@ -455,6 +463,16 @@ namespace Sinbinder.Gameplay
                 rec.Health=g.MaxHP>0f ? Mathf.Clamp01(g.HP/g.MaxHP) : 1f;
                 rec.Meetings++;
                 alive.Add(rec);
+            }
+            // Обоз разграблен — охранять больше нечего: выжившая охрана уходит на дорогу
+            // (оттуда её возьмёт дозор Ордена — п.2), а на месте обоза пусто.
+            if(_plan.Kind==ExpeditionMapKind.SaltRoad && _state!=null && _state.CargoTaken && !_state.CaravanPassed && alive.Count>0)
+            {
+                Survivors.Settle(_plan.Id,null);
+                Survivors.Wander(alive);
+                _state.EnemiesRemaining=0;
+                foreach(var s in alive) Debug.Log($"[ВЫЖИВШИЕ] {s.Name}: обоз разграблен — ушёл на дорогу");
+                return;
             }
             Survivors.Settle(_plan.Id,alive);
             foreach(var s in alive)

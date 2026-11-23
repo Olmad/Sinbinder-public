@@ -2384,6 +2384,42 @@ namespace Sinbinder.Tests
                   "зачищенное, но не разграбленное, пустует: беречь там нечего");
             Check(Survivors.OnReturn(4, 4, true, 1, 20) != Return.Reoccupied,
                   "пока там кто-то жив, место не занимают заново");
+
+            // Переходы (п.2): только живые и только с поводом. Память игры откладывается и возвращается.
+            var kept = Survivors.Snapshot();
+            int clock = Sorties.Count;
+            try
+            {
+                Survivors.Restore(null);
+                Survivors.Wander(new List<SavedSurvivor>
+                {
+                    new SavedSurvivor { Name = "Проба Обозный", Undead = false, Meetings = 1 },
+                    new SavedSurvivor { Name = "Проба Покойник", Undead = true, Meetings = 1 },
+                });
+                Check(Survivors.All.Count == 1, "на дорогу уходит только живой: покойник места не покидает");
+                var guide = Survivors.Guide("expedition:roadside-chapel");
+                Check(guide != null && guide.Name == "Проба Обозный" && guide.Reason == "guide"
+                      && Survivors.At("expedition:roadside-chapel").Count == 1,
+                      "охранник разграбленного обоза приходит с дозором Ордена");
+                Check(Survivors.Guide("expedition:roadside-chapel") == null, "второго проводника нет — его не выдумывают");
+                Check(Survivors.Why(guide, 40f).Contains(Loc.Name("Проба Обозный")),
+                      "проводник объяснён словами, по имени");
+
+                var at = new List<SavedSurvivor>
+                {
+                    new SavedSurvivor { Name = "Проба Беглец", Undead = false, Fled = true },
+                    new SavedSurvivor { Name = "Проба Кости", Undead = true, Fled = true },
+                };
+                Check(Survivors.BringFriends(at, Return.SameNight).Count == 0, "той же ночью подмоги нет — не успел");
+                var friends = Survivors.BringFriends(at, Return.Later);
+                Check(friends.Count == 1 && friends[0].Name == "Проба Беглец", "бежавший живой возвращается не один, покойник — нет");
+                Check(Survivors.BringFriends(at, Return.Later).Count == 0, "подмогу приводят один раз");
+            }
+            finally
+            {
+                Survivors.Restore(kept);
+                Sorties.Restore(clock);
+            }
         }
 
         // ================= рассказ =================

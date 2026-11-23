@@ -131,6 +131,48 @@ namespace Sinbinder.Gameplay
                 if (s != null && !string.IsNullOrEmpty(s.Name)) { s.Place = place; _all.Add(s); }
         }
 
+        // ── Переходы (план 69 §7 п.2): только живые и только с поводом ──
+
+        /// <summary>Место бродяг: охранник разграбленного обоза, которому больше некого охранять.</summary>
+        public const string Road = "road";
+
+        /// <summary>Обоз разграблен — выжившая охрана без места: уходит на дорогу.</summary>
+        public static void Wander(IList<SavedSurvivor> robbed)
+        {
+            if (robbed == null) return;
+            foreach (var s in robbed)
+                if (s != null && !s.Undead && !string.IsNullOrEmpty(s.Name))
+                { s.Place = Road; s.Reason = "robbed"; _all.Add(s); }
+        }
+
+        /// <summary>
+        /// Дозор Ордена берёт с собой того, кто знает Греховода в лицо: охранника
+        /// разграбленного обоза. Он переходит на новое место; нет такого — null.
+        /// </summary>
+        public static SavedSurvivor Guide(string place)
+        {
+            var s = _all.Find(x => x.Place == Road && x.Reason == "robbed");
+            if (s == null) return null;
+            s.Place = place; s.Reason = "guide";
+            return s;
+        }
+
+        /// <summary>
+        /// Бежавший живой возвращается не один — если прошло время (не той же ночью).
+        /// Покойник места не покидает и никого не приводит. Привёл — долг снят.
+        /// </summary>
+        public static List<SavedSurvivor> BringFriends(IList<SavedSurvivor> at, Return back)
+        {
+            var list = new List<SavedSurvivor>();
+            if (back != Return.Later || at == null) return list;
+            foreach (var s in at) if (s != null && s.Fled && !s.Undead) { list.Add(s); s.Fled = false; }
+            return list;
+        }
+
+        /// <summary>Строка журнала: бежавший вернулся с подмогой.</summary>
+        public static string Friends(SavedSurvivor s)
+            => Loc.F("{0} бежал от вас в прошлый раз — и вернулся не один.", Loc.Name(s.Name));
+
         /// <summary>Через сколько походов разграбленную часовню займут снова.</summary>
         public const int ReoccupyAfter = 3;
 
@@ -157,6 +199,8 @@ namespace Sinbinder.Gameplay
         /// <summary>Почему он здесь — строка журнала при входе.</summary>
         public static string Why(SavedSurvivor s, float maxHp)
         {
+            if (s.Reason == "guide")
+                return Loc.F("{0} пришёл с дозором Ордена: обоз, который он охранял, разграбили, и теперь он служит Ордену — он знает вас в лицо.", Loc.Name(s.Name));
             if (s.Reason == "order")
                 return Loc.F("{0} — из дозора Ордена: часовню стерегут с тех пор, как её разграбили.", Loc.Name(s.Name))
                        + " " + Deed(s, maxHp);
@@ -187,6 +231,7 @@ namespace Sinbinder.Gameplay
                 return s.Undead ? Loc.F("Опять ты. {0} так и лежит у часовни.", first)
                                 : Loc.F("Помню тебя. Твоих я уже считаю: {0}.", first);
             }
+            if (s.Reason == "guide") return Loc.T("Обоз ты разграбил. Теперь я служу Ордену — и тебя узнаю где угодно.");
             if (s.Fled) return Loc.T("Ты. В тот раз я ушёл. Больше не уйду.");
             if (s.Undead && s.Health < 0.999f) return Loc.T("Кости не срастаются, некромант. Я считаю каждую.");
             return Loc.T("Я тебя видел. Ты ушёл — я остался.");

@@ -106,6 +106,11 @@ namespace Sinbinder.EditorTools
                     LeftAt = Sorties.Count, ClearedAt = Sorties.Count }
             });
             Survivors.Settle(chapel, null);
+            // И обоз разграблен раньше: его охранник Бажен Рыжий ушёл на дорогу — дозор возьмёт его с собой (п.2).
+            Survivors.Wander(new List<SavedSurvivor>
+            {
+                new SavedSurvivor { Name = "Бажен Рыжий", Sin = (int)Sinbinder.Core.SinType.Greed, Undead = false, Meetings = 1, Health = 1f }
+            });
             for (int i = 0; i < Survivors.ReoccupyAfter; i++) Sorties.Tick();
             Write($"=== ЧАСОВНЯ РАЗГРАБЛЕНА И ЗАЧИЩЕНА, прошло походов: {Survivors.ReoccupyAfter} (время мира {Sorties.Count})");
             return "разграблена; походов прошло " + Survivors.ReoccupyAfter;
