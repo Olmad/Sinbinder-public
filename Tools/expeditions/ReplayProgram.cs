@@ -30,7 +30,7 @@ static class Program
         Test(Loc.Use("en",catalog)>0,"PO catalog loaded by production Loc parser");
         foreach(var (kind,ru,en) in stageLabels)
         {
-            Test(viewerSource.Contains(kind+" => Loc.T(\\\""+ru+"\\\")"),
+            Test(viewerSource.Contains(kind+" => Loc.T(\""+ru+"\")"),
                 "replay stage "+kind+" is routed to Loc.T");
             Test(Loc.T(ru)==en,
                 "actual production Loc parser translates "+ru+" to "+en);
