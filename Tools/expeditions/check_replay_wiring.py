@@ -61,7 +61,11 @@ assert "public int Round;" in data
 assert "ev.HealDealt,ev.Round,ev.TargetName,true," in board and "ev.Resolved,ev.TargetKilled" in board
 assert "frame.Damage,frame.Healing,frame.Round" in board
 assert "Round = frame.Round" in archive
-assert 'frame.Round>0 ? "\\nХод AOS: "+frame.Round' in viewer
+assert 'Loc.F("Ход AOS: {0}",frame.Round)' in viewer
+assert 'frame.Round>0' in viewer
+locale=(r/"Assets/Resources/Lang/en.txt").read_text(encoding="utf-8")
+assert locale.count('msgid "Ход AOS: {0}"') == 1
+assert 'msgstr "AOS turn: {0}"' in locale
 print("PASS: factual AOS round provenance retained through save and replay")
 
 # An AOS BattleEvent's attempted attack power is not the actual HP removed.
