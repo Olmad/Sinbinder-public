@@ -464,16 +464,18 @@ namespace Sinbinder.Crypt
             // У этого места есть выжившие прошлых встреч — отряд встречает их, а не безымянных.
             journey.FoeNames=new List<string>();
             journey.FoeSins=new List<int>();
+            // Живых залечило время (поход — это время), покойник приходит с прежними ранами.
+            var wounds=new List<float>();
             var place=ExpeditionMapPlan.ForName(mission.Name);
             if(place!=null)
                 foreach(var s in Gameplay.Survivors.At(place.Id))
                     if(journey.FoeNames.Count<Mathf.Max(mission.Guards,1))
-                    { journey.FoeNames.Add(s.Name); journey.FoeSins.Add(s.Sin); }
+                    { journey.FoeNames.Add(s.Name); journey.FoeSins.Add(s.Sin); wounds.Add(s.Undead ? s.Health : 1f); }
 
             try
             {
                 using(var combat=new Expedition.CombatEncounter(away,mission.Guards,null,
-                    journey.FoeNames,journey.FoeSins))
+                    journey.FoeNames,journey.FoeSins,wounds))
                 {
                     // This is the BEFORE-first-round world state.
                     var initial=combat.Snapshot();
@@ -625,7 +627,12 @@ namespace Sinbinder.Crypt
             var place=ExpeditionMapPlan.ForName(journey.MissionName);
             if(fought && place!=null && journey.FoeNames!=null && journey.FoeNames.Count>0)
             {
-                int fell=Gameplay.Survivors.AfterAutoBattle(place.Id,journey.FoeNames,journey.Party,fight.Record);
+                // Раны стражей — из последнего снимка раунда (он ещё у похода: обнуляется после).
+                var health=new Dictionary<string,float>();
+                if(journey.BattleCheckpoint!=null && journey.BattleCheckpoint.Actors!=null)
+                    foreach(var a in journey.BattleCheckpoint.Actors)
+                        if(a!=null && !a.OriginalParty && !a.Dead && !string.IsNullOrEmpty(a.Name)) health[a.Name]=a.HealthFraction;
+                int fell=Gameplay.Survivors.AfterAutoBattle(place.Id,journey.FoeNames,journey.Party,fight.Record,health);
                 if(fell>0) Gameplay.PersonalExpedition.GuardsFellElsewhere(place.Id,fell);
             }
         }

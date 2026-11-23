@@ -2449,7 +2449,8 @@ namespace Sinbinder.Tests
                 rec.AddEvent(new Sinbinder.AOS.BattleEvent { ActorName = "Проба Командир", TargetName = "Проба Страж Б", DamageDealt = 12f, TargetKilled = true });
                 rec.AddEvent(new Sinbinder.AOS.BattleEvent { ActorName = "Проба Командир", TargetName = "Проба Страж А", DamageDealt = 4f });
                 int fell = Survivors.AfterAutoBattle(spot, new List<string> { "Проба Страж А", "Проба Страж Б" },
-                    new List<string> { "Проба Командир", "Проба Боец" }, rec);
+                    new List<string> { "Проба Командир", "Проба Боец" }, rec,
+                    new Dictionary<string, float> { { "Проба Страж А", 0.4f } });
                 var left = Survivors.At(spot);
                 var a = left.Find(s => s.Name == "Проба Страж А");
                 var v = left.Find(s => s.Name == "Проба Страж В");
@@ -2457,6 +2458,8 @@ namespace Sinbinder.Tests
                       "павший в бою без Греховода забыт, уцелевшие — на месте");
                 Check(a != null && a.Meetings == 2 && v != null && v.Meetings == 1,
                       "встреча засчитана тем, кто был в бою, а не всем на месте");
+                Check(a != null && Math.Abs(a.Health - 0.4f) < 0.001f && v != null && v.Health > 0.999f,
+                      "раны из снимка боя — у того, кто бился");
                 Check(a != null && a.Grudges.Exists(g => !g.Ours && g.Who == "Проба Командир" && g.Victim == "Проба Страж Б")
                       && a.Grudges.Exists(g => g.Ours && g.Who == "Проба Боец" && g.Victim == "Проба Боец")
                       && a.Grudges.Exists(g => g.Ours && g.Who == "Проба Командир" && g.Victim == "Проба Боец"),

@@ -212,7 +212,8 @@ namespace Sinbinder.Gameplay
         /// (встреч +1). Отряд мал, бой один — свидетели все, кто в нём был. Вернёт, сколько
         /// выживших пало.
         /// </summary>
-        public static int AfterAutoBattle(string place, IList<string> foes, IList<string> party, AOS.BattleRecord record)
+        public static int AfterAutoBattle(string place, IList<string> foes, IList<string> party, AOS.BattleRecord record,
+                                          IDictionary<string, float> health = null)
         {
             if (string.IsNullOrEmpty(place) || foes == null || party == null || record == null || record.Events == null) return 0;
             var here = At(place);
@@ -243,7 +244,11 @@ namespace Sinbinder.Gameplay
             foreach (var s in here)
             {
                 if (fallen.Contains(s.Name)) continue;
-                if (met.ContainsKey(s.Name)) s.Meetings++;
+                if (met.ContainsKey(s.Name))
+                {
+                    s.Meetings++;
+                    if (health != null && health.TryGetValue(s.Name, out float h)) s.Health = Math.Max(0f, Math.Min(1f, h));
+                }
                 alive.Add(s);
             }
             Settle(place, alive);

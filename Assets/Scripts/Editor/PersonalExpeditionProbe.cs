@@ -165,7 +165,7 @@ namespace Sinbinder.EditorTools
             sb.Append("у часовни: ");
             foreach (var s in Survivors.At("expedition:roadside-chapel"))
             {
-                sb.Append($"{s.Name} (встреч {s.Meetings}{(string.IsNullOrEmpty(s.Killed) ? "" : ", убил " + s.Killed)}");
+                sb.Append($"{s.Name} ({s.Health:P0}, встреч {s.Meetings}{(string.IsNullOrEmpty(s.Killed) ? "" : ", убил " + s.Killed)}");
                 if (s.Grudges != null)
                     foreach (var g in s.Grudges) sb.Append(g.Ours ? $"; наш {g.Who}: {(g.Victim == "" ? "ранен им" : "убил " + g.Victim)}"
                                                                   : $"; помнит {g.Who}: {(g.Victim == "" ? "ранил" : "убил " + g.Victim)}");

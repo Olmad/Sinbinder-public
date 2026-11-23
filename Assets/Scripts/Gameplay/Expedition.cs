@@ -118,7 +118,8 @@ namespace Sinbinder.Gameplay
             /// встречи; остальные — «Чужой N». Имена закреплены за походом: снимок раунда сверяет их.</param>
             public CombatEncounter(List<SquadRoster.Member> away, int foeCount,
                                    ExpeditionBattleCheckpoint checkpoint = null,
-                                   IList<string> foeNames = null, IList<int> foeSins = null)
+                                   IList<string> foeNames = null, IList<int> foeSins = null,
+                                   IList<float> foeHealth = null)
             {
                 if(away==null || away.Count==0)
                     throw new System.ArgumentException("Combat requires outgoing warriors.");
@@ -147,6 +148,9 @@ namespace Sinbinder.Gameplay
                         var sin=known && foeSins!=null && i<foeSins.Count ? (SinType)foeSins[i] : (SinType)(i%7);
                         var foe=Make(_holder,known ? foeNames[i] : "Чужой "+(i+1),sin,MoralType.Vicious,
                             40f+i*5f,50f,false,Team.Enemy,relations);
+                        // Прежние раны (покойник не лечится) — только в начале: дальше их несёт снимок раунда.
+                        if(known && checkpoint==null && foeHealth!=null && i<foeHealth.Count && foeHealth[i]<0.999f)
+                            foe.SetHealthFraction(foeHealth[i]);
                         _originalFoes.Add(foe);
                         _foes.Add(foe);
                     }
