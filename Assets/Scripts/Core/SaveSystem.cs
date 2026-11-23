@@ -96,6 +96,7 @@ namespace Sinbinder.Core
             save.FallenBags = Gameplay.FallenBag.Snapshot();
             save.PersonalExpeditions = Gameplay.PersonalExpedition.SnapshotProgress();
             save.Survivors = Gameplay.Survivors.Snapshot();
+            save.Sorties = Gameplay.Sorties.Count;
             save.ExpeditionReplays = Gameplay.ExpeditionReplayArchive.Snapshot();
             save.AutoExpeditions = MissionBoard.SnapshotJourneys();
             save.AutoExpeditionReport = MissionBoard.SnapshotReport();
@@ -494,6 +495,7 @@ namespace Sinbinder.Core
             Gameplay.FallenBag.Restore(save.FallenBags, RaidEvent.HostOf(save.Scene));
             Gameplay.PersonalExpedition.RestoreProgress(save.PersonalExpeditions);
             Gameplay.Survivors.Restore(save.Survivors);
+            Gameplay.Sorties.Restore(save.Sorties);
             Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays);
             Gameplay.ExpeditionMemoryLedger.Restore(save.ExpeditionMemories);
             MissionBoard.RestoreJourneys(save.AutoExpeditions);

@@ -70,6 +70,7 @@ namespace Sinbinder.Tests
                 Temptation();
                 Geometry();
                 Narration();
+                ReturnRules();
                 Voting();
                 Commanding();
                 Epilogue();
@@ -2366,6 +2367,23 @@ namespace Sinbinder.Tests
             Check(!Facing.IsFromBehind(null, Vector3.zero), "пустая цель не падает");
             Check(!Facing.IsFromBehind(victim.transform, Vector3.zero),
                 "совпадение позиций не считается ударом в спину");
+        }
+
+        // ================= место не обновляется (Survivors, план 69 §7 п.1б) =================
+
+        private static void ReturnRules()
+        {
+            Check(Survivors.OnReturn(-1, -1, false, 2, 5) == Return.First, "первый вход — первый");
+            Check(Survivors.OnReturn(4, -1, false, 2, 4) == Return.SameNight, "без похода между — та же ночь");
+            Check(Survivors.OnReturn(4, -1, false, 2, 5) == Return.Later, "прошёл поход — позже");
+            Check(Survivors.OnReturn(4, 4, true, 0, 6) == Return.Later,
+                  "разграбленная часовня через два похода ещё пустует");
+            Check(Survivors.OnReturn(4, 4, true, 0, 4 + Survivors.ReoccupyAfter) == Return.Reoccupied,
+                  "разграбленную часовню через три похода занимает дозор");
+            Check(Survivors.OnReturn(4, 4, false, 0, 20) != Return.Reoccupied,
+                  "зачищенное, но не разграбленное, пустует: беречь там нечего");
+            Check(Survivors.OnReturn(4, 4, true, 1, 20) != Return.Reoccupied,
+                  "пока там кто-то жив, место не занимают заново");
         }
 
         // ================= рассказ =================

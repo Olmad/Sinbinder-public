@@ -172,6 +172,8 @@ namespace Sinbinder.Core
 
         // Выжившие стражи личных вылазок (Survivors, план 69 §7). В старых сохранениях нет — никто не помнит.
         public List<Sinbinder.Gameplay.SavedSurvivor> Survivors = new List<Sinbinder.Gameplay.SavedSurvivor>();
+        // Время мира в походах (Sorties). В старых сохранениях 0.
+        public int Sorties;
 
         // Older crypt saves record expeditions only after entering the sandbox.
         internal bool OpensCryptSandbox => Scene == Sinbinder.Crypt.CryptMap.SceneName &&

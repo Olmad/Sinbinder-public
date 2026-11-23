@@ -22,6 +22,11 @@ namespace Sinbinder.Gameplay
         public bool CaravanAssaulted;
         public bool SecretTaken;
         public int Visits;
+        // Время мира (Sorties): когда ушли отсюда и когда зачистили. Нет в старых сохранениях — «ещё не уходили».
+        public int LeftAt = -1;
+        public int ClearedAt = -1;
+        /// <summary>0 — свои хозяева места; 1 — дозор Ордена занял разграбленную часовню.</summary>
+        public int Occupant;
     }
 
     public sealed class PersonalExpedition : MonoBehaviour
@@ -52,7 +57,8 @@ namespace Sinbinder.Gameplay
                   CargoTaken=state.CargoTaken, CaravanPassed=state.CaravanPassed,
                   CaravanAssaulted=state.CaravanAssaulted,
                   SecretTaken=state.SecretTaken,
-                  Visits=state.Visits });
+                  Visits=state.Visits,
+                  LeftAt=state.LeftAt, ClearedAt=state.ClearedAt, Occupant=state.Occupant });
             return list;
         }
 
@@ -177,6 +183,18 @@ namespace Sinbinder.Gameplay
                visit._state.EnemiesRemaining<mission.Guards &&
                !visit._state.CaravanPassed && !visit._state.CargoTaken)
                 visit._state.CaravanAssaulted=true;
+
+            // Место не обновляется само (Survivors.OnReturn): та же ночь — те же раны;
+            // разграбленную часовню через три похода занимает дозор Ордена — и журнал говорит почему.
+            visit._return = Survivors.OnReturn(visit._state.LeftAt, visit._state.ClearedAt,
+                visit._state.SecretTaken, visit._state.EnemiesRemaining, Sorties.Count);
+            if (visit._return == Return.Reoccupied && plan.Kind == ExpeditionMapKind.Chapel)
+            {
+                visit._state.EnemiesRemaining = 2;
+                visit._state.Occupant = 1;
+                visit._state.ClearedAt = -1;
+                visit._why.Add(Survivors.Reoccupied());
+            }
 
             visit._mapRoot = ExpeditionMapBuilder.Build(plan);
             if (visit._mapRoot == null)
@@ -337,21 +355,22 @@ namespace Sinbinder.Gameplay
             int remaining=Mathf.Clamp(_state.EnemiesRemaining,0,8);
             var sceneSetup=UnityEngine.Object.FindFirstObjectByType<AOS.AOSSceneSetup>();
             var relations=new RelationshipSystem(AOS.MemoryProcessor.Instance);
-            bool undead=_plan.Kind!=ExpeditionMapKind.SaltRoad;
+            bool order=_state.Occupant==1;
+            bool undead=!order && _plan.Kind!=ExpeditionMapKind.SaltRoad;
             // Выжившие прошлых встреч стоят первыми — с прежним именем, грехом и ранами (Survivors).
             var known=Survivors.At(_plan.Id);
+            if(_return==Return.SameNight && known.Count>0) _why.Insert(0,Survivors.SameNight());
             var taken=new List<string>();
             for(int i=0;i<remaining;i++)
             {
                 Vector3 at=ExpeditionMapBuilder.Point(_plan,(i%2==0?-1f:1f)*(5f+i*2f),
                     _plan.GoalZ-13f-(i/2)*5f);
-                var go=new GameObject(_plan.Kind==ExpeditionMapKind.SaltRoad
+                var go=new GameObject(order ? "Дозор Ордена" : _plan.Kind==ExpeditionMapKind.SaltRoad
                     ? "Страж соляного обоза" : "Покойник при часовне");
                 go.transform.SetParent(_mapRoot.transform,true);
                 go.transform.position=at;
                 var w=go.AddComponent<Warrior>();
-                var shell=_plan.Kind==ExpeditionMapKind.SaltRoad
-                    ? ShellType.Living : ShellType.Skeleton;
+                var shell=undead ? ShellType.Skeleton : ShellType.Living;
                 // A caravan isn't a battle until the player attacks or
                 // explicitly orders an assault. Chapel defenders remain
                 // hostile from the outset. State persists across visits.
@@ -359,7 +378,7 @@ namespace Sinbinder.Gameplay
                     !_state.CaravanAssaulted && !_state.CaravanPassed
                     ? Team.Neutral : Team.Enemy;
                 var was=i<known.Count ? known[i] : null;
-                string name=was!=null ? was.Name : Survivors.NameFor(undead,taken);
+                string name=was!=null ? was.Name : Survivors.NameFor(order ? "order" : undead ? "bound" : "caravan",taken);
                 taken.Add(name);
                 var sin=was!=null ? (SinType)was.Sin : (SinType)(i%7);
                 w.Initialize(new SoulData(name,sin,MoralType.Vicious,1,55f),shell,relations,false,disposition);
@@ -369,12 +388,14 @@ namespace Sinbinder.Gameplay
                 _guards.Add(w);
                 var record=was ?? new SavedSurvivor{Name=name,Sin=(int)sin,Undead=undead};
                 record.Undead=undead;
+                record.Reason=order ? "order" : undead ? "bound" : "caravan";
                 _met[w]=record;
                 if(was!=null)
                 {
                     // Покойник не лечится: кости с прошлой встречи не срослись.
-                    // Живого охранника время между походами залечило.
-                    if(undead && was.Health<0.999f) go.GetComponent<Damageable>()?.Wound(was.Health);
+                    // Живого залечило время — если оно прошло: той же ночью раны те же.
+                    if(was.Health<0.999f && (undead || _return==Return.SameNight))
+                        go.GetComponent<Damageable>()?.Wound(was.Health);
                     _why.Add(Survivors.Why(was,w.MaxHP));
                     Debug.Log("[ВЫЖИВШИЕ] "+Survivors.Why(was,w.MaxHP));
                 }
@@ -385,6 +406,7 @@ namespace Sinbinder.Gameplay
         private readonly Dictionary<Warrior,SavedSurvivor> _met=new();
         private readonly HashSet<Warrior> _greeted=new();
         private readonly List<string> _why=new();
+        private Return _return;
         private CombatManager _combat;
         private float _nextLook;
 
@@ -716,6 +738,12 @@ namespace Sinbinder.Gameplay
                     UnityEngine.Object.FindFirstObjectByType<MissionBoard>();
                 board?.RecordPersonal(_mission,
                     _state != null && ((_state.CargoTaken && !_state.CaravanPassed) || _state.SecretTaken));
+                if (board == null) Sorties.Tick(); // возвращение — шаг времени мира и без доски
+                if (_state != null)
+                {
+                    _state.LeftAt = Sorties.Count;
+                    if (_state.EnemiesRemaining == 0 && _state.ClearedAt < 0) _state.ClearedAt = Sorties.Count;
+                }
             }
             UnityEngine.Object.Destroy(gameObject);
         }

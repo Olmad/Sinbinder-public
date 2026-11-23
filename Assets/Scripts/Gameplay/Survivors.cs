@@ -21,7 +21,26 @@ namespace Sinbinder.Gameplay
         /// <summary>Кого из отряда убил — через «, », в порядке смертей.</summary>
         public string Killed = "";
         public bool Fled;
+        /// <summary>Почему он здесь: «bound» — покойник места, «caravan» — охрана обоза, «order» — дозор Ордена.</summary>
+        public string Reason = "";
     }
+
+    /// <summary>
+    /// Время мира в походах: каждый ушедший отряд и каждое возвращение Греховода —
+    /// один шаг. Своих часов у мира нет (23.11), а «через пару минут» и «через три
+    /// похода» должны давать разное: автор — «логично ли, что часовню разграбили,
+    /// а она восстановилась через пару минут?». Идёт в сохранение.
+    /// </summary>
+    public static class Sorties
+    {
+        public static int Count { get; private set; }
+        public static void Tick() => Count++;
+        public static void Restore(int count) => Count = Math.Max(0, count);
+        public static void Forget() => Count = 0;
+    }
+
+    /// <summary>С чем возвращаются на место, где уже были.</summary>
+    public enum Return { First, SameNight, Later, Reoccupied }
 
     /// <summary>
     /// Выжившие помнят (автор, 23.11: «выжившие стражники сохранялись в памяти
@@ -56,6 +75,24 @@ namespace Sinbinder.Gameplay
             Loc.N("Радим Копьё"), Loc.N("Неждан Хмурый"), Loc.N("Гордей Плечистый"),
             Loc.N("Малюта Быстрый"), Loc.N("Любим Кистень"),
         };
+
+        // Дозор Ордена — братья, не наёмники обоза: «Тихон Соляной» у алтаря читался чужим (кадр 23.11).
+        private static readonly string[] _order =
+        {
+            Loc.N("Брат Евсей"), Loc.N("Брат Корнил"), Loc.N("Брат Игнат"), Loc.N("Брат Аким"),
+            Loc.N("Брат Пимен"), Loc.N("Брат Варлаам"), Loc.N("Брат Сысой"), Loc.N("Брат Феогност"),
+        };
+
+        /// <summary>Имя по тому, кто он: «bound», «caravan» или «order».</summary>
+        public static string NameFor(string reason, ICollection<string> taken)
+            => reason == "order" ? Pick(_order, taken) : NameFor(reason == "bound", taken);
+
+        private static string Pick(string[] pool, ICollection<string> taken)
+        {
+            foreach (var n in pool)
+                if ((taken == null || !taken.Contains(n)) && !_all.Exists(s => s.Name == n)) return n;
+            return pool[(taken?.Count ?? 0) % pool.Length];
+        }
 
         /// <summary>Кто ждёт на этом месте — в порядке, в каком их запомнили.</summary>
         public static List<SavedSurvivor> At(string place)
@@ -94,9 +131,35 @@ namespace Sinbinder.Gameplay
                 if (s != null && !string.IsNullOrEmpty(s.Name)) { s.Place = place; _all.Add(s); }
         }
 
+        /// <summary>Через сколько походов разграбленную часовню займут снова.</summary>
+        public const int ReoccupyAfter = 3;
+
+        /// <summary>
+        /// Место не обновляется само. Вернулся, пока в мире не прошло ни одного похода, —
+        /// та же ночь: раны у всех те же. Зачищенное пустует; разграбленную часовню
+        /// через <see cref="ReoccupyAfter"/> похода займёт дозор Ордена — слух дошёл.
+        /// Зачищенное, но не разграбленное — пустует: беречь там нечего.
+        /// </summary>
+        public static Return OnReturn(int leftAt, int clearedAt, bool plundered, int enemiesLeft, int now)
+        {
+            if (leftAt < 0) return Return.First;
+            if (enemiesLeft == 0 && plundered && clearedAt >= 0 && now - clearedAt >= ReoccupyAfter)
+                return Return.Reoccupied;
+            return now <= leftAt ? Return.SameNight : Return.Later;
+        }
+
+        /// <summary>Строка журнала: вернулись той же ночью.</summary>
+        public static string SameNight() => Loc.T("Вы вернулись той же ночью: стража не успела ни уйти, ни залечить раны.");
+
+        /// <summary>Строка журнала: часовню заняли снова.</summary>
+        public static string Reoccupied() => Loc.T("Слух о разграбленной часовне дошёл до Ордена: у алтаря теперь их дозор.");
+
         /// <summary>Почему он здесь — строка журнала при входе.</summary>
         public static string Why(SavedSurvivor s, float maxHp)
         {
+            if (s.Reason == "order")
+                return Loc.F("{0} — из дозора Ордена: часовню стерегут с тех пор, как её разграбили.", Loc.Name(s.Name))
+                       + " " + Deed(s, maxHp);
             string why = s.Undead
                 ? Loc.F("{0} ждёт здесь: покойник не может уйти от места, где его подняли.", Loc.Name(s.Name))
                 : Loc.F("{0} снова в охране: обоз ходит той же дорогой и с теми же людьми.", Loc.Name(s.Name));
@@ -134,7 +197,7 @@ namespace Sinbinder.Gameplay
             var list = new List<SavedSurvivor>();
             foreach (var s in _all)
                 list.Add(new SavedSurvivor { Name = s.Name, Place = s.Place, Sin = s.Sin, Undead = s.Undead,
-                    Health = s.Health, Meetings = s.Meetings, Killed = s.Killed ?? "", Fled = s.Fled });
+                    Health = s.Health, Meetings = s.Meetings, Killed = s.Killed ?? "", Fled = s.Fled, Reason = s.Reason ?? "" });
             return list;
         }
 
@@ -146,7 +209,7 @@ namespace Sinbinder.Gameplay
                 if (s != null && !string.IsNullOrEmpty(s.Name) && !string.IsNullOrEmpty(s.Place)) _all.Add(s);
         }
 
-        /// <summary>Новая игра — никто никого не помнит.</summary>
-        public static void Forget() => _all.Clear();
+        /// <summary>Новая игра — никто никого не помнит, и время с нуля.</summary>
+        public static void Forget() { _all.Clear(); Sorties.Forget(); }
     }
 }

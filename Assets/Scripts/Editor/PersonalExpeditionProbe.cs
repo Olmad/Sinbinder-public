@@ -91,6 +91,26 @@ namespace Sinbinder.EditorTools
             return "второй вход: " + memory;
         }
 
+        /// <summary>
+        /// Часовня разграблена и зачищена, и прошло три похода (Sorties) — как будто игрок
+        /// взял тайник, перебил стражу и ходил в другие места. Потом Revisit: должен стоять
+        /// дозор Ордена, и журнал — сказать, почему.
+        /// </summary>
+        public static string PlunderAndWait()
+        {
+            if (PersonalExpedition.Active) return "экспедиция идёт — сначала Leave";
+            const string chapel = "expedition:roadside-chapel";
+            PersonalExpedition.RestoreProgress(new List<SavedPersonalExpedition>
+            {
+                new SavedPersonalExpedition { Id = chapel, EnemiesRemaining = 0, SecretTaken = true, Visits = 1,
+                    LeftAt = Sorties.Count, ClearedAt = Sorties.Count }
+            });
+            Survivors.Settle(chapel, null);
+            for (int i = 0; i < Survivors.ReoccupyAfter; i++) Sorties.Tick();
+            Write($"=== ЧАСОВНЯ РАЗГРАБЛЕНА И ЗАЧИЩЕНА, прошло походов: {Survivors.ReoccupyAfter} (время мира {Sorties.Count})");
+            return "разграблена; походов прошло " + Survivors.ReoccupyAfter;
+        }
+
         public static string Leave()
         {
             if (!PersonalExpedition.Active) return "экспедиции нет";

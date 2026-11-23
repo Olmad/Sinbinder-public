@@ -696,6 +696,7 @@ namespace Sinbinder.Crypt
         public void RecordPersonal(Mission mission, bool recoveredSomething)
         {
             Sent++;
+            Gameplay.Sorties.Tick();
             LastReplay = null; // no false "automatic" reconstruction of live play
             LastReport = recoveredSomething
                 ? Loc.F("Греховод лично вернулся из «{0}» с находкой.", Loc.Name(mission.Name))
@@ -848,6 +849,7 @@ namespace Sinbinder.Crypt
                     }
             }
             Sent++;
+            Gameplay.Sorties.Tick(); // ушедший отряд — шаг времени мира (Survivors.OnReturn)
             ActiveJourneys.Add(new SavedAutoExpedition
             {
                 MissionName=mission.Name, Commander=commanderName,
