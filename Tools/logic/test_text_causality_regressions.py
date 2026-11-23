@@ -146,10 +146,10 @@ class CorrectedTextRegressions(unittest.TestCase):
         for module, phrase in safe.items():
             with self.subTest(module=module):
                 self.assertRegex(idle, r'case "' + re.escape(module) +
-                                 r'":\\s*return Loc\\.T\\("' + re.escape(phrase) + r'"\\);')
+                                 r'":\s*return Loc\.T\("' + re.escape(phrase) + r'"\);')
                 self.assertEqual(1, self.locale.count('msgid "' + phrase + '"'))
                 match = re.search(r'^msgid "' + re.escape(phrase) +
-                                  r'"\\s*\\nmsgstr "([^"]+)"', self.locale, re.MULTILINE)
+                                  r'"\s*\nmsgstr "([^"]+)"', self.locale, re.MULTILINE)
                 self.assertIsNotNone(match)
                 self.assertFalse(re.search(r"[А-Яа-яЁё]", match.group(1)))
         for unproved in (
