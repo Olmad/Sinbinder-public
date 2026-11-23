@@ -97,7 +97,7 @@ namespace Sinbinder.Gameplay
 
             if (Core.Transparency.Shows(Core.Clarity.Trace))
                 Debug.Log($"[БОЙ] {_warrior.DisplayName} вышел из ближнего боя "
-                    + $"и получил удар вслед от {enemy.name}.");
+                    + $"и получил удар вслед от {(enemy.GetComponent<Warrior>() is Warrior foe ? foe.DisplayName : enemy.name)}.");
         }
     }
 }

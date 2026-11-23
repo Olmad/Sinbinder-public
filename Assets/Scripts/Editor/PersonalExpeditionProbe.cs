@@ -37,6 +37,7 @@ namespace Sinbinder.EditorTools
             if (!EditorApplication.isPlaying) return "нужен режим игры (play)";
             File.WriteAllText(LogPath, "", new UTF8Encoding(false));
             Party.Clear(); Guards.Clear();
+            _retreat = false;
             Result = "идёт";
             Next(Step.Camp);
             EditorApplication.update -= Tick;
@@ -198,15 +199,32 @@ namespace Sinbinder.EditorTools
                     sb.Append("|| стража: ");
                     foreach (var g in Guards) sb.Append(g == null ? "— " : g.IsDead ? "пал; " : $"{g.HP:F0}/{g.MaxHP:F0}; ");
                     Write(sb.ToString());
+                    if (hero == null || hero.IsDead) { Finish("НЕ ПРОЙДЕНО: Греховод пал в бою"); return; }
                     bool guardsDown = Guards.TrueForAll(g => g == null || g.IsDead);
                     bool partyDown = Party.TrueForAll(w => w == null || w.IsDead);
-                    if (guardsDown || partyDown || game > 150f || spent > 500)
+                    // Страж у самого Греховода. 20.11 и 23.11 сбежавший от Вейна скелет
+                    // натыкался на стоящего столбом Греховода и убивал его — игрок бы ушёл.
+                    Warrior close = null;
+                    foreach (var g in Guards)
+                        if (g != null && !g.IsDead && Flat(g.transform.position, hero.transform.position) < 7f) close = g;
+                    if (guardsDown || partyDown || close != null || game > 150f || spent > 500)
                     {
                         int hit = 0; foreach (var g in Guards) if (g != null && (g.IsDead || g.HP < g.MaxHP - 0.01f)) hit++;
                         int hurt = 0; foreach (var w in Party) if (w != null && (w.IsDead || w.HP < w.MaxHP - 0.01f)) hurt++;
-                        string fight = $"{(guardsDown ? "стража пала" : partyDown ? "отряд пал" : "за 150 с игры бой не кончился")} ({game:F0} с игры); "
-                             + $"задеты стражей {hit} из {Guards.Count}, своих {hurt} из {Party.Count}";
-                        if (!guardsDown) { Finish(fight); return; }
+                        string why = guardsDown ? "стража пала" : partyDown ? "отряд пал"
+                            : close != null ? $"{close.DisplayName} в {Flat(close.transform.position, hero.transform.position):F1} м от Греховода"
+                            : "за 150 с игры бой не кончился";
+                        string fight = $"{why} ({game:F0} с игры); задеты стражей {hit} из {Guards.Count}, своих {hurt} из {Party.Count}";
+                        if (!guardsDown)
+                        {
+                            // Как игрок, когда бой проигран: назад к бирюзовому знаку и F — вернуться.
+                            // Так проверяется и выход из вылазки без победы.
+                            Write("бой: " + fight + " — отступаю к знаку, как игрок");
+                            _retreat = true;
+                            hero.GetComponent<UnitMover>().CommandMove(Vector3.MoveTowards(Spot("Gate"), hero.transform.position, 1.5f));
+                            Next(Step.Gate);
+                            return;
+                        }
                         Write("бой: " + fight);
                         // Цель — как игрок: дойти к янтарному огню и нажать F.
                         hero.GetComponent<UnitMover>().CommandMove(Vector3.MoveTowards(Spot("Objective"), hero.transform.position, 1.5f));
@@ -222,6 +240,15 @@ namespace Sinbinder.EditorTools
                     float left = Flat(hero.transform.position, spot);
                     if (now >= _next) { _next = now + 10; Write($"  +{spent:F0} с: до точки {left:F1} м{(_wasd ? " (шагом)" : "")}. " + Route().Replace("\n", " | ")); }
                     var agent = hero.GetComponent<NavMeshAgent>();
+                    // Урок жатвы уводит Греховода к душе (мир стоит, пока не соберёт).
+                    // После урока игрок снова щёлкает к своей точке — так и здесь.
+                    // 23.11 без этого Греховод стоял у души в 58 м от знака.
+                    if (!_wasd && left > 3.5f && agent != null && agent.isOnNavMesh && Flat(agent.destination, spot) > 3f)
+                    {
+                        hero.GetComponent<UnitMover>().CommandMove(Vector3.MoveTowards(spot, hero.transform.position, 1.5f));
+                        Write($"  снова к {(_step == Step.Goal ? "цели" : "знаку")}: приказ стоял не туда (после урока)");
+                        _since = now;
+                    }
                     // Приказ мышью встал — дальше так, как ходит игрок глазами: W шагает agent.Move (PlayerWalk).
                     if (left > 3.5f && spent > 8 && !_wasd && agent != null && agent.velocity.sqrMagnitude < 0.01f)
                     { _wasd = true; Write($"  приказ мышью встал в {left:F1} м от точки — дальше шаг как с клавиш (agent.Move, как PlayerWalk)"); }
@@ -235,7 +262,7 @@ namespace Sinbinder.EditorTools
                         agent.Move(dir.normalized * 3.5f * (float)System.Math.Min(0.1, now - _lastTick));
                     }
                     _lastTick = now;
-                    if (left > 3.5f && spent < 60) return;
+                    if (left > 3.5f && spent < 90) return;
                     Write($"{(_step == Step.Goal ? "цель" : "знак возврата")}: дошёл за {spent:F0} с, до точки {left:F1} м; F предлагает: "
                         + string.Join(" / ", Offers().ConvertAll(o => o.label)));
                     var want = _step == Step.Goal ? "исследовать" : "вернуться";
@@ -264,7 +291,7 @@ namespace Sinbinder.EditorTools
                     var inv = Inventory.PlayerInventory.Instance;
                     bool letter = false;
                     if (inv != null) foreach (var it in inv.GetAllItems()) if (it != null && it.Name.Contains("письмо")) letter = true;
-                    Finish($"{(PersonalExpedition.Active ? "НЕ ПРОЙДЕНО: из экспедиции не вышли" : "ПРОЙДЕНО: вошли, дошли, приказали, стража пала, цель взята, вернулись")}"
+                    Finish($"{(PersonalExpedition.Active ? "НЕ ПРОЙДЕНО: из экспедиции не вышли" : hero == null || hero.IsDead ? "НЕ ПРОЙДЕНО: Греховод пал" : _retreat ? "ПРОЙДЕНО С ОТСТУПЛЕНИЕМ: вошли, дошли, приказали, бой не выигран — ушли к знаку и вернулись" : "ПРОЙДЕНО: вошли, дошли, приказали, стража пала, цель взята, вернулись")}"
                          + $"; письмо в суме {(letter ? "есть" : "НЕТ")}");
                     return;
                 }
@@ -272,6 +299,7 @@ namespace Sinbinder.EditorTools
         }
 
         private static float _fightFrom;
+        private static bool _retreat;
         private static string _lessonSeen;
         private static double _lessonNext;
 

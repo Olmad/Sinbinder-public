@@ -780,7 +780,9 @@ namespace Sinbinder.Tests
             mute.UnpaidMissions = 3;
             string gesture = Dialogue.CampLines.Gesture(mute);
             var exchange = Dialogue.CampLines.Exchange(mute, liska);
-            Check(exchange.First == gesture && exchange.Answer == Loc.T("Пока тихо."),
+            // С 11.11 (b8483589) на жест отвечают «Понял/Поняла» — кивок жесту,
+            // а не ответ на жалобу о плате, которой немой не произносил.
+            Check(exchange.First == gesture && exchange.Answer == Dialogue.CampLines.Acknowledge(liska),
                   "собеседник немого не отвечает на невысказанную жалобу");
             Check(Dialogue.TalkLines.Greet(mute) == gesture, "немой здоровается жестом даже при долге");
             Check(Dialogue.TalkLines.Attitude(mute) == gesture, "немой не произносит рассказ об отношении");
@@ -2370,9 +2372,11 @@ namespace Sinbinder.Tests
 
         private static void Narration()
         {
-            Check(BattleNarrator.Build(null).Contains("без единого спора"),
+            // С 19.11 (8133e14d) пустой журнал ничего не утверждает о бое:
+            // «без единого спора» было бы выдумкой — записей нет.
+            Check(BattleNarrator.Build(null) == Loc.T("Записей о ходе боя нет."),
                 "пустой бой описывается как бой без споров");
-            Check(BattleNarrator.Build(new List<string>()).Contains("без единого спора"),
+            Check(BattleNarrator.Build(new List<string>()) == Loc.T("Записей о ходе боя нет."),
                 "пустой список тоже");
 
             var repeated = BattleNarrator.Build(new List<string> { "Марга ушла за добычей.", "Марга ушла за добычей.", "Марга ушла за добычей." });
