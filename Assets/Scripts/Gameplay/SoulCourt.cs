@@ -1279,11 +1279,18 @@ namespace Sinbinder.Gameplay
                 return Loc.T("Два сильнейших решения слишком близки по весу — душа замешкалась.");
 
             float proSum = 0f, conSum = 0f;
-            foreach (var j in judges) if (j.ForOrder) proSum += Mathf.Abs(j.Net); else conSum += Mathf.Abs(j.Net);
+            // Only seated voting voices can appear in the final verdict.
+            // A net below Audible is an abstention, not a vote for either side.
+            foreach (var j in judges)
+            {
+                if (j.Abstains) continue;
+                if (j.ForOrder) proSum += Mathf.Abs(j.Net);
+                else conSum += Mathf.Abs(j.Net);
+            }
             // Перевес меньше пятой части — сказать: иначе почти ровная стрелка спорит со словом «склонились».
             bool hair = proSum > 0f && conSum > 0f && Mathf.Abs(proSum - conSum) < 0.2f * Mathf.Max(proSum, conSum);
-            string against = Roll(judges.FindAll(j => !j.ForOrder));
-            string pro = Roll(judges.FindAll(j => j.ForOrder));
+            string against = Roll(judges.FindAll(j => !j.Abstains && !j.ForOrder));
+            string pro = Roll(judges.FindAll(j => !j.Abstains && j.ForOrder));
 
             if (d.RefusedCommand)
             {
