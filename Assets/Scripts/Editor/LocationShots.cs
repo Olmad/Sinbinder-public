@@ -248,7 +248,7 @@ namespace Sinbinder.EditorTools
         internal static void Hill(Vector3 at, Vector3 size, Color c)
             => Box("Холм", at, size, Plain(c), 0f, 0f, PrimitiveType.Sphere);
 
-        internal static void Fire(Vector3 at, float power = 1f, Color? colour = null)
+        internal static void Fire(Vector3 at, float power = 1f, Color? colour = null, float core = 0.7f)
         {
             var c = colour ?? new Color(1f, 0.55f, 0.18f);
             var go = new GameObject("Огонь");
@@ -259,8 +259,8 @@ namespace Sinbinder.EditorTools
             light.range = 9f * power;
             light.intensity = 4f * power;
             light.shadows = LightShadows.Soft;
-            var core = Quad("Пламя", at, Vector3.one * 0.7f * power, Soft(), new Color(c.r * 4f, c.g * 3f, c.b * 2f, 1f));
-            Flames.Add(core.transform);
+            var flame = Quad("Пламя", at, Vector3.one * core * power, Soft(), new Color(c.r * 4f, c.g * 3f, c.b * 2f, 1f));
+            Flames.Add(flame.transform);
         }
 
         internal static void Trees(string[] kinds, Vector3 from, Vector3 to, int count, float spread, float scale, int seed)

@@ -7,7 +7,8 @@
 
 | Дата | Что изменилось | Кадров | Где записано | Автор |
 |---|---|---|---|---|
-| 23 ноября | [Карта в шаре и кадр места в карточке экспедиции](2026-11-23%208%20%D0%BA%D0%B0%D1%80%D1%82%D0%B0%20%D0%B2%20%D1%88%D0%B0%D1%80%D0%B5/README.md) | 3 | 69-PLAN.md §7 · UI/ReliefMap.cs · Editor/LocationShots.cs | ждём |
+| 23 ноября | [Обложка для страницы Steam — сцена SteamCover](2026-11-23%209%20%D0%BE%D0%B1%D0%BB%D0%BE%D0%B6%D0%BA%D0%B0%20Steam/README.md) | 3 | Editor/SteamCover.cs · Tools/steam/compose.py · 06-SELLING.md | ждём |
+| 23 ноября | [Карта в шаре и кадр места в карточке экспедиции](2026-11-23%208%20%D0%BA%D0%B0%D1%80%D1%82%D0%B0%20%D0%B2%20%D1%88%D0%B0%D1%80%D0%B5/README.md) | 3 | 69-PLAN.md §7 · UI/ReliefMap.cs · Editor/LocationShots.cs · [`4edc30d5`](https://github.com/Olmad/Sinbinder-public/commit/4edc30d5) | ждём |
 | 23 ноября | [Шар: карта с точками и карточка места](2026-11-23%207%20%D0%BC%D0%B5%D0%BD%D1%8E%20%D1%8D%D0%BA%D1%81%D0%BF%D0%B5%D0%B4%D0%B8%D1%86%D0%B8%D0%B9/README.md) | 4 | 69-PLAN.md §7 · [`4297be03`](https://github.com/Olmad/Sinbinder-public/commit/4297be03) | ждём |
 | 23 ноября | [Убил воина — ищет Греховода сам](2026-11-23%206%20%D0%BE%D1%85%D0%BE%D1%82%D0%BD%D0%B8%D0%BA/README.md) | 1 | 69-PLAN.md §7 п.2 · [`55505722`](https://github.com/Olmad/Sinbinder-public/commit/55505722) | ждём |
 | 23 ноября | [Окрик по имени больше не тонет в перебранке](2026-11-23%205%20%D0%BE%D0%BA%D1%80%D0%B8%D0%BA%20%D0%B1%D0%B5%D0%B7%20%D0%BF%D0%B5%D1%80%D0%B5%D0%B1%D1%80%D0%B0%D0%BD%D0%BA%D0%B8/README.md) | 1 | PersonalExpedition.HoldBanter · DialogueTrigger.cs · 69-PLAN §7 п.1в · [`0e9062a6`](https://github.com/Olmad/Sinbinder-public/commit/0e9062a6) | ждём |

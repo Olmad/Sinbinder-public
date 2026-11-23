@@ -57,42 +57,78 @@ namespace Sinbinder.EditorTools
             _lit = null; _sky = null; Flames.Clear();
 
             // Ночь после разгрома: небо тёмно-лиловое, у земли — зарево горящего лагеря.
-            Night(new Color(0.035f, 0.03f, 0.075f), new Color(0.30f, 0.12f, 0.09f), new Color(0.11f, 0.09f, 0.13f),
-                  0.040f, new Vector3(-0.42f, 0.30f, 1f), new Color(0.62f, 0.70f, 0.98f), 0.55f, 34f);
+            Night(new Color(0.03f, 0.03f, 0.07f), new Color(0.17f, 0.085f, 0.09f), new Color(0.10f, 0.085f, 0.12f),
+                  0.032f, new Vector3(-0.20f, 0.30f, 1f), new Color(0.62f, 0.70f, 0.98f), 0.55f, 34f);
             Ground("Ground077", new Color(0.42f, 0.36f, 0.34f), 60f);
 
-            // Стол совета, шар, банки душ.
+            // Стол совета, шар, банки душ. Стол модели крупнее человеческого — приводим к 0,86 м.
             var table = Prop("CouncilTable", new Vector3(0f, 0f, 0f), 0f, 1f);
-            float top = table != null ? Top(table) : 0.9f;
-            const float ball = 0.46f;
-            Box("Подставка шара", new Vector3(0f, top + 0.03f, 0f), new Vector3(0.2f, 0.03f, 0.2f),
-                Plain(new Color(0.08f, 0.07f, 0.07f)), 0f, 0f, PrimitiveType.Cylinder);
-            Ball(new Vector3(0f, top + 0.06f + ball * 0.5f, 0f), ball);
-            Jar(new Vector3(-0.62f, top, 0.05f));
-            Jar(new Vector3(0.66f, top, -0.08f));
-            Prop("Torch", new Vector3(0.38f, top, 0.28f), 30f, 0.8f, 82f);
+            float top = 0.86f;
+            if (table != null)
+            {
+                float raw = Top(table);
+                if (raw > 0.05f) table.transform.localScale *= top / raw;
+                Notes.Add($"стол: верх {raw:0.00} м → {top:0.00} м");
+                // Светлое дерево под шаром и банками выбеливалось — тёмный дуб.
+                foreach (var r in table.GetComponentsInChildren<Renderer>())
+                {
+                    var mats = r.sharedMaterials;
+                    for (int i = 0; i < mats.Length; i++)
+                    {
+                        if (mats[i] == null) continue;
+                        mats[i] = new Material(mats[i]);
+                        if (mats[i].HasProperty("_BaseColor")) mats[i].SetColor("_BaseColor", mats[i].GetColor("_BaseColor") * 0.38f);
+                        if (mats[i].HasProperty("_Smoothness")) mats[i].SetFloat("_Smoothness", 0.25f);
+                    }
+                    r.sharedMaterials = mats;
+                }
+            }
+            const float ball = 0.34f;
+            var ballAt = new Vector3(-0.34f, 0f, -0.08f);
+            var iron = Plain(new Color(0.09f, 0.075f, 0.07f));
+            if (iron.HasProperty("_Smoothness")) iron.SetFloat("_Smoothness", 0.6f);
+            if (iron.HasProperty("_Metallic")) iron.SetFloat("_Metallic", 0.8f);
+            Box("Подставка шара", ballAt + Vector3.up * (top + 0.012f), new Vector3(0.26f, 0.012f, 0.26f), iron, 0f, 0f, PrimitiveType.Cylinder);
+            Box("Кольцо подставки", ballAt + Vector3.up * (top + 0.035f), new Vector3(0.2f, 0.012f, 0.2f), iron, 0f, 0f, PrimitiveType.Cylinder);
+            Ball(ballAt + Vector3.up * (top + 0.02f + ball * 0.5f), ball);
+            Jar(new Vector3(-0.78f, top, 0.3f));
+            Jar(new Vector3(0.78f, top, 0.22f));
 
             // Греховод — за столом, лицом к зрителю.
             var sin = new GameObject("Греховод");
-            sin.transform.SetPositionAndRotation(new Vector3(0f, 0f, 0.82f), Quaternion.Euler(0f, 180f, 0f));
+            sin.transform.SetPositionAndRotation(new Vector3(0.08f, 0f, 0.72f), Quaternion.Euler(0f, 186f, 0f));
             var body = typeof(SinbinderPlayer).GetMethod("BuildBody", BindingFlags.NonPublic | BindingFlags.Static);
             if (body != null) body.Invoke(null, new object[] { sin.transform });
             else Notes.Add("нет SinbinderPlayer.BuildBody");
-            Pose(sin, 0.35f, "Idle", "Stand");
+            // Idle на 0,6: капюшон к зрителю (лист поз steam-позы.png, 23.11). Посох в Idle лежит
+            // как придётся (в игре его ставит WeaponView) — ставим стоймя, огнём вверх.
+            Pose(sin, 0.6f, "Idle", "Stand");
+            var staffTop = Upright(sin.transform, "SinStaff", 6f, new Vector3(0.56f, 0f, 0.74f));
+            // Огонёк души на посохе — тот же тёплый, что у костра (SinbinderPlayer.BuildBody).
+            if (staffTop.HasValue) Fire(staffTop.Value + Vector3.down * 0.12f, 0.35f, new Color(1f, 0.55f, 0.22f), 0.5f);
+            {
+                var rs = sin.GetComponentsInChildren<Renderer>();
+                if (rs.Length > 0)
+                {
+                    var b = rs[0].bounds;
+                    foreach (var r in rs) b.Encapsulate(r.bounds);
+                    Notes.Add($"Греховод: рост {b.size.y:0.00} м, ширина {b.size.x:0.00} м");
+                }
+            }
 
             // Отряд за спиной — в тумане, глаза горят грехом.
-            Warrior(ShellType.Skeleton, new Vector3(-1.55f, 0f, 2.5f), 196f, 1.78f, 0.5f, new Color(0.9f, 0.25f, 0.2f), 0.1f, "Sword", "Shield", "PauldronLeft");
-            Warrior(ShellType.Zombie, new Vector3(1.75f, 0f, 2.8f), 165f, 1.72f, 0.58f, new Color(0.35f, 0.9f, 0.35f), 0.55f, "Axe", "Tabard");
-            Warrior(ShellType.Golem, new Vector3(-3.3f, 0f, 4.6f), 200f, 2.35f, 0.75f, new Color(1f, 0.6f, 0.15f), 0.8f, "Club");
-            Warrior(ShellType.Ghost, new Vector3(3.2f, 0f, 4.9f), 160f, 1.8f, 0.5f, new Color(0.45f, 0.75f, 1f), 0.25f, "Cloak");
-            Warrior(ShellType.Skeleton, new Vector3(0.9f, 0f, 6.2f), 175f, 1.7f, 0.48f, new Color(0.8f, 0.4f, 1f), 0.7f, "Bow", "Quiver", "Hood");
-            Warrior(ShellType.Zombie, new Vector3(-0.9f, 0f, 7.4f), 188f, 1.75f, 0.55f, new Color(0.9f, 0.25f, 0.2f), 0.4f, "Club");
+            Warrior(ShellType.Skeleton, new Vector3(-1.75f, 0f, 2.7f), 196f, 1.78f, 0.5f, new Color(0.9f, 0.25f, 0.2f), 0.1f, "Sword", "Shield", "PauldronLeft");
+            Warrior(ShellType.Zombie, new Vector3(2.5f, 0f, 3.8f), 165f, 1.72f, 0.58f, new Color(0.35f, 0.9f, 0.35f), 0.15f, "Axe", "Tabard");
+            Warrior(ShellType.Golem, new Vector3(-3.5f, 0f, 4.9f), 200f, 2.35f, 0.75f, new Color(1f, 0.6f, 0.15f), 0.8f, "Club");
+            Warrior(ShellType.Skeleton, new Vector3(3.4f, 0f, 5.3f), 160f, 1.75f, 0.5f, new Color(0.45f, 0.75f, 1f), 0.25f, "Bow", "Quiver", "Hood");
+            Warrior(ShellType.Zombie, new Vector3(0.9f, 0f, 6.6f), 175f, 1.7f, 0.55f, new Color(0.8f, 0.4f, 1f), 0.7f, "Club");
+            Warrior(ShellType.Skeleton, new Vector3(-0.8f, 0f, 7.8f), 188f, 1.75f, 0.5f, new Color(0.9f, 0.25f, 0.2f), 0.4f, "Sword", "Hood");
 
             // Факелы по бокам стола — тёплый контровой свет на багрец.
-            foreach (var x in new[] { -1.45f, 1.55f })
+            foreach (var x in new[] { -2.6f })
             {
-                Prop("TorchStand", new Vector3(x, 0f, 0.55f));
-                Fire(new Vector3(x, 2.1f, 0.55f), 0.9f);
+                Prop("TorchStand", new Vector3(x, 0f, 3.4f));
+                Fire(new Vector3(x, 2.1f, 3.4f), 0.6f, null, 0.28f);
             }
 
             // Вдали горит лагерь: палатки, огонь, частокол; лес по сторонам; кости у стола.
@@ -100,18 +136,23 @@ namespace Sinbinder.EditorTools
             {
                 var p = new Vector3(-14f + i * 5.6f + (i % 2) * 1.5f, 0f, 20f + (i % 3) * 5f);
                 Prop("Tent", p, i * 47f, 1.3f, i % 2 == 0 ? 8f : -6f);
-                Fire(p + Vector3.up * 1.2f, 2.2f + (i % 2), new Color(1f, 0.42f, 0.12f));
+                Fire(p + Vector3.up * 1.2f, 2.2f + (i % 2), new Color(1f, 0.42f, 0.12f), 0.5f);
             }
             for (int i = 0; i < 12; i++)
                 Prop("Palisade", new Vector3(-20f + i * 3.4f, 0f, 15f + Mathf.Sin(i * 1.7f)), 0f, 1f, i % 3 == 1 ? 18f : 0f);
             Prop("Banner", new Vector3(-6f, 0f, 13f), 10f, 1.4f, 12f);
+            // Зарево за спиной Греховода: горит главный шатёр — силуэт на огне.
+            Prop("Tent", new Vector3(0.6f, 0f, 13f), 20f, 1.6f, 10f);
+            Fire(new Vector3(0.6f, 1.6f, 12.5f), 4.5f, new Color(1f, 0.45f, 0.14f), 0.55f);
+            var blaze = Quad("Зарево", new Vector3(0.6f, 3f, 14f), new Vector3(16f, 9f, 1f), Soft(), new Color(1.6f, 0.55f, 0.18f, 0.55f));
+            Flames.Add(blaze.transform);
             Trees(Dead, new Vector3(-9f, 0f, 6f), new Vector3(-16f, 0f, 30f), 9, 7f, 1.3f, 51);
             Trees(Dead, new Vector3(9f, 0f, 6f), new Vector3(16f, 0f, 30f), 9, 7f, 1.3f, 52);
-            Trees(Pines, new Vector3(-40f, 0f, 45f), new Vector3(40f, 0f, 55f), 26, 14f, 1.6f, 53);
+            Trees(Pines, new Vector3(-50f, 0f, 70f), new Vector3(50f, 0f, 85f), 22, 16f, 1.8f, 53);
             Hill(new Vector3(0f, -16f, 200f), new Vector3(520f, 60f, 80f), new Color(0.07f, 0.05f, 0.07f));
             for (int i = 0; i < 10; i++)
                 Prop(i % 3 == 0 ? "Rock" : "GrassTuft", new Vector3(-3.5f + i * 0.8f, 0f, -0.6f + (i % 4) * 0.9f), i * 61f, 0.6f + (i % 3) * 0.3f);
-            var bone = Plain(new Color(0.78f, 0.75f, 0.68f));
+            var bone = Plain(new Color(0.36f, 0.33f, 0.30f));
             var rnd = new System.Random(5);
             for (int i = 0; i < 14; i++)
             {
@@ -121,12 +162,12 @@ namespace Sinbinder.EditorTools
             }
 
             // Камеры: широкая (Греховод левее, справа место логотипу) и вертикальная (он по центру).
-            var wideFrom = new Vector3(0.35f, 1.0f, -2.75f);
-            var wideTo = new Vector3(1.0f, 1.32f, 1.4f);
+            var wideFrom = new Vector3(-0.12f, 1.5f, -1.9f);
+            var wideTo = new Vector3(0.45f, 1.3f, 0.8f);
             Stage(wideFrom, wideTo);
             var wide = Cam(wideFrom, wideTo, 40f);
             wide.name = WideCamera;
-            var tall = Cam(new Vector3(0f, 1.05f, -3.3f), new Vector3(0f, 1.5f, 1f), 44f);
+            var tall = Cam(new Vector3(0.02f, 1.72f, -2.25f), new Vector3(0.06f, 1.5f, 0.9f), 52f);
             tall.name = TallCamera;
             tall.enabled = false;
 
@@ -165,7 +206,74 @@ namespace Sinbinder.EditorTools
             return string.Join("\n", done);
         }
 
+        /// <summary>
+        /// Все позы Греховода по одной — выбрать выразительную: steam-поза-&lt;клип&gt;-&lt;доля&gt;.png.
+        /// Сцену не сохраняет и в конце открывает заново.
+        /// </summary>
+        public static string Poses()
+        {
+            if (EditorApplication.isPlaying) return "нужно вне игры (stop)";
+            if (EditorSceneManager.GetActiveScene().path != ScenePath)
+                EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var sin = GameObject.Find("Греховод");
+            if (sin == null) return "нет Греховода в сцене";
+            sin.transform.position = new Vector3(40f, 0f, 0f);
+            var lamp = new GameObject("Лампа позы").AddComponent<Light>();
+            lamp.type = LightType.Point; lamp.range = 8f; lamp.intensity = 5f; lamp.color = new Color(1f, 0.85f, 0.7f);
+            lamp.transform.position = new Vector3(41.2f, 2.2f, -1.6f);
+            var cam = Cam(new Vector3(40f, 1.2f, -3.4f), new Vector3(40f, 1.0f, 0f), 40f);
+            var animator = sin.GetComponentInChildren<Animator>();
+            var done = new List<string>();
+            foreach (var clip in animator.runtimeAnimatorController.animationClips)
+                foreach (var phase in new[] { 0.25f, 0.6f })
+                {
+                    Sample(animator, clip, phase);
+                    var tex = Render(cam, 360, 480);
+                    var file = Path.GetFullPath($"{CleanShot.Folder}/steam-поза-{clip.name}-{Mathf.RoundToInt(phase * 100)}.png");
+                    File.WriteAllBytes(file, tex.EncodeToPNG());
+                    Object.DestroyImmediate(tex);
+                    done.Add(file);
+                }
+            EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            return $"поз: {done.Count}";
+        }
+
         // ── части ──
+
+        /// <summary>Вещь стоймя: длинная ось — вверх, дальний от хвата конец (огонь посоха) — наверху.</summary>
+        private static Vector3? Upright(Transform root, string name, float tilt, Vector3 grip)
+        {
+            Transform item = null;
+            foreach (var t in root.GetComponentsInChildren<Transform>(true))
+                if (t.name.StartsWith(name)) { item = t; break; }
+            if (item == null) { Notes.Add("нет " + name); return null; }
+            Mesh mesh = null;
+            var mf = item.GetComponentInChildren<MeshFilter>();
+            if (mf != null) mesh = mf.sharedMesh;
+            var skin = item.GetComponentInChildren<SkinnedMeshRenderer>();
+            if (mesh == null && skin != null) mesh = skin.sharedMesh;
+            if (mesh == null) { Notes.Add(name + ": нет сетки"); return null; }
+            var meshOwner = mf != null ? mf.transform : skin.transform;
+            var b = mesh.bounds;
+            var axis = b.size.x >= b.size.y && b.size.x >= b.size.z ? Vector3.right
+                     : b.size.y >= b.size.z ? Vector3.up : Vector3.forward;
+            // Верх — где огонь души (подсетка с материалом Soulfire); нет его — дальний от хвата конец.
+            var top = b.center;
+            var mats = (mf != null ? (Renderer)mf.GetComponent<MeshRenderer>() : skin).sharedMaterials;
+            for (int i = 0; i < mats.Length && i < mesh.subMeshCount; i++)
+                if (mats[i] != null && mats[i].name.Contains("Soulfire")) top = mesh.GetSubMesh(i).bounds.center;
+            if (Vector3.Dot(top - b.center, axis) < 0f || (top == b.center && Vector3.Dot(b.center, axis) < 0f)) axis = -axis;
+            var topWorld = meshOwner.TransformDirection(axis).normalized;
+            var want = Quaternion.AngleAxis(-tilt, root.forward) * Vector3.up;
+            item.rotation = Quaternion.FromToRotation(topWorld, want) * item.rotation;
+            // Нижний конец — на земле у бока (grip — точка земли), а не там, куда увела руку поза.
+            var r = item.GetComponentInChildren<Renderer>();
+            var bounds = r.bounds;
+            var foot = new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+            item.position += new Vector3(grip.x, 0f, grip.z) - foot;
+            Notes.Add($"{name}: стоймя, длина {bounds.size.y:0.00} м");
+            return meshOwner.TransformPoint(top);
+        }
 
         private static float Top(GameObject go)
         {
@@ -207,8 +315,8 @@ namespace Sinbinder.EditorTools
             light.transform.position = centre + Vector3.up * diameter * 0.1f;
             light.type = LightType.Point;
             light.color = new Color(0.62f, 0.82f, 1f);
-            light.range = 4.5f;
-            light.intensity = 6f;
+            light.range = 2.2f;
+            light.intensity = 1.5f;
             light.shadows = LightShadows.Soft;
 
             var halo = Quad("Сияние шара", centre, Vector3.one * diameter * 3.4f, Soft(), new Color(0.55f, 0.78f, 1f, 0.32f));
@@ -252,10 +360,10 @@ namespace Sinbinder.EditorTools
             var light = new GameObject("Свет души").AddComponent<Light>();
             light.type = LightType.Point;
             light.color = new Color(0.45f, 0.8f, 1f);
-            light.range = 1.8f;
-            light.intensity = 2.5f;
+            light.range = 1.5f;
+            light.intensity = 1.6f;
             light.transform.position = at + Vector3.up * 0.2f;
-            var glow = Quad("Огонёк души", at + Vector3.up * 0.16f, Vector3.one * 0.32f, Soft(), new Color(0.9f, 1.8f, 2.6f, 0.9f));
+            var glow = Quad("Огонёк души", at + Vector3.up * 0.14f, Vector3.one * 0.22f, Soft(), new Color(0.7f, 1.4f, 2.2f, 0.55f));
             Flames.Add(glow.transform);
         }
 
@@ -286,7 +394,11 @@ namespace Sinbinder.EditorTools
             var names = new List<string>();
             foreach (var c in clips) if (c != null) names.Add(c.name);
             Notes.Add($"{root.name}: поза {pick.name} (есть: {string.Join(", ", names)})");
+            Sample(animator, pick, phase);
+        }
 
+        private static void Sample(Animator animator, AnimationClip pick, float phase)
+        {
             var graph = PlayableGraph.Create("Поза обложки");
             var output = AnimationPlayableOutput.Create(graph, "поза", animator);
             var play = AnimationClipPlayable.Create(graph, pick);
