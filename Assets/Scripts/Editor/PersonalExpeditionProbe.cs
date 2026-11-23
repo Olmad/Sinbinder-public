@@ -95,7 +95,9 @@ namespace Sinbinder.EditorTools
                 {
                     // Только вошедшие: жители склепа остаются в склепе.
                     if (w == null || w.IsDead || w.Team != Team.Player || w is SinbinderPlayer || !names.Contains(w.DisplayName)) continue;
-                    var spot = at + side * (k % 2 == 0 ? 2f : -2f) * (1 + k / 2);
+                    // На 4 м позади Греховода: 17 м — узнают (20), но перебранка (15) ещё не начата,
+                    // как при обычном подходе.
+                    var spot = at - (first.transform.position - at).normalized * 4f + side * (k % 2 == 0 ? 2f : -2f) * (1 + k / 2);
                     var a = w.GetComponent<NavMeshAgent>();
                     if (a != null && a.isOnNavMesh) a.Warp(spot); else w.transform.position = spot;
                     k++;

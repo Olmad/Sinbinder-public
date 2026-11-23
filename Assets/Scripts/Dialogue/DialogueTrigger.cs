@@ -63,6 +63,8 @@ namespace Sinbinder.Dialogue
 
             if (_battleDialogueTriggered) return;
             if (Time.time - _lastDialogueTime < _dialogueCooldown) return;
+            // Личный счёт только что назван — перебранка подождёт (Survivors, план 69 §7 п.1в).
+            if (Gameplay.PersonalExpedition.HoldBanter) return;
 
             var allies = CombatManager.Instance?.GetAliveAllies() ?? new List<Damageable>();
             var enemies = CombatManager.Instance?.GetAliveEnemies() ?? new List<Damageable>();

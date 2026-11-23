@@ -453,6 +453,13 @@ namespace Sinbinder.Gameplay
         /// <summary>С какого расстояния узнают того, с кем счёт.</summary>
         private const float Recognize=20f;
         private readonly HashSet<Warrior> _spoke=new();
+        private float _lastCallOut=-99f;
+
+        /// <summary>
+        /// Только что прозвучал личный счёт — перебранка отряда (DialogueTrigger) ждёт:
+        /// кадр 23.11 — «Косой Ждан! Прохор Немытый лежит из-за тебя» тонул в чужом разговоре.
+        /// </summary>
+        public static bool HoldBanter => _active!=null && !_active._exiting && Time.time-_active._lastCallOut<8f;
 
         private void OnDeath(Damageable killed,GameObject killer)
         {
@@ -531,6 +538,7 @@ namespace Sinbinder.Gameplay
             AOS.MemoryProcessor.Instance?.CreateMemory(speaker,me ? "MurderedMe" : kill ? "EnemyKilledAlly" : "WoundedMe",target.Id,
                 AOS.EmotionType.Anger,kill ? 0.8f : 0.5f);
             _spoke.Add(speaker);
+            _lastCallOut=Time.time;
             Debug.Log("[ВЫЖИВШИЕ] счёт: "+speaker.DisplayName+" → "+target.DisplayName+" — "+line);
             return true;
         }
