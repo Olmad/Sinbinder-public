@@ -117,6 +117,48 @@ class CorrectedTextRegressions(unittest.TestCase):
                 self.assertIn('msgid "' + ru + '"\nmsgstr "' + en + '"',
                               self.locale)
 
+    def test_court_abstention_avoids_unsupported_world_facts(self):
+        # A small order/rival net is not evidence that the world contains
+        # no threats, debts, loot or memories. Inspect the production path,
+        # not a second hand-written model of the AOS rules.
+        court_scene = read("Assets/Scripts/Gameplay/SoulCourt.cs")
+        self.assertIn("Mathf.Abs(Net) < Audible", court_scene)
+        self.assertIn("order.FindAll(x => x.Abstains && !shortly)", court_scene)
+        self.assertIn("SoulCourtReasons.Idle(j.Module, w)", court_scene)
+        idle = self.court.split("public static string Idle(string module, Warrior w)", 1)[1].split(
+            "// ── что в душе ──", 1)[0]
+        safe = {
+            "Loyalty": "Воздерживаюсь: верность не выбрала сторону.",
+            "Fear": "Воздерживаюсь: страх не выбрал сторону.",
+            "Memory": "Воздерживаюсь: память не выбрала сторону.",
+            "Morality": "Воздерживаюсь: совесть не выбрала сторону.",
+            "Virtue": "Воздерживаюсь: добродетель не выбрала сторону.",
+            "Patience": "Воздерживаюсь: терпение не выбрало сторону.",
+            "Greed": "Воздерживаюсь: жадность не выбрала сторону.",
+            "Pride": "Воздерживаюсь: гордыня не выбрала сторону.",
+            "Wrath": "Воздерживаюсь: гнев не выбрал сторону.",
+            "Envy": "Воздерживаюсь: зависть не выбрала сторону.",
+            "Lust": "Воздерживаюсь: страсть не выбрала сторону.",
+            "Gluttony": "Воздерживаюсь: чревоугодие не выбрало сторону.",
+            "Sloth": "Воздерживаюсь: уныние не выбрало сторону.",
+        }
+        self.assertEqual(set(safe), set(re.findall(r'case "([^"]+)":', idle)))
+        for module, phrase in safe.items():
+            with self.subTest(module=module):
+                self.assertRegex(idle, r'case "' + re.escape(module) +
+                                 r'":\s*return Loc\.T\("' + re.escape(phrase) + r'"\);')
+                self.assertEqual(1, self.locale.count('msgid "' + phrase + '"'))
+                match = re.search(r'^msgid "' + re.escape(phrase) +
+                                  r'"\s*\nmsgstr "([^"]+)"', self.locale, re.MULTILINE)
+                self.assertIsNotNone(match)
+                self.assertFalse(re.search(r"[А-Яа-яЁё]", match.group(1)))
+        for unproved in (
+            "обид и долгов тут нет", "его жизни этот приказ не грозит",
+            "делить тут нечего", "мстить тут некому",
+            "честь его тут не задета", "сравнивать тут не с кем",
+        ):
+            self.assertNotIn(unproved, idle)
+
     def test_all_revised_ru_lines_have_single_english_translation(self):
         phrases = (
             "За твой ответ я заплачу три монеты.",
