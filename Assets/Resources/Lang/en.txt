@@ -10117,8 +10117,8 @@ msgid "Не уходи."
 msgstr "Don't leave."
 
 #: Gameplay/SoulCourt.cs
-msgid "Голоса вровень — душа не выбрала ничего."
-msgstr "The voices are even — the soul chose nothing."
+msgid "Два сильнейших решения слишком близки по весу — душа замешкалась."
+msgstr "The two strongest choices were too close in weight, so the soul hesitated."
 
 #: Gameplay/SoulCourt.cs
 msgid "Приказ отвергнут."
