@@ -21,7 +21,10 @@ namespace Sinbinder.Gameplay
         /// <summary>Кого из отряда убил — через «, », в порядке смертей.</summary>
         public string Killed = "";
         public bool Fled;
-        /// <summary>Почему он здесь: «bound» — покойник места, «caravan» — охрана обоза, «order» — дозор Ордена.</summary>
+        /// <summary>
+        /// Почему он здесь: «bound» — покойник места, «caravan» — охрана обоза, «order» — дозор Ордена,
+        /// «guide» — пришёл с дозором, «robbed» — охрана разграбленного обоза, «hunt» — ищет Греховода сам.
+        /// </summary>
         public string Reason = "";
         /// <summary>
         /// Постоянная личность (Warrior.Id). С ней память AOS о нём — у наших и его о наших —
@@ -188,6 +191,42 @@ namespace Sinbinder.Gameplay
             return list;
         }
 
+        /// <summary>Место охотника: живой, убивший нашего, ищет Греховода сам — пока не встретит.</summary>
+        public const string Hunt = "hunt";
+
+        /// <summary>
+        /// Убил воина — ищет Греховода сам (план 69 §7 п.2): живой, на чьём счету наш, уходит
+        /// со своего места. Зовётся, когда весть доходит до склепа, и только о тех местах,
+        /// откуда её принесли: Греховод — о вылазке, откуда вернулся; отряд — о месте своего боя.
+        /// Покойник места не покидает никогда. Вернёт ушедших и откуда.
+        /// </summary>
+        public static List<(SavedSurvivor who, string left)> GoHunting(ICollection<string> from)
+        {
+            var list = new List<(SavedSurvivor, string)>();
+            if (from == null) return list;
+            foreach (var s in _all)
+                if (!s.Undead && !string.IsNullOrEmpty(s.Killed) && s.Place != Hunt && from.Contains(s.Place))
+                { list.Add((s, s.Place)); s.Place = Hunt; s.Reason = Hunt; }
+            return list;
+        }
+
+        /// <summary>
+        /// Греховод вошёл в вылазку: кто его ищет — здесь. Слух о нём уже был в склепе
+        /// (<see cref="Rumour"/>), поэтому приход не случаен и назван.
+        /// </summary>
+        public static List<SavedSurvivor> JoinHunt(string place)
+        {
+            var list = new List<SavedSurvivor>();
+            if (string.IsNullOrEmpty(place)) return list;
+            foreach (var s in _all) if (s.Place == Hunt) { s.Place = place; list.Add(s); }
+            return list;
+        }
+
+        /// <summary>Слух в склепе — до похода, где охотник появится.</summary>
+        public static string Rumour(SavedSurvivor s)
+            => Loc.F("Слух: {0} ищет Греховода сам — от его руки погибли ваши: {1}. Куда пойдёте вы, туда придёт и он.",
+                     Loc.Name(s.Name), s.Killed);
+
         /// <summary>Записать счёт один раз: та же пара и та же смерть дважды не считаются.</summary>
         public static void Grudge(SavedSurvivor s, string who, string victim, bool ours)
         {
@@ -293,6 +332,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Почему он здесь — строка журнала при входе.</summary>
         public static string Why(SavedSurvivor s, float maxHp)
         {
+            if (s.Reason == Hunt)
+                return Loc.F("{0} пришёл не за добычей, а за вами: слух в склепе не врал.", Loc.Name(s.Name))
+                       + " " + Deed(s, maxHp);
             if (s.Reason == "guide")
                 return Loc.F("{0} пришёл с дозором Ордена: обоз, который он охранял, разграбили, и теперь он служит Ордену — он знает вас в лицо.", Loc.Name(s.Name));
             if (s.Reason == "order")

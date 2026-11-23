@@ -77,7 +77,7 @@ namespace Sinbinder.EditorTools
             foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
                 if (w != null && !w.IsDead && w.Team == Team.Enemy)
                 {
-                    Write($"  страж {w.DisplayName}: {w.HP:F0}/{w.MaxHP:F0}, грех {w.Soul?.Sin}");
+                    Write($"  страж {w.DisplayName}: {w.HP:F0}/{w.MaxHP:F0}, грех {w.Soul?.Sin}, тело {w.Shell}");
                     if (first == null) first = w;
                 }
             if (first != null && SinbinderPlayer.Exists)
@@ -232,6 +232,37 @@ namespace Sinbinder.EditorTools
             for (int i = 0; i < Survivors.ReoccupyAfter; i++) Sorties.Tick();
             Write($"=== ЧАСОВНЯ РАЗГРАБЛЕНА И ЗАЧИЩЕНА, прошло походов: {Survivors.ReoccupyAfter} (время мира {Sorties.Count})");
             return "разграблена; походов прошло " + Survivors.ReoccupyAfter;
+        }
+
+        /// <summary>
+        /// «Убил воина — ищет Греховода сам» (69 §7 п.2) настоящим путём: у обоза записан живой
+        /// охранник, убивший нашего; Греховод входит к обозу и сразу выходит — весть приходит в склеп
+        /// (слух в отчёте и журнале), охранник уходит искать. Потом Revisit: он должен стоять у
+        /// часовни живым и враждебным, с объяснением в журнале.
+        /// </summary>
+        public static string HuntTrail()
+        {
+            if (!EditorApplication.isPlaying || CryptMap.Board == null) return "нужен склеп в игре";
+            if (PersonalExpedition.Active) return "экспедиция идёт — сначала Leave";
+            const string road = "expedition:salt-road";
+            var keep = new List<SavedSurvivor>();
+            foreach (var s in Survivors.All) if (s.Place != road) keep.Add(s);
+            keep.Add(new SavedSurvivor { Name = "Неждан Хмурый", Place = road, Sin = (int)Sinbinder.Core.SinType.Wrath,
+                Undead = false, Meetings = 1, Health = 0.7f, Killed = "Вейн Тихий", Reason = "caravan" });
+            Survivors.Restore(keep);
+            Mission caravan = default; bool found = false;
+            foreach (var m in CryptMap.Board.Missions) if (m.Name == "Соляной обоз") { caravan = m; found = true; }
+            if (!found) return "нет обоза";
+            var names = new List<string>();
+            foreach (var m in SquadRoster.Members) if (names.Count < caravan.Squad - 1 && SquadRoster.CanGo(m)) names.Add(m.Name);
+            if (!PersonalExpedition.Enter(caravan, names, out var error)) { Write("  вход к обозу отказан: " + error); return "вход отказан: " + error; }
+            Object.FindFirstObjectByType<PersonalExpedition>()?.Exit();
+            SavedSurvivor hunting = null;
+            foreach (var s in Survivors.All) if (s.Name == "Неждан Хмурый") hunting = s;
+            Write($"=== ОХОТНИК: у обоза записан живой убийца (Неждан Хмурый, убил Вейна Тихого); вход к обозу и выход");
+            Write($"  отчёт склепа: {CryptMap.Board.LastReport.Replace("\n", " / ")}");
+            Write($"  Неждан теперь: {(hunting == null ? "НЕТ В ПАМЯТИ" : hunting.Place + ", причина " + hunting.Reason)}");
+            return hunting != null && hunting.Place == Survivors.Hunt ? "ушёл искать; отчёт: " + CryptMap.Board.LastReport : "НЕ ушёл";
         }
 
         public static string Leave()

@@ -59,6 +59,23 @@ namespace Sinbinder.Gameplay
             if(state.EnemiesRemaining==0 && state.ClearedAt<0) state.ClearedAt=Sorties.Count;
         }
 
+        /// <summary>
+        /// Весть дошла до склепа (план 69 §7 п.2): живой, убивший нашего, уходит искать Греховода
+        /// сам — на его месте стражей на одного меньше. <paramref name="from"/> — места, откуда
+        /// весть принесли. Вернёт строки слуха для склепа.
+        /// </summary>
+        public static List<string> SendHunters(params string[] from)
+        {
+            var lines=new List<string>();
+            foreach(var (s,left) in Survivors.GoHunting(from))
+            {
+                GuardsFellElsewhere(left,1);
+                lines.Add(Survivors.Rumour(s));
+                Debug.Log($"[ВЫЖИВШИЕ] охотник: {s.Name} ушёл с «{left}» искать Греховода (убил: {s.Killed})");
+            }
+            return lines;
+        }
+
         public static List<SavedPersonalExpedition> SnapshotProgress()
         {
             var list = new List<SavedPersonalExpedition>();
@@ -214,6 +231,10 @@ namespace Sinbinder.Gameplay
                 if (visit._state.EnemiesRemaining < 4) visit._state.EnemiesRemaining++;
                 visit._why.Add(Survivors.Friends(fled));
             }
+            // Кто ищет Греховода сам — приходит туда, куда пошёл он (п.2). Слух о нём был в склепе;
+            // почему он здесь, скажет журнал при входе (Survivors.Why).
+            foreach (var hunter in Survivors.JoinHunt(plan.Id))
+                if (visit._state.EnemiesRemaining < 8) visit._state.EnemiesRemaining++;
 
             visit._mapRoot = ExpeditionMapBuilder.Build(plan);
             if (visit._mapRoot == null)
@@ -384,19 +405,23 @@ namespace Sinbinder.Gameplay
             {
                 Vector3 at=ExpeditionMapBuilder.Point(_plan,(i%2==0?-1f:1f)*(5f+i*2f),
                     _plan.GoalZ-13f-(i/2)*5f);
-                var go=new GameObject(order ? "Дозор Ордена" : _plan.Kind==ExpeditionMapKind.SaltRoad
+                var was=i<known.Count ? known[i] : null;
+                // Охотник пришёл издалека и живым (п.2): место не делает его покойником, а обоз,
+                // который ещё не тронули, не делает мирным — он пришёл за Греховодом.
+                bool hunter=was!=null && was.Reason==Survivors.Hunt;
+                bool bones=undead && !hunter;
+                var go=new GameObject(hunter ? "Ищет Греховода" : order ? "Дозор Ордена" : _plan.Kind==ExpeditionMapKind.SaltRoad
                     ? "Страж соляного обоза" : "Покойник при часовне");
                 go.transform.SetParent(_mapRoot.transform,true);
                 go.transform.position=at;
                 var w=go.AddComponent<Warrior>();
-                var shell=undead ? ShellType.Skeleton : ShellType.Living;
+                var shell=bones ? ShellType.Skeleton : ShellType.Living;
                 // A caravan isn't a battle until the player attacks or
                 // explicitly orders an assault. Chapel defenders remain
                 // hostile from the outset. State persists across visits.
-                Team disposition=_plan.Kind==ExpeditionMapKind.SaltRoad &&
+                Team disposition=!hunter && _plan.Kind==ExpeditionMapKind.SaltRoad &&
                     !_state.CaravanAssaulted && !_state.CaravanPassed
                     ? Team.Neutral : Team.Enemy;
-                var was=i<known.Count ? known[i] : null;
                 string name=was!=null ? was.Name : Survivors.NameFor(order ? "order" : undead ? "bound" : "caravan",taken);
                 taken.Add(name);
                 var sin=was!=null ? (SinType)was.Sin : (SinType)(i%7);
@@ -407,16 +432,17 @@ namespace Sinbinder.Gameplay
                 WarriorLook.Build(go,shell,1.65f,1f,1f);
                 sceneSetup?.SetupWarrior(go);
                 _guards.Add(w);
-                var record=was ?? new SavedSurvivor{Name=name,Sin=(int)sin,Undead=undead};
-                record.Undead=undead;
-                if(record.Reason!="guide") record.Reason=order ? "order" : undead ? "bound" : "caravan";
+                var record=was ?? new SavedSurvivor{Name=name,Sin=(int)sin,Undead=bones};
+                record.Undead=bones;
+                if(record.Reason!="guide" && !hunter) record.Reason=order ? "order" : undead ? "bound" : "caravan";
                 record.Id=w.Id;
                 _met[w]=record;
                 if(was!=null)
                 {
                     // Покойник не лечится: кости с прошлой встречи не срослись.
                     // Живого залечило время — если оно прошло: той же ночью раны те же.
-                    if(was.Health<0.999f && (undead || _return==Return.SameNight))
+                    // Охотник шёл издалека — время у него прошло, что бы ни было с этим местом.
+                    if(was.Health<0.999f && (bones || !hunter && _return==Return.SameNight))
                         go.GetComponent<Damageable>()?.Wound(was.Health);
                     _why.Add(Survivors.Why(was,w.MaxHP));
                     Debug.Log("[ВЫЖИВШИЕ] "+Survivors.Why(was,w.MaxHP));
@@ -863,6 +889,13 @@ namespace Sinbinder.Gameplay
                 {
                     _state.LeftAt = Sorties.Count;
                     if (_state.EnemiesRemaining == 0 && _state.ClearedAt < 0) _state.ClearedAt = Sorties.Count;
+                }
+                // Греховод в склепе — и весть с ним: кто убил нашего и жив, теперь ищет его сам (п.2).
+                // Отсюда — и с дороги: охрана разграбленного обоза ушла туда в этот же выход.
+                foreach (var rumour in SendHunters(_plan != null ? _plan.Id : "", Survivors.Road))
+                {
+                    if (board != null) board.Hear(rumour);
+                    else UnityEngine.Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(rumour);
                 }
             }
             UnityEngine.Object.Destroy(gameObject);

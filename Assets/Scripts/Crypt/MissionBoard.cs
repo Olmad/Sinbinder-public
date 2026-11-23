@@ -715,6 +715,17 @@ namespace Sinbinder.Crypt
             }
             ResolveReturned(found,journey.Commander,away,
                 new List<string>(journey.Party),journey,bodies,spawner);
+            // Отряд принёс весть о месте боя: кто убил нашего и жив — ищет Греховода сам (69 §7 п.2).
+            var place=ExpeditionMapPlan.ForName(journey.MissionName);
+            if(place!=null) foreach(var rumour in Gameplay.PersonalExpedition.SendHunters(place.Id)) Hear(rumour);
+        }
+
+        /// <summary>Слух, принесённый в склеп: в отчёт карты и в журнал.</summary>
+        public void Hear(string rumour)
+        {
+            if(string.IsNullOrEmpty(rumour)) return;
+            LastReport=string.IsNullOrEmpty(LastReport) ? rumour : LastReport+"\n"+rumour;
+            Log(rumour);
         }
 
 

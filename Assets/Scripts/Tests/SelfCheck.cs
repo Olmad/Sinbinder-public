@@ -2539,6 +2539,31 @@ namespace Sinbinder.Tests
                 Check(friends.Count == 1 && friends[0].Name == "Проба Беглец", "бежавший живой возвращается не один, покойник — нет");
                 Check(Survivors.BringFriends(at, Return.Later).Count == 0, "подмогу приводят один раз");
 
+                // Убил воина — ищет Греховода сам (п.2): только живой убийца, только с места, откуда весть.
+                Survivors.Restore(new List<SavedSurvivor>
+                {
+                    new SavedSurvivor { Name = "Проба Убийца", Place = "expedition:salt-road", Killed = "Проба Павший" },
+                    new SavedSurvivor { Name = "Проба Мёртвый Убийца", Place = "expedition:salt-road", Undead = true, Killed = "Проба Павший" },
+                    new SavedSurvivor { Name = "Проба Мирный", Place = "expedition:salt-road" },
+                    new SavedSurvivor { Name = "Проба Дальний", Place = "expedition:roadside-chapel", Killed = "Проба Другой" },
+                });
+                var hunters = Survivors.GoHunting(new[] { "expedition:salt-road" });
+                Check(hunters.Count == 1 && hunters[0].who.Name == "Проба Убийца" && hunters[0].left == "expedition:salt-road"
+                      && hunters[0].who.Place == Survivors.Hunt,
+                      "ищет Греховода только живой, убивший нашего; покойник и не убивавший остаются на месте");
+                Check(Survivors.At("expedition:roadside-chapel").Count == 1,
+                      "весть — только о месте, откуда её принесли: дальний убийца ещё не знает, что о нём узнали");
+                Check(Survivors.GoHunting(new[] { "expedition:salt-road" }).Count == 0, "ушедший охотник второй раз не уходит");
+                string rumour = Survivors.Rumour(hunters[0].who);
+                Check(rumour.Contains(Loc.Name("Проба Убийца")) && rumour.Contains("Проба Павший"),
+                      "слух в склепе называет охотника и того, кого он убил");
+                var joined = Survivors.JoinHunt("expedition:roadside-chapel");
+                Check(joined.Count == 1 && Survivors.At("expedition:roadside-chapel").Count == 2
+                      && Survivors.JoinHunt("expedition:salt-road").Count == 0,
+                      "охотник приходит туда, куда пошёл Греховод, — один раз");
+                Check(Survivors.Why(joined[0], 40f).Contains(Loc.Name("Проба Убийца")) && Survivors.Why(joined[0], 40f).Contains("Проба Павший"),
+                      "при входе сказано, почему он здесь и что на нём");
+
                 // Личные счёты (автор, 23.11): не «отряд вообще», а кто именно — и они в сохранении.
                 var foe = new SavedSurvivor { Name = "Проба Счёт", Place = "expedition:roadside-chapel", Id = "id-проба" };
                 Survivors.Grudge(foe, "Проба Наш", "Проба Павший", false);
