@@ -130,7 +130,55 @@ namespace Sinbinder.Gameplay
 
             Apply();
             Glass();
+            Relief();
             Motes();
+        }
+
+        // ── Рельеф в стекле (автор, 23.11: «в шаре находилась рельефная общая карта с точками
+        // интереса»; «на столе военного совета лежит шар, сейчас с огоньками») ──
+        //
+        // Та же земля, что на карте у шара (UI.ReliefMap): холмы, река, леса, дороги. Огни отрядов
+        // не кружат, а стоят над своими местами: в лагере — у часовни и каменоломни, третий
+        // загорается над заставой, когда отряд ушёл; в склепе — над местами, куда ушли отряды.
+
+        private const float ReliefRadius = 0.36f;   // в долях сферы-примитива (её радиус 0,5)
+        private const float ReliefLift = 0.20f;
+        private const float ReliefDepth = -0.19f;
+        private Transform _relief;
+
+        /// <summary>Куда идут отряды лагеря: двое уже в пути, третий — тот, кого пошлёт игрок.</summary>
+        private static readonly string[] CampSquads = { "Придорожная часовня", "Затопленная каменоломня", "Сожжённая застава" };
+
+        private void Relief()
+        {
+            if (_relief != null) return;
+            var go = new GameObject("Рельеф в шаре");
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = new Vector3(0f, ReliefDepth, 0f);
+            // Север — от игрока, как на карте у шара: стол бывает повёрнут, земля — нет.
+            go.transform.rotation = Quaternion.identity;
+            go.AddComponent<MeshFilter>().sharedMesh = UI.ReliefMap.ReliefMesh(64, ReliefRadius, ReliefLift);
+            var renderer = go.AddComponent<MeshRenderer>();
+            // Без освещения: отмывка уже в картинке, а лампа шара в вершке от земли выжигала её
+            // добела (кадр 23.11). Sprites/Default в сборке есть всегда (на нём и стекло).
+            // Земля — до стекла (очередь 2999); треугольники с севера на юг — дальние раньше.
+            var shader = Shader.Find("Sprites/Default");
+            if (shader == null) { Destroy(go); return; }
+            var mat = new Material(shader) { name = "Рельеф в шаре (код)", mainTexture = UI.ReliefMap.MapTexture(),  // ключ
+                                             renderQueue = 2999, color = new Color(1.15f, 1.12f, 1.05f, 1f) };
+            renderer.sharedMaterial = mat;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            _relief = go.transform;
+        }
+
+        /// <summary>Точка над местом на рельефе, в мире.</summary>
+        private Vector3 Above(string place, float lift)
+        {
+            var uv = UI.ReliefMap.MapPos(place);
+            var d = uv - new Vector2(0.5f, 0.5f);
+            float h = (UI.ReliefMap.HeightAt(uv) + 0.05f) * ReliefLift;
+            return _relief.TransformPoint(new Vector3(d.x * 2f * ReliefRadius, h + lift, d.y * 2f * ReliefRadius));
         }
 
         void Start()
@@ -542,7 +590,7 @@ namespace Sinbinder.Gameplay
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.startLifetime = 1000f;
             main.startSpeed = 0f;
-            main.maxParticles = Mathf.Max(1, _squadsOut) + 1;
+            main.maxParticles = MoteSlots;
 
             var emission = _motes.emission;
             emission.enabled = false;
@@ -564,8 +612,11 @@ namespace Sinbinder.Gameplay
             renderer.receiveShadows = false;
 
             _motes.Play();
-            _moteBuffer = new ParticleSystem.Particle[Mathf.Max(1, _squadsOut) + 1];
+            _moteBuffer = new ParticleSystem.Particle[MoteSlots];
         }
+
+        /// <summary>Ядро, огни лагеря (или отрядов склепа, до восьми) и уголь свободного места.</summary>
+        private int MoteSlots => Mathf.Max(Mathf.Max(1, _squadsOut), 8) + 2;
 
         /// <summary>
         /// Первым — ядро: мягкое пятно цвета шара во всё стекло, яркость —
@@ -586,6 +637,8 @@ namespace Sinbinder.Gameplay
             // Цвет ядра — частица, то есть не ярче единицы; материал огней
             // ярче единицы вдвое, и ядро на тревоге светит, а не лежит.
             Color core = _glow != null ? _glow.color * Mathf.Min(1f, 0.3f * Level()) : Color.black;
+            // Над рельефом ядро тише: иначе пятно света закрыло бы землю в стекле.
+            if (_relief != null && !IsAlarmed) core *= 0.4f;
             _moteBuffer[count++] = new ParticleSystem.Particle
             {
                 position = centre,
@@ -595,14 +648,43 @@ namespace Sinbinder.Gameplay
                 remainingLifetime = 1000f,
             };
 
+            // Склеп: огонь над каждым местом, куда ушёл отряд.
+            if (_relief != null && !_leadsAlarm && _lit == 0)
+                foreach (var journey in Crypt.MissionBoard.Journeys)
+                {
+                    if (count >= _moteBuffer.Length || !UI.ReliefMap.Has(journey.MissionName)) continue;
+                    _moteBuffer[count++] = new ParticleSystem.Particle
+                    {
+                        position = Above(journey.MissionName, 0.10f + 0.02f * Mathf.Sin(t * 1.6f + count)),
+                        startSize = 0.035f * (1f + 0.15f * Mathf.Sin(t * 2.3f + count)),
+                        startColor = new Color32(255, 236, 200, 255),
+                        startLifetime = 1000f,
+                        remainingLifetime = 1000f,
+                    };
+                }
+
+            // Лагерь до совета: свободное место тлеет углём — туда и пойдёт отряд.
+            if (_relief != null && _leadsAlarm && _lit < CampSquads.Length && !IsAlarmed && count < _moteBuffer.Length)
+                _moteBuffer[count++] = new ParticleSystem.Particle
+                {
+                    position = Above(CampSquads[CampSquads.Length - 1], 0.06f),
+                    startSize = 0.022f * (1f + 0.35f * Mathf.Sin(t * 3.1f)),
+                    startColor = new Color32(245, 148, 56, 255),
+                    startLifetime = 1000f,
+                    remainingLifetime = 1000f,
+                };
+
             for (int j = 0; j < _lit && count < _moteBuffer.Length; j++)
             {
                 float angle = t * 0.45f + j * Mathf.PI * 2f / slots;
                 var offset = new Vector3(Mathf.Cos(angle) * 0.085f,
                                          Mathf.Sin(t * 0.8f + j * 1.7f) * 0.04f,
                                          Mathf.Sin(angle) * 0.085f);
+                // Над рельефом огонь стоит над своим местом и чуть покачивается.
+                if (_relief != null && j < CampSquads.Length)
+                    offset = Above(CampSquads[j], 0.10f + 0.015f * Mathf.Sin(t * 1.4f + j * 1.7f)) - centre;
 
-                float size = 0.045f * (1f + 0.15f * Mathf.Sin(t * 2.3f + j));
+                float size = (_relief != null ? 0.03f : 0.045f) * (1f + 0.15f * Mathf.Sin(t * 2.3f + j));
                 float alpha = 1f;
                 if (j == _dying)
                 {

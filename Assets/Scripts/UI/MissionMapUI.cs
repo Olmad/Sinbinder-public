@@ -155,11 +155,26 @@ namespace Sinbinder.UI
             if (CryptMap.Opened) SquadRoster.RefreshFromScene(MissionBoard.Squad());
 
             _pickingCommander = false;
+            Enlarge();
             ShowMissions();
 
             _shown = this;
             _panel.SetActive(true);
             Core.GamePauseController.Instance?.Pause();
+        }
+
+        /// <summary>
+        /// Панель шара крупнее прежнего списка (1000×640 из сборщика сцены): шар с картой и
+        /// карточка с кадром места в старую не помещались (кадр 23.11 — кнопки за краем).
+        /// </summary>
+        private void Enlarge()
+        {
+            EnsureScrolling();
+            if (_panel.transform is RectTransform panel && panel.sizeDelta.x < 1400f)
+                panel.sizeDelta = new Vector2(1400f, 880f);
+            var view = _missionScroll != null ? _missionScroll.viewport : _rows;
+            if (view != null && view.sizeDelta.y < 760f)
+                view.sizeDelta = new Vector2(view.sizeDelta.x, 880f - 86f - 24f);
         }
 
         private void Close()
@@ -182,11 +197,6 @@ namespace Sinbinder.UI
                     : _board.LastReport;
 
             Rows(out float y);
-            _spawned.Add(Row(y, true, Loc.T("Продолжить игру"),
-                MissionBoard.Journeys.Count > 0
-                    ? Loc.T("Время вылазок остановлено, пока открыта карта.") : "",
-                "", Close, 68f));
-            y -= 76f;
 
             // Карта окрестностей с точками экспедиций (автор, 23.11: «открывается небольшая карта
             // с точками интереса… нажимает на точку — описание, выйти и продолжить, как в This Is
@@ -323,8 +333,12 @@ namespace Sinbinder.UI
             _card = true;
             _chosen = m;
 
-            if (_title != null) _title.text = Loc.Name(m.Name) + Loc.T("  Esc — назад");
+            if (_title != null) _title.text = Loc.T("Экспедиция") + Loc.T("  Esc — назад");
             Rows(out float y);
+            // Шапка — кадр места и имя поверх (автор, 23.11: «сверху нужен эпичный красивый кадр локации»).
+            y -= ReliefMap.Header(_rows, y, 300f, m.Name, Loc.Name(m.Name), _font) + 8f;
+            _spawned.Add(_rows.GetChild(_rows.childCount - 1).gameObject);
+            Grow(y, 0f);
 
             // Людей меньше, чем советуют, — не запрет (с 16 октября):
             // послать можно и одного. Строка говорит, сколько советуют
@@ -780,34 +794,20 @@ namespace Sinbinder.UI
             return go;
         }
 
-        // ── Карта окрестностей (автор, 23.11) ──
+        // ── Карта окрестностей в шаре (автор, 23.11: «в шаре — рельефная общая карта с точками
+        // интереса») ──
 
-        // Где точка на карте: доли ширины и высоты. Порядок и места постоянны — карта, которая
-        // тасуется, отняла бы у игрока сравнение (MissionCatalog). Склеп — дом, слева.
-        private static readonly Dictionary<string, Vector2> Spots = new()
-        {
-            ["Соляной обоз"] = new Vector2(0.24f, 0.30f),
-            ["Придорожная часовня"] = new Vector2(0.40f, 0.68f),
-            ["Затопленная каменоломня"] = new Vector2(0.60f, 0.30f),
-            ["Сожжённая застава"] = new Vector2(0.64f, 0.80f),
-            ["Старый гарнизон"] = new Vector2(0.86f, 0.62f),
-            ["Костяная топь"] = new Vector2(0.87f, 0.22f),
-        };
-        private static readonly Vector2 Home = new Vector2(0.07f, 0.52f);
-        private static readonly string[][] Roads =
-        {
-            new[] { "", "Соляной обоз" }, new[] { "", "Придорожная часовня" },
-            new[] { "Придорожная часовня", "Сожжённая застава" }, new[] { "Соляной обоз", "Затопленная каменоломня" },
-            new[] { "Затопленная каменоломня", "Костяная топь" }, new[] { "Сожжённая застава", "Старый гарнизон" },
-        };
+        private Text _preview;
 
-        private static Vector2 SpotOf(string name)
-            => string.IsNullOrEmpty(name) ? Home : Spots.TryGetValue(name, out var p) ? p : new Vector2(0.5f, 0.5f);
-
-        /// <summary>Карта с точками: дороги, склеп, места. Нажатие на место — его карточка. Вернёт высоту.</summary>
+        /// <summary>
+        /// Слева — шар с рельефной картой (<see cref="ReliefMap"/>, та же земля, что в стекле на
+        /// столе): склеп, пепелище лагеря, места; огни — отряды в пути. Справа — что за место под
+        /// курсором, подсказка, охотник и выход. Нажатие на место — его карточка. Вернёт высоту.
+        /// </summary>
         private float MapBlock(float y)
         {
-            const float height = 440f;
+            float view = _missionScroll != null ? _missionScroll.viewport.rect.height : 550f;
+            float height = Mathf.Max(540f, view - 10f), ball = height - 20f;
             var go = new GameObject("Карта окрестностей", typeof(RectTransform));
             go.transform.SetParent(_rows, false);
             var rt = (RectTransform)go.transform;
@@ -816,21 +816,16 @@ namespace Sinbinder.UI
             rt.sizeDelta = new Vector2(0f, height);
             rt.anchoredPosition = new Vector2(0f, y);
             Grow(y, height);
-            go.AddComponent<Image>().color = new Color(0.14f, 0.12f, 0.09f, 0.95f);
             _spawned.Add(go);
-            Label(rt, Loc.T("Окрестности склепа. Нажмите на место, чтобы прочесть о нём."), 20, new Vector2(18f, -10f), 28f, false);
 
-            var area = new GameObject("Поле карты", typeof(RectTransform));
-            area.transform.SetParent(rt, false);
-            var field = (RectTransform)area.transform;
-            field.anchorMin = Vector2.zero; field.anchorMax = Vector2.one;
-            field.offsetMin = new Vector2(40f, 40f); field.offsetMax = new Vector2(-40f, -60f);
-            float w = Mathf.Max(1f, field.rect.width), h = Mathf.Max(1f, field.rect.height);
-
-            var road = new Color(0.42f, 0.36f, 0.27f, 0.85f);
-            foreach (var pair in Roads) Line(field, SpotOf(pair[0]), SpotOf(pair[1]), w, h, road);
-
-            Point(field, Home, Loc.T("Склеп"), "", new Color(0.55f, 0.75f, 0.85f), true, null);
+            var sphere = ReliefMap.Ball(rt, ball, new Vector2(0f, -10f));
+            foreach (var journey in MissionBoard.Journeys)
+                if (ReliefMap.Has(journey.MissionName))
+                    ReliefMap.Glow(sphere, journey.MissionName, new Color(1f, 0.93f, 0.78f));
+            ReliefMap.Point(sphere, ReliefMap.Camp, Loc.T("Пепелище лагеря"), "", new Color(0.55f, 0.50f, 0.46f),
+                            false, _font, null, home: true);
+            ReliefMap.Point(sphere, ReliefMap.Crypt, Loc.T("Склеп"), "", new Color(0.55f, 0.75f, 0.85f),
+                            true, _font, null, home: true);
             foreach (var mission in _board.Missions)
             {
                 var m = mission;
@@ -838,86 +833,83 @@ namespace Sinbinder.UI
                 var plan = ExpeditionMapPlan.ForName(m.Name);
                 bool known = plan != null && Survivors.KnownAt(plan.Id).Count > 0;
                 bool been = plan != null && PersonalExpedition.KnownAbout(plan).Count > 0;
-                string note = known ? Loc.T("там ждут знакомые") : been ? Loc.T("вы там были") : "";
-                var colour = known ? new Color(0.85f, 0.32f, 0.25f) : new Color(0.86f, 0.70f, 0.36f);
-                Point(field, SpotOf(m.Name), Loc.Name(m.Name), note, colour, can, () => ShowCard(m));
+                bool away = false;
+                foreach (var j in MissionBoard.Journeys) away |= j.MissionName == m.Name;
+                string note = away ? Loc.T("там ваш отряд") : known ? Loc.T("там ждут знакомые") : been ? Loc.T("вы там были") : "";
+                var colour = known ? new Color(0.90f, 0.36f, 0.28f) : new Color(0.92f, 0.76f, 0.40f);
+                ReliefMap.Point(sphere, m.Name, Loc.Name(m.Name), note, colour, can, _font, () => ShowCard(m), () => Preview(m));
             }
 
-            // Кто ищет Греховода сам — известно по слуху, принесённому в склеп; места у него нет —
-            // он там, куда пойдёте вы. Строка внизу карты, а не под ней: под картой её не видно.
+            // Правый столбец.
+            float x = ball + 24f, w = Mathf.Max(200f, (_rows.rect.width > 10f ? _rows.rect.width : 952f) - x - 8f);
+            TextAt(rt, x, -14f, w, 40f, Loc.T("Окрестности склепа"), 28, new Color(0.95f, 0.90f, 0.80f));
+            TextAt(rt, x, -56f, w, 96f, FirstTime()
+                ? Loc.T("Места в шаре — куда можно идти. Нажмите на место — прочтёте слух и что о нём известно. "
+                      + "Повести можно старшего — отряд уйдёт сам, бой решат души; а можно повести самому.")
+                : Loc.T("Нажмите на место в шаре, чтобы прочесть о нём."), 19, new Color(0.78f, 0.74f, 0.68f));
+            _preview = TextAt(rt, x, -164f, w, 260f, Loc.T("Наведите на место — здесь будет, что о нём говорят."),
+                              20, new Color(0.86f, 0.83f, 0.78f));
+
             var hunters = Survivors.Hunters();
             if (hunters.Count > 0)
             {
+                // Кто ищет Греховода сам — известно по слуху, принесённому в склеп; места у него нет —
+                // он там, куда пойдёте вы.
                 var names = new List<string>();
                 foreach (var hunter in hunters) names.Add(Survivors.Shown(hunter));
-                var line = Caption(rt, Loc.F("Ищет Греховода: {0}. Куда пойдёте вы, туда придёт и он.",
-                    string.Join(", ", names)), 19, -(height - 34f), true);
-                var lt = (RectTransform)line.transform;
-                lt.offsetMin = new Vector2(18f, lt.offsetMin.y);
-                lt.offsetMax = new Vector2(-18f, lt.offsetMax.y);
-                line.color = new Color(0.85f, 0.32f, 0.25f);
+                TextAt(rt, x, -440f, w, 70f, Loc.F("Ищет Греховода: {0}. Куда пойдёте вы, туда придёт и он.",
+                    string.Join(", ", names)), 18, new Color(0.90f, 0.36f, 0.28f));
             }
+
+            if (MissionBoard.Journeys.Count > 0)
+                TextAt(rt, x, -(height - 108f), w, 30f, Loc.T("Время вылазок остановлено, пока открыта карта."),
+                       16, new Color(0.62f, 0.58f, 0.52f));
+            ButtonAt(rt, x, -(height - 74f), w, 64f, Loc.T("Продолжить игру"), Close);
             return height;
         }
 
-        /// <summary>Дорога между двумя точками карты — тонкая полоса под углом.</summary>
-        private static void Line(RectTransform field, Vector2 a, Vector2 b, float w, float h, Color colour)
+        /// <summary>Первый поход ещё не начат: ни отряд не уходил, ни Греховод не водил сам.</summary>
+        private bool FirstTime()
+            => _board != null && _board.Sent == 0 && !PersonalExpedition.SnapshotProgress().Exists(s => s.Visits > 0);
+
+        /// <summary>Что за место под курсором: имя, слух, опасность словами.</summary>
+        private void Preview(Mission m)
         {
-            var go = new GameObject("Дорога", typeof(RectTransform));
-            go.transform.SetParent(field, false);
-            var rt = (RectTransform)go.transform;
-            Vector2 pa = new Vector2(a.x * w, a.y * h), pb = new Vector2(b.x * w, b.y * h);
-            Vector2 mid = (pa + pb) * 0.5f, d = pb - pa;
-            rt.anchorMin = rt.anchorMax = Vector2.zero;
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(d.magnitude, 4f);
-            rt.anchoredPosition = mid;
-            rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
-            var img = go.AddComponent<Image>();
-            img.color = colour;
-            img.raycastTarget = false;
+            if (_preview == null) return;
+            _preview.text = $"<size=25>{Loc.Name(m.Name)}</size>\n{m.Rumour}\n\n{MissionCatalog.Danger(m)}";
         }
 
-        /// <summary>Точка карты: ромб, имя под ним и строка о том, что известно. Нажатие — карточка.</summary>
-        private void Point(RectTransform field, Vector2 at, string title, string note, Color colour, bool bright, System.Action onClick)
+        private Text TextAt(RectTransform parent, float x, float top, float width, float height, string text, int size, Color colour)
         {
-            var go = new GameObject(title, typeof(RectTransform));
-            go.transform.SetParent(field, false);
+            var go = new GameObject("Текст", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
             var rt = (RectTransform)go.transform;
-            rt.anchorMin = rt.anchorMax = at;
-            rt.pivot = new Vector2(0.5f, 0.75f);
-            rt.sizeDelta = new Vector2(240f, 96f);
-            rt.anchoredPosition = Vector2.zero;
-            // Прозрачная плашка ловит нажатие по всей подписи, а не только по ромбу.
-            var hit = go.AddComponent<Image>();
-            hit.color = new Color(0f, 0f, 0f, 0.001f);
-            if (onClick != null && bright)
-            {
-                var button = go.AddComponent<Button>();
-                button.targetGraphic = hit;
-                var tint = button.colors; tint.highlightedColor = new Color(1f, 1f, 1f, 0.12f); button.colors = tint;
-                button.onClick.AddListener(() => onClick());
-            }
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f); rt.pivot = new Vector2(0f, 1f);
+            rt.sizeDelta = new Vector2(width, height);
+            rt.anchoredPosition = new Vector2(x, top);
+            var label = go.AddComponent<Text>();
+            label.font = _font; label.fontSize = size; label.text = text; label.color = colour;
+            label.supportRichText = true; label.raycastTarget = false;
+            label.horizontalOverflow = HorizontalWrapMode.Wrap; label.verticalOverflow = VerticalWrapMode.Truncate;
+            label.alignment = TextAnchor.UpperLeft;
+            return label;
+        }
 
-            var mark = new GameObject("Ромб", typeof(RectTransform));
-            mark.transform.SetParent(rt, false);
-            var mt = (RectTransform)mark.transform;
-            mt.anchorMin = mt.anchorMax = new Vector2(0.5f, 0.75f);
-            mt.sizeDelta = new Vector2(22f, 22f);
-            mt.anchoredPosition = Vector2.zero;
-            mt.localRotation = Quaternion.Euler(0f, 0f, 45f);
-            var img = mark.AddComponent<Image>();
-            img.color = bright ? colour : colour * 0.5f;
-            img.raycastTarget = false;
-
-            var name = Caption(rt, title, 22, -42f, bright);
-            name.alignment = TextAnchor.UpperCenter;
-            if (!string.IsNullOrEmpty(note))
-            {
-                var line = Caption(rt, note, 16, -70f, bright);
-                line.alignment = TextAnchor.UpperCenter;
-                line.color = new Color(colour.r, colour.g, colour.b, bright ? 1f : 0.5f);
-            }
+        private void ButtonAt(RectTransform parent, float x, float top, float width, float height, string text, System.Action onClick)
+        {
+            var go = new GameObject(text, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f); rt.pivot = new Vector2(0f, 1f);
+            rt.sizeDelta = new Vector2(width, height);
+            rt.anchoredPosition = new Vector2(x, top);
+            var plate = go.AddComponent<Image>();
+            plate.color = new Color(0.14f, 0.12f, 0.10f, 0.95f);
+            var button = go.AddComponent<Button>();
+            button.targetGraphic = plate;
+            button.onClick.AddListener(() => onClick());
+            var label = Caption(rt, text, 26, -16f, true);
+            label.alignment = TextAnchor.UpperCenter;
         }
 
         private Text Caption(RectTransform parent, string text, int size, float top, bool bright)

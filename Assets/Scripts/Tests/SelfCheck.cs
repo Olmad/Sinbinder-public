@@ -2448,7 +2448,8 @@ namespace Sinbinder.Tests
                     "Gameplay.SquadGear.Slots Gameplay.SquadOrders.InDemo Gameplay.Survivors._dead Gameplay.Survivors._living " +
                     "Gameplay.Survivors._order Gameplay.Survivors._ranks Gameplay.TugBench.Markers Gameplay.TugBench.Shells Gameplay.TugTutorial.Lessons " +
                     "Gameplay.TugTutorial.Objectives Gameplay.Wardrobe.Hands Gameplay.Wardrobe.Hollows Gameplay.Wardrobe.Soft " +
-                    "Gameplay.Wardrobe.SoftMeshes Gameplay.Wardrobe.Worn UI.MissionMapUI.Roads UI.MissionMapUI.Spots " +
+                    "Gameplay.Wardrobe.SoftMeshes Gameplay.Wardrobe.Worn Gameplay.CrystalBall.CampSquads UI.ReliefMap.Places " +
+                    "UI.ReliefMap.RoadPairs UI.ReliefMap.River UI.ReliefMap.Art UI.ReliefMap._colors UI.ReliefMap._heights " +
                     "UI.ScalesOverhead.Corners UI.SpeechBubbles.Corners " +
                     "UI.SquadStrategyUI.Keys"));
 
