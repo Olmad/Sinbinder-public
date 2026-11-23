@@ -46,7 +46,7 @@ for kind, ru, en in labels:
     assert branch + ' => Loc.T("' + ru + '")' in stage, (branch, ru)
     key = 'msgid "' + ru + '"'
     assert locale.count(key) == 1, (ru, "missing or duplicate PO key")
-    assert key + '\\nmsgstr "' + en + '"' in locale, (ru, "not loaded by Loc.Parse")
+    assert key + '\nmsgstr "' + en + '"' in locale, (ru, "not loaded by Loc.Parse")
 assert "Выступление=Departure" not in locale, "legacy key=value is not a valid PO translation"
 print("PASS: seven replay stage labels use actual Loc.T + PO translations")
 
