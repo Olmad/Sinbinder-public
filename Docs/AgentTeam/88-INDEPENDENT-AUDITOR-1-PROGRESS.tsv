@@ -368,7 +368,7 @@ Assets/Scripts/Gameplay/MomentCamera.cs	9a8bf8876a7ff86b88260e6c00f741f3ba81ce42
 Assets/Scripts/Gameplay/MoonDisc.cs	3acf5309737e6c901ca6277454f8a7fdac50e3c3	7422	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/MoonShafts.cs	de81b631286ea41a9f7145223c8fa4a7e66cca1d	8825	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/OpeningReveal.cs	8a002898a85d847ad036d174058972370e0778ff	34753	CSharp	0	0	0	0	UNINSPECTED	
-Assets/Scripts/Gameplay/OrderAdvice.cs	eb296da60a13cd9825e600ca33174f5da4ec76bf	5303	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/Gameplay/OrderAdvice.cs	eb296da60a13cd9825e600ca33174f5da4ec76bf	5303	CSharp	0	0	0	0	UNKNOWN_CONTEXT	QA2 2026-11-23 source-level: blob eb296da60a13cd9825e600ca33174f5da4ec76bf; complete Short/Next advice catalog read, factor precedence over voice; advice is imperative suggestion, not guaranteed obedience. Potential unsupported presupposition: Murderer advice says 'его убийц' while AOSDecisionAdvice selects Murderer on KnownMurdererInSight; need establish memory source and target identity before FAIL/PASS. Loc.T call site identified but English PO equivalence not verified. Runtime UNKNOWN; no semantic PASS.
 Assets/Scripts/Gameplay/PatienceSkills.cs	acc6efcf65e8d83f2a9b75d6ff779dfc2298f96a	4845	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/PendingCommand.cs	ea1bde459ece1af0701f53a2dfe7119bcab0445f	4842	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Gameplay/PersonalExpedition.cs	21dbe9dac0a9f7379c23f06b544229f7f982f386	25891	CSharp	0	0	0	0	UNINSPECTED	
@@ -481,7 +481,7 @@ Assets/Scripts/Tools/blender/motion/SitIdle.json	2dbf0fed8e42e646928c1f0cb52e63c
 Assets/Scripts/Tools/blender/motion/Stand.json	351756a0ca3cd9c4d39639d6143aa6d3ef725789	322742	JSON	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Tools/blender/motion/SwordSlash.json	5f8c0197e04402ea080e2f5c120d4f647a29a42a	52396	JSON	0	0	0	0	UNINSPECTED	
 Assets/Scripts/Tools/blender/motion/Walking.json	068afe4088725bb8eda93f9e7152473d3032f817	36389	JSON	0	0	0	0	UNINSPECTED	
-Assets/Scripts/UI/AOSDecisionAdvice.cs	bc1654cb7e2a8a3455e7416642ae9455d7bd6a9f	2441	CSharp	0	0	0	0	UNINSPECTED	
+Assets/Scripts/UI/AOSDecisionAdvice.cs	bc1654cb7e2a8a3455e7416642ae9455d7bd6a9f	2441	CSharp	0	0	0	0	UNKNOWN_CONTEXT	QA2 2026-11-23 source-level: blob bc1654cb7e2a8a3455e7416642ae9455d7bd6a9f; Next/NextShort require HasCommand plus RefusedCommand or Hesitated; weighed decisions use Decisive factor, otherwise prioritize CommandVolume<0.75, unpaid missions, known murderer in sight, endangered ally, surrounded, fatigue, wounds; Loc.T wraps OrderAdvice; Fulfilled additionally requires context.SatisfiedBy(action). No direct promise of obedience. UNKNOWN: provenance and calibration of context flags, actual UI caller, RU/EN PO keys, runtime. No semantic PASS.
 Assets/Scripts/UI/BattleLogUI.cs	b3f15c540d73d3d71e257c0a6f438a9d6908b77b	12240	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/UI/Billboard.cs	aec098869c65a028b46ed23213e30090227a4ecd	4502	CSharp	0	0	0	0	UNINSPECTED	
 Assets/Scripts/UI/CheatSpawner.cs	b34dee30f262052b0a2cdc38e6afb842dd96a275	4373	CSharp	0	0	0	0	UNINSPECTED	
