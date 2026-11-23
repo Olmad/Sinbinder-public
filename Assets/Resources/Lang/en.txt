@@ -6077,51 +6077,51 @@ msgstr ""
 
 #: Dialogue/VillageLines.cs
 msgid "Мы им не дичь."
-msgstr ""
+msgstr "We're not their prey."
 
 #: Dialogue/VillageLines.cs
 msgid "Придут — тогда и встанем."
-msgstr ""
+msgstr "We'll get up when they arrive."
 
 #: Dialogue/VillageLines.cs
 msgid "С охотника снять есть что."
-msgstr ""
+msgstr "Hunters have things worth taking."
 
 #: Dialogue/VillageLines.cs
 msgid "К соседям бы сперва зашли."
-msgstr ""
+msgstr "They could visit the neighbors first."
 
 #: Dialogue/VillageLines.cs
 msgid "Лишь бы не к нашим очагам."
-msgstr ""
+msgstr "As long as they stay away from our hearths."
 
 #: Dialogue/VillageLines.cs
 msgid "Значит, спать вполглаза."
-msgstr ""
+msgstr "Then we'll sleep with one eye open."
 
 #: Dialogue/VillageLines.cs
 msgid "Пойдёт тот, кому заплатят."
-msgstr ""
+msgstr "Whoever gets paid will go."
 
 #: Dialogue/VillageLines.cs
 msgid "Я бы пошёл. Позвал бы кто."
-msgstr ""
+msgstr "I'd go, if someone asked."
 
 #: Dialogue/VillageLines.cs
 msgid "Без меня сходят."
-msgstr ""
+msgstr "They can go without me."
 
 #: Dialogue/VillageLines.cs
 msgid "Позовут лучших — пойду."
-msgstr ""
+msgstr "If they call the best, I'll go."
 
 #: Dialogue/VillageLines.cs
 msgid "Сходят другие — и всё им достанется."
-msgstr ""
+msgstr "Others will go and take all the rewards."
 
 #: Dialogue/VillageLines.cs
 msgid "Не наше это дело. Пока."
-msgstr ""
+msgstr "Not our business. Not yet."
 
 #: Dialogue/VillageLines.cs
 msgid "Сколько у тебя припрятано? Только честно."
@@ -6213,7 +6213,7 @@ msgstr "Start anew"
 
 #: Editor/DoorCheck.cs UI/PauseMenu.cs
 msgid "Проснуться"
-msgstr ""
+msgstr "Wake up"
 
 #: Gameplay/BodyWorth.cs
 msgid "Чужой клинок"
@@ -12346,7 +12346,7 @@ msgstr ""
 
 #: UI/PauseMenu.cs
 msgid "пропустить сон — в лагерь"
-msgstr ""
+msgstr "skip the dream and return to camp"
 
 #: UI/PauseMenu.cs
 msgid "Сон Греховода"
@@ -14730,3 +14730,19 @@ msgstr "Actual healing: {0}."
 #: UI/ExpeditionReplayViewer.cs
 msgid "Гибель цели подтверждена."
 msgstr "Target death confirmed."
+
+#: Dialogue/stage1-fact-review
+msgid "Пусть приходят. Встретим как следует."
+msgstr "Let them come. We'll give them a proper welcome."
+
+#: Dialogue/stage1-fact-review
+msgid "Своё добро берегу. Хочешь проверить?"
+msgstr "I keep my belongings safe. Want to test me?"
+
+#: Dialogue/stage1-fact-review
+msgid "Была бы горбушка хлеба — до вечера бы не дожила."
+msgstr "If I had a heel of bread, it wouldn't last until evening."
+
+#: Dialogue/stage1-fact-review
+msgid "Была бы горбушка — поделился бы. Наверное."
+msgstr "If I had some bread, I'd share it. Probably."
