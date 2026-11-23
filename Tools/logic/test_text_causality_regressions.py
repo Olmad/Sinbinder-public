@@ -136,6 +136,25 @@ class CorrectedTextRegressions(unittest.TestCase):
         self.assertIsNotNone(found)
         self.assertEqual("The two strongest choices were too close in weight, so the soul hesitated.", found.group(1))
 
+    def test_court_final_verdict_excludes_abstaining_judges(self):
+        # Net in (-Audible, +Audible) is not a counted vote. In particular,
+        # weak negative/positive weights cannot make a bench appear split.
+        scene = read("Assets/Scripts/Gameplay/SoulCourt.cs")
+        sentence = scene.split("private static string Sentence(", 1)[1].split(
+            "private static string Weight(", 1)[0]
+        self.assertIn("if (j.Abstains) continue;", sentence)
+        self.assertIn("if (j.ForOrder) proSum += Mathf.Abs(j.Net);", sentence)
+        self.assertIn("else conSum += Mathf.Abs(j.Net);", sentence)
+        self.assertIn("Roll(judges.FindAll(j => !j.Abstains && !j.ForOrder))",
+                      sentence)
+        self.assertIn("Roll(judges.FindAll(j => !j.Abstains && j.ForOrder))",
+                      sentence)
+        # Guard the direction and ensure the old unfiltered formula is gone.
+        self.assertNotIn("Roll(judges.FindAll(j => !j.ForOrder))", sentence)
+        self.assertNotIn("Roll(judges.FindAll(j => j.ForOrder))", sentence)
+        self.assertIn("Mathf.Abs(Net) < Audible", scene)
+        self.assertIn("var voting = judges.FindAll(j => !j.Abstains);", scene)
+
     def test_court_abstention_avoids_unsupported_world_facts(self):
         # A small order/rival net is not evidence that the world contains
         # no threats, debts, loot or memories. Inspect the production path,
