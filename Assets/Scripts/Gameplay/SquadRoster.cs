@@ -72,6 +72,14 @@ namespace Sinbinder.Gameplay
             public bool Legend;
 
             /// <summary>
+            /// Подвиги, уважение и страх (ReputationData) — путь к званию. С 23.11 живут здесь,
+            /// как звание: тело остаётся в сцене, и счёт подвигов обнулялся каждой сменой доли.
+            /// </summary>
+            public List<AOS.DeedRecord> Deeds;
+            public float Respect;
+            public float Fear;
+
+            /// <summary>
             /// Заработанный титул словом («Костекоп»; пусто — нет). Живёт
             /// здесь с 16 октября: титул лежит на теле (<c>ReputationData</c>),
             /// тело остаётся в сцене, и заслуживший имя в набеге входил в склеп
@@ -433,6 +441,11 @@ namespace Sinbinder.Gameplay
                 if (!ambiguous.Contains(i) && owners.TryGetValue(i, out var warrior))
                 {
                     member = CaptureEquipment(warrior, member);
+                    // Звание и подвиги, заслуженные в этой же сцене, — тоже в запись (проверка 23.11:
+                    // снимок брал только вещи, и загрузка отнимала имя, полученное после смены доли).
+                    string title = AOS.TitleManager.TitleOf(warrior);
+                    if (!string.IsNullOrEmpty(title)) member.Title = title;
+                    CaptureDeeds(warrior, ref member);
                     if (captureCondition) member = CaptureCondition(warrior, member);
                 }
                 yield return member;
@@ -574,7 +587,37 @@ namespace Sinbinder.Gameplay
             member.IsAway = false;
             member.Shell = w.Shell;
             member.Title = AOS.TitleManager.TitleOf(w);
+            CaptureDeeds(w, ref member);
             return CaptureEquipment(w, CaptureCondition(w, member));
+        }
+
+        /// <summary>Подвиги с тела — копией: тело в сцене живёт своей жизнью дальше.</summary>
+        public static void CaptureDeeds(Warrior w, ref Member member)
+        {
+            var rep = w != null ? w.Reputation : null;
+            if (rep == null) return;
+            member.Deeds = CopyDeeds(rep.Deeds);
+            member.Respect = rep.Respect;
+            member.Fear = rep.Fear;
+        }
+
+        /// <summary>Подвиги — на тело (спавн, загрузка на месте). Нет записи — тело не трогаем.</summary>
+        public static void ApplyDeeds(Warrior w, Member member)
+        {
+            var rep = w != null ? w.Reputation : null;
+            if (rep == null || member.Deeds == null) return;
+            rep.Deeds = CopyDeeds(member.Deeds);
+            rep.Respect = member.Respect;
+            rep.Fear = member.Fear;
+        }
+
+        public static List<AOS.DeedRecord> CopyDeeds(List<AOS.DeedRecord> deeds)
+        {
+            var list = new List<AOS.DeedRecord>();
+            if (deeds == null) return list;
+            foreach (var d in deeds)
+                if (d != null) list.Add(new AOS.DeedRecord { Type = d.Type, Importance = d.Importance });
+            return list;
         }
 
         private static Member CaptureCondition(Warrior warrior, Member member)

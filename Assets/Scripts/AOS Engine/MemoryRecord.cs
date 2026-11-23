@@ -4,6 +4,19 @@ using UnityEngine;
 
 namespace Sinbinder.AOS
 {
+    /// <summary>Воспоминание в файле: чьё оно и сколько ему секунд (не Time.time — часы сессии).</summary>
+    [Serializable]
+    public class SavedMemory
+    {
+        public string Owner;
+        public string EventType;
+        public string TargetID;
+        public int Emotion;
+        public float Importance;
+        public float DecayRate;
+        public float Age;
+    }
+
     [Serializable]
     public class MemoryRecord
     {

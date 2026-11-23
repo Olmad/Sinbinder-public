@@ -140,8 +140,23 @@ namespace Sinbinder.Core
                     Legend = m.Legend,
                     Shell = (int)m.Shell,
                     Title = m.Title,
+                    HasSeed = m.Seed != null,
+                    Seed = CopyMemorySeed(m.Seed),
+                    Deeds = SquadRoster.CopyDeeds(m.Deeds),
+                    Respect = m.Respect,
+                    Fear = m.Fear,
                 });
             }
+
+            // Память AOS — тех, кто живёт дольше сцены: отряд и выжившие стражи.
+            var owners = new HashSet<string>();
+            foreach (var m in save.Squad) if (!string.IsNullOrEmpty(m.WarriorId)) owners.Add(m.WarriorId);
+            foreach (var s in save.Survivors) if (!string.IsNullOrEmpty(s.Id)) owners.Add(s.Id);
+            save.AosMemories = Sinbinder.AOS.MemoryProcessor.Snapshot(owners);
+
+            var hero = Gameplay.SinbinderPlayer.Exists ? Gameplay.SinbinderPlayer.Instance : null;
+            if (hero != null && !hero.IsDead)
+                save.HeroHealth = Gameplay.ExpeditionHealthRules.Capture(hero.HP, hero.MaxHP);
 
             var souls = SoulManager.Instance;
             if (souls != null)
@@ -485,6 +500,11 @@ namespace Sinbinder.Core
                     Legend = m.Legend,
                     Shell = (ShellType)m.Shell,
                     Title = m.Title ?? "",
+                    Seed = m.HasSeed ? CopyMemorySeed(m.Seed) : null,
+                    // Старая запись подвигов не несла: null — тело остаётся со своими.
+                    Deeds = m.Deeds != null && m.Deeds.Count > 0 ? SquadRoster.CopyDeeds(m.Deeds) : null,
+                    Respect = m.Respect,
+                    Fear = m.Fear,
                 };
                 members.Add(member);
                 if (living != null) mappedBodies.Add(living, member);
@@ -498,6 +518,10 @@ namespace Sinbinder.Core
             Gameplay.Sorties.Restore(save.Sorties);
             Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays);
             Gameplay.ExpeditionMemoryLedger.Restore(save.ExpeditionMemories);
+            Sinbinder.AOS.MemoryProcessor.Restore(save.AosMemories);
+            // Смена сцены: прежний Греховод ещё здесь — здоровье ждёт нового (SinbinderPlayer.Update).
+            HeroHealthOnArrival = save.HeroHealth;
+            if (keepScene) ApplyHeroHealth();
             MissionBoard.RestoreJourneys(save.AutoExpeditions);
             MissionBoard.RestoreReport(save.AutoExpeditionReport);
             CryptUpgrades.Restore(save.Installed, save.Brought);
@@ -510,6 +534,21 @@ namespace Sinbinder.Core
 
             if (keepScene) RestoreSouls(save, scene);
             return true;
+        }
+
+        /// <summary>
+        /// Здоровье Греховода из записи: 0 — старая запись или уже отдано. Загрузка на месте
+        /// кладёт его сразу; загрузка со сменой сцены — когда Греховод появится (SinbinderPlayer.Start).
+        /// </summary>
+        public static float HeroHealthOnArrival;
+
+        public static void ApplyHeroHealth()
+        {
+            if (HeroHealthOnArrival <= 0f || !Gameplay.SinbinderPlayer.Exists) return;
+            var hero = Gameplay.SinbinderPlayer.Instance;
+            if (hero == null || hero.IsDead) return;
+            hero.SetHealthFraction(Gameplay.ExpeditionHealthRules.RestoreFraction(HeroHealthOnArrival));
+            HeroHealthOnArrival = 0f;
         }
 
         private static IEnumerable<Warrior> LivingSquadIn(Scene scene) =>
@@ -536,6 +575,7 @@ namespace Sinbinder.Core
                 if (mappedBodies.TryGetValue(warrior, out var member))
                 {
                     warrior.RestoreEquipment(member.Equipment, member.Gear);
+                    SquadRoster.ApplyDeeds(warrior, member);
                     if (restoreCryptCondition && !member.IsAway)
                         warrior.RestoreExpeditionCondition(member);
                     continue;

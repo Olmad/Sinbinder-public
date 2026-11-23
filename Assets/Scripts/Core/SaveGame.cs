@@ -91,6 +91,22 @@ namespace Sinbinder.Core
         public bool Legend;
 
         /// <summary>
+        /// История сгенерированного (как умер и как попал к нам, docs/53-GENERATOR.md §11).
+        /// До 23.11 в запись не шла: после загрузки выкованный воин вспоминал чужую жизнь —
+        /// «по составу лагеря». Флаг — потому что JsonUtility не пишет null у класса.
+        /// </summary>
+        public bool HasSeed;
+        public MemorySeed Seed;
+
+        /// <summary>
+        /// Подвиги, уважение и страх (ReputationData) — путь к званию. До 23.11 жили только
+        /// на теле: смена доли и загрузка обнуляли счёт подвигов, звание сохранялось.
+        /// </summary>
+        public List<AOS.DeedRecord> Deeds = new List<AOS.DeedRecord>();
+        public float Respect;
+        public float Fear;
+
+        /// <summary>
         /// Тело (<see cref="ShellType"/> числом). С 25 сентября отряд — не одни
         /// скелеты (§107). Старые записи читаются нулём — скелетом, каким
         /// тогда был весь отряд.
@@ -174,6 +190,13 @@ namespace Sinbinder.Core
         public List<Sinbinder.Gameplay.SavedSurvivor> Survivors = new List<Sinbinder.Gameplay.SavedSurvivor>();
         // Время мира в походах (Sorties). В старых сохранениях 0.
         public int Sorties;
+
+        // Память AOS отряда и выживших стражей (MemoryProcessor): из неё считаются отношения.
+        // До 23.11 не писалась. В старых сохранениях нет — никто ничего не помнит, как и было.
+        public List<Sinbinder.AOS.SavedMemory> AosMemories = new List<Sinbinder.AOS.SavedMemory>();
+
+        // Здоровье Греховода. 0 — старая запись: цел (ExpeditionHealthRules.RestoreFraction).
+        public float HeroHealth;
 
         // Older crypt saves record expeditions only after entering the sandbox.
         internal bool OpensCryptSandbox => Scene == Sinbinder.Crypt.CryptMap.SceneName &&

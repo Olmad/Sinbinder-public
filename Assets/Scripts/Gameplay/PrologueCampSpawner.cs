@@ -600,6 +600,8 @@ namespace Sinbinder.Gameplay
 
             // Имя, заслуженное в прошлой доле, — при нём (SquadRoster.Member.Title).
             AOS.TitleManager.Bestow(warrior, member.Title);
+            // И путь к следующему — подвиги, уважение, страх (проверка сохранений 23.11).
+            SquadRoster.ApplyDeeds(warrior, member);
 
             // Сбежавший уносит своё, включая раскладку по местам.
             warrior.RestoreEquipment(member.Equipment, member.Gear);

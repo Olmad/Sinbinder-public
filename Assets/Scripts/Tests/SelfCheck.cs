@@ -1721,6 +1721,10 @@ namespace Sinbinder.Tests
                             new InventoryItem("Топор пробы", "", ItemType.Equipment, attack: 2f),
                         },
                         Pocket = 5,
+                        Seed = new MemorySeed { Story = "Проба: утонул у мельницы", Atoned = 2 },
+                        Deeds = new List<Sinbinder.AOS.DeedRecord>
+                            { new Sinbinder.AOS.DeedRecord { Type = Sinbinder.AOS.DeedType.Kill, Importance = 1.5f } },
+                        Respect = 7f, Fear = 3f,
                     },
                     new SquadRoster.Member
                     {
@@ -1780,6 +1784,13 @@ namespace Sinbinder.Tests
                 Check(second.Trade == Trade.None && !second.Brother && !second.Legend,
                       "ремесло, братство или слава приписаны тому, у кого их не было");
                 Same(first.Shell, ShellType.Zombie, "тело не пережило файл — зомби вернулся скелетом");
+                // Проверка сохранений 23.11: история выкованного и путь к званию.
+                Check(first.Seed != null && first.Seed.Story == "Проба: утонул у мельницы" && first.Seed.Atoned == 2,
+                      "история выкованного не пережила файл — после загрузки он помнил чужую жизнь");
+                Check(second.Seed == null, "истории не было — после файла её и нет");
+                Check(first.Deeds != null && first.Deeds.Count == 1 && first.Deeds[0].Type == Sinbinder.AOS.DeedType.Kill
+                      && Math.Abs(first.Respect - 7f) < 0.01f && Math.Abs(first.Fear - 3f) < 0.01f,
+                      "подвиги, уважение и страх не пережили файл — путь к званию обнулялся");
                 Same(second.Shell, ShellType.Skeleton, "тело по умолчанию — не скелет");
 
                 Check(Commitment.On, "режим обязательств не пережил файл — "
@@ -2435,6 +2446,48 @@ namespace Sinbinder.Tests
                 Check(call.Contains(Loc.Name("Проба Наш")) && call.Contains(Loc.Name("Проба Павший")),
                       "оклик называет обидчика и павшего по имени");
                 Check(Survivors.Scar("Проба Наш").Contains(Loc.Name("Проба Наш")), "раненый называет того, кто ранил");
+
+                // Память AOS в файле (проверка сохранений 23.11): возраст, а не Time.time.
+                var aosKept = Sinbinder.AOS.MemoryProcessor.Snapshot(null);
+                try
+                {
+                    var sample = new List<Sinbinder.AOS.SavedMemory>
+                    {
+                        new Sinbinder.AOS.SavedMemory { Owner = "проба-воин", EventType = "AllySavedMe", TargetID = "проба-друг",
+                            Emotion = (int)Sinbinder.AOS.EmotionType.Joy, Importance = 0.8f, DecayRate = 0.01f, Age = 120f },
+                    };
+                    var through = JsonUtility.FromJson<SaveGame>(JsonUtility.ToJson(new SaveGame { AosMemories = sample }));
+                    // Враг, живой в сцене: загрузка на месте его тела не трогает — и памяти тоже.
+                    var live = Sinbinder.AOS.MemoryProcessor.Instance;
+                    live?.CreateMemoryById("проба-враг-в-сцене", "EnemyKilledAlly", "проба-наш", Sinbinder.AOS.EmotionType.Anger, 0.8f);
+                    Sinbinder.AOS.MemoryProcessor.Restore(through.AosMemories);
+                    if (live != null)
+                        Check(live.GetMemoriesById("проба-враг-в-сцене").Count == 1,
+                              "загрузка на месте не стирает память врагов, живых в сцене");
+                    var again = Sinbinder.AOS.MemoryProcessor.Snapshot(new HashSet<string> { "проба-воин" });
+                    Check(again.Count == 1 && again[0].EventType == "AllySavedMe" && again[0].TargetID == "проба-друг"
+                          && Math.Abs(again[0].Age - 120f) < 2f,
+                          "память AOS пережила файл — кто кого спас, с прежним возрастом");
+                    Check(Sinbinder.AOS.MemoryProcessor.Snapshot(new HashSet<string> { "чужой" }).Count == 0,
+                          "в запись идёт память только тех, кто живёт дольше сцены");
+                    // Выживший страж — враг с памятью: его память AOS идёт в запись вместе с ним.
+                    if (live != null)
+                    {
+                        var guardKept = Survivors.Snapshot();
+                        try
+                        {
+                            Survivors.Restore(new List<SavedSurvivor>
+                                { new SavedSurvivor { Name = "Проба Страж Памяти", Place = "expedition:roadside-chapel", Id = "проба-страж-ид" } });
+                            live.CreateMemoryById("проба-страж-ид", "EnemyKilledAlly", "проба-наш", Sinbinder.AOS.EmotionType.Anger, 0.8f);
+                            var file = JsonUtility.FromJson<SaveGame>(JsonUtility.ToJson(SaveSystem.Snapshot()));
+                            Check(file.Survivors.Exists(s => s.Id == "проба-страж-ид")
+                                  && file.AosMemories.Exists(m => m.Owner == "проба-страж-ид" && m.EventType == "EnemyKilledAlly"),
+                                  "выживший страж в записи — вместе со своей памятью AOS");
+                        }
+                        finally { Survivors.Restore(guardKept); }
+                    }
+                }
+                finally { Sinbinder.AOS.MemoryProcessor.Restore(aosKept); }
 
                 // Бой отряда без Греховода с выжившими места — по записи AOS (п.1в, авто-вылазки).
                 const string spot = "expedition:roadside-chapel";

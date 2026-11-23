@@ -60,6 +60,7 @@ namespace Sinbinder.Gameplay
         }
 
         private bool _fallen;
+        private int _aliveFrames;
 
         /// <summary>
         /// Пал — конец игры. Слово автора, 24 сентября: «После смерти
@@ -72,6 +73,9 @@ namespace Sinbinder.Gameplay
         /// </summary>
         void Update()
         {
+            // Загрузка со сменой сцены: здоровье из записи — когда тело уже собрано (кадр после
+            // появления), иначе сборка тела перезаписала бы его полным (проверка сохранений 23.11).
+            if (Core.SaveSystem.HeroHealthOnArrival > 0f && ++_aliveFrames > 1) Core.SaveSystem.ApplyHeroHealth();
             if (_fallen || !IsDead) return;
             _fallen = true;
 

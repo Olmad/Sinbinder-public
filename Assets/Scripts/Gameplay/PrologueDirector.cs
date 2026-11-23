@@ -113,6 +113,7 @@ namespace Sinbinder.Gameplay
             PersonalExpedition.Forget();
             Survivors.Forget();
             ExpeditionReplayArchive.Forget();
+            ExpeditionMemoryLedger.Forget(); // по имени: тот же Вейн новой игры не помнит прошлых походов
             UI.MovementHintUI.Forget();
             UI.HarvestHintUI.Forget();
             UI.CommandHintUI.Forget();
@@ -142,6 +143,10 @@ namespace Sinbinder.Gameplay
             UI.ViewHintUI.Forget();
             UI.StaminaHintUI.Forget();
             AOS.RumourManager.Clear();
+            // Память AOS живёт в DontDestroyOnLoad, а номера воинов отряда постоянны:
+            // без этого новая игра наследовала обиды и долги прошлой (проверка сохранений 23.11).
+            AOS.MemoryProcessor.ForgetAll();
+            Core.SaveSystem.HeroHealthOnArrival = 0f; // раны из прошлой записи новому Греховоду не достаются
             Crypt.CryptHands.Forget();
             Crypt.MissionBoard.Forget();
             // Золотые пластинки — найденные в тайниках — ищут заново (автор, 29.10: «при „Начать заново“
