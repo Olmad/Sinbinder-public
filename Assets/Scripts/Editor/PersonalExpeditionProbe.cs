@@ -46,6 +46,51 @@ namespace Sinbinder.EditorTools
             return "запущена";
         }
 
+        /// <summary>
+        /// Второй вход в часовню после прогона: те ли стражи ждут (Survivors), с теми ли ранами,
+        /// что сказано в журнале. Греховод ставится в 10 м от первого выжившего — узнать его.
+        /// </summary>
+        public static string Revisit()
+        {
+            if (!EditorApplication.isPlaying || CryptMap.Board == null) return "нужен склеп в игре";
+            if (PersonalExpedition.Active) return "экспедиция уже идёт";
+            var memory = new StringBuilder("в памяти: ");
+            foreach (var s in Survivors.All)
+                memory.Append($"{s.Name} при {s.Place}, {s.Health:P0}, встреч {s.Meetings}{(string.IsNullOrEmpty(s.Killed) ? "" : ", убил " + s.Killed)}{(s.Fled ? ", бежал" : "")}; ");
+            if (Survivors.All.Count == 0) memory.Append("никого");
+            Write("=== ВТОРОЙ ВХОД: " + memory);
+            Mission chapel = default; bool found = false;
+            foreach (var m in CryptMap.Board.Missions) if (m.Name == "Придорожная часовня") { chapel = m; found = true; }
+            if (!found) return "нет часовни";
+            var names = new List<string>();
+            foreach (var m in SquadRoster.Members) if (names.Count < chapel.Squad - 1 && SquadRoster.CanGo(m)) names.Add(m.Name);
+            if (!PersonalExpedition.Enter(chapel, names, out var error)) { Write("  вход отказан: " + error); return "вход отказан: " + error; }
+            Warrior first = null;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (w != null && !w.IsDead && w.Team == Team.Enemy)
+                {
+                    Write($"  страж {w.DisplayName}: {w.HP:F0}/{w.MaxHP:F0}, грех {w.Soul?.Sin}");
+                    if (first == null) first = w;
+                }
+            if (first != null && SinbinderPlayer.Exists)
+            {
+                var hero = SinbinderPlayer.Instance;
+                // 13 м: в шаге от узнавания (14 м), но не в бою. Кадр — сразу, и сразу Leave():
+                // 23.11 Греховод, оставленный в 10 м на время разговора в склепе, пал.
+                var at = first.transform.position + (hero.transform.position - first.transform.position).normalized * 13f;
+                var agent = hero.GetComponent<NavMeshAgent>();
+                if (agent != null && agent.isOnNavMesh) agent.Warp(at); else hero.transform.position = at;
+                var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                if (cam != null)
+                {
+                    var to = first.transform.position - at; to.y = 0f;
+                    cam.Yaw = Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg; cam.Pitch = 0f;
+                }
+                Write($"  Греховод поставлен в 13 м от {first.DisplayName}, лицом к нему");
+            }
+            return "второй вход: " + memory;
+        }
+
         public static string Leave()
         {
             if (!PersonalExpedition.Active) return "экспедиции нет";

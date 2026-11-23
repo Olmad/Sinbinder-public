@@ -103,6 +103,13 @@ namespace Sinbinder.Gameplay
                 error = Loc.T("Греховод должен лично присутствовать.");
                 return false;
             }
+            // Разговор в склепе (Карган о потерях после вылазки) держит камеру над склепом:
+            // уйти посреди него — и Греховод на карте, а камера и полосы остались здесь (кадр 23.11).
+            if (UI.Letterbox.CanSkip || UI.TalkView.Shown)
+            {
+                error = Loc.T("Сейчас говорят. Дослушайте — потом в путь.");
+                return false;
+            }
 
             var travellers = new List<Traveller>
             {
@@ -223,6 +230,10 @@ namespace Sinbinder.Gameplay
             visit.enabled = true;
             visit.Announce(Loc.F("Экспедиция «{0}»: доберитесь до отмеченной цели и вернитесь к бирюзовому знаку.",
                 Loc.T(plan.Title)));
+            // Почему выжившие здесь — после приветствия: журнал держит последние строки,
+            // и написанное раньше приветствия уходило из виду (кадр 23.11).
+            var log=UnityEngine.Object.FindFirstObjectByType<UI.BattleLogUI>();
+            foreach(var line in visit._why) log?.Write(line);
             return true;
         }
 
@@ -326,6 +337,10 @@ namespace Sinbinder.Gameplay
             int remaining=Mathf.Clamp(_state.EnemiesRemaining,0,8);
             var sceneSetup=UnityEngine.Object.FindFirstObjectByType<AOS.AOSSceneSetup>();
             var relations=new RelationshipSystem(AOS.MemoryProcessor.Instance);
+            bool undead=_plan.Kind!=ExpeditionMapKind.SaltRoad;
+            // Выжившие прошлых встреч стоят первыми — с прежним именем, грехом и ранами (Survivors).
+            var known=Survivors.At(_plan.Id);
+            var taken=new List<string>();
             for(int i=0;i<remaining;i++)
             {
                 Vector3 at=ExpeditionMapBuilder.Point(_plan,(i%2==0?-1f:1f)*(5f+i*2f),
@@ -343,13 +358,86 @@ namespace Sinbinder.Gameplay
                 Team disposition=_plan.Kind==ExpeditionMapKind.SaltRoad &&
                     !_state.CaravanAssaulted && !_state.CaravanPassed
                     ? Team.Neutral : Team.Enemy;
-                w.Initialize(new SoulData("Страж экспедиции "+(i+1),
-                        (SinType)(i%7),MoralType.Vicious,1,55f),shell,relations,false,disposition);
+                var was=i<known.Count ? known[i] : null;
+                string name=was!=null ? was.Name : Survivors.NameFor(undead,taken);
+                taken.Add(name);
+                var sin=was!=null ? (SinType)was.Sin : (SinType)(i%7);
+                w.Initialize(new SoulData(name,sin,MoralType.Vicious,1,55f),shell,relations,false,disposition);
                 WarriorRig.Attach(go);
                 WarriorLook.Build(go,shell,1.65f,1f,1f);
                 sceneSetup?.SetupWarrior(go);
                 _guards.Add(w);
+                var record=was ?? new SavedSurvivor{Name=name,Sin=(int)sin,Undead=undead};
+                record.Undead=undead;
+                _met[w]=record;
+                if(was!=null)
+                {
+                    // Покойник не лечится: кости с прошлой встречи не срослись.
+                    // Живого охранника время между походами залечило.
+                    if(undead && was.Health<0.999f) go.GetComponent<Damageable>()?.Wound(was.Health);
+                    _why.Add(Survivors.Why(was,w.MaxHP));
+                    Debug.Log("[ВЫЖИВШИЕ] "+Survivors.Why(was,w.MaxHP));
+                }
             }
+        }
+
+        // ── Выжившие помнят (Survivors, план 69 §7) ──
+        private readonly Dictionary<Warrior,SavedSurvivor> _met=new();
+        private readonly HashSet<Warrior> _greeted=new();
+        private readonly List<string> _why=new();
+        private CombatManager _combat;
+        private float _nextLook;
+
+        void Update()
+        {
+            if(_exiting || _plan==null) return;
+            if(_combat==null && CombatManager.Instance!=null)
+            { _combat=CombatManager.Instance; _combat.OnAnyDeath+=OnDeath; }
+            if(Time.time<_nextLook) return;
+            _nextLook=Time.time+0.5f;
+            var hero=SinbinderPlayer.Exists ? SinbinderPlayer.Instance : null;
+            foreach(var g in _guards)
+            {
+                if(g==null || g.IsDead || !_met.TryGetValue(g,out var rec)) continue;
+                var mind=g.GetComponent<AOS.AOSWarriorWrapper>();
+                if(mind!=null && mind.LastDecisionDetail.Action.ToString()=="Flee") rec.Fled=true;
+                // Узнал — один раз за поход, и только тот, кто уже встречал Греховода.
+                if(hero!=null && rec.Meetings>0 && !_greeted.Contains(g) && Dist(g.transform.position,hero.transform.position)<14f)
+                {
+                    _greeted.Add(g);
+                    string line=Survivors.Greeting(rec);
+                    UI.SpeechBubbles.Say(g,line,5f);
+                    UnityEngine.Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F("{0}: «{1}»",Loc.Name(g.DisplayName),line));
+                    Debug.Log("[ВЫЖИВШИЕ] узнал: "+g.DisplayName+" — "+line);
+                }
+            }
+        }
+
+        private void OnDeath(Damageable killed,GameObject killer)
+        {
+            var dead=killed!=null ? killed.Warrior : null;
+            // Греховод пал — это конец игры, а не строка в памяти врага.
+            if(dead==null || dead.Team!=Team.Player || dead is SinbinderPlayer || killer==null) return;
+            var by=killer.GetComponent<Warrior>();
+            if(by==null || !_met.TryGetValue(by,out var rec)) return;
+            rec.Killed=string.IsNullOrEmpty(rec.Killed) ? Loc.Name(dead.DisplayName) : rec.Killed+", "+Loc.Name(dead.DisplayName);
+        }
+
+        /// <summary>Итог встречи в память: кто из стражи жив — запомнен, павшие забыты.</summary>
+        private void SettleSurvivors()
+        {
+            var alive=new List<SavedSurvivor>();
+            foreach(var g in _guards)
+            {
+                if(g==null || g.IsDead || !_met.TryGetValue(g,out var rec)) continue;
+                rec.Health=g.MaxHP>0f ? Mathf.Clamp01(g.HP/g.MaxHP) : 1f;
+                rec.Meetings++;
+                alive.Add(rec);
+            }
+            Survivors.Settle(_plan.Id,alive);
+            foreach(var s in alive)
+                Debug.Log($"[ВЫЖИВШИЕ] запомнен: {s.Name} при «{_plan.Title}», здоровье {s.Health:P0}, встреч {s.Meetings}"
+                    +(string.IsNullOrEmpty(s.Killed) ? "" : ", убил: "+s.Killed)+(s.Fled ? ", бежал" : ""));
         }
 
         private int EnemiesLeft()
@@ -573,6 +661,8 @@ namespace Sinbinder.Gameplay
             _caravanChoiceOpen=false;
             if (commitResult && _state != null)
                 _state.EnemiesRemaining=EnemiesLeft();
+            if (commitResult && _plan != null) SettleSurvivors();
+            if (_combat != null) { _combat.OnAnyDeath -= OnDeath; _combat = null; }
             // No duplicate reward by returning to the same expedition.
             foreach(var member in _travellers)
                 if(member.Warrior!=null && !member.Warrior.IsDead)

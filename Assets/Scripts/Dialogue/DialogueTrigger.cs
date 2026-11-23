@@ -79,7 +79,9 @@ namespace Sinbinder.Dialogue
             {
                 if (allyDmg == null || allyDmg.IsDead) continue;
                 var ally = allyDmg.Warrior;
-                if (ally == null) continue;
+                // Греховод не говорит — и не начинает: 23.11 на вылазке к страже подошёл
+                // он один, а разговор открыл Карган, сидевший в склепе за 2500 м.
+                if (ally == null || ally is SinbinderPlayer) continue;
 
                 foreach (var enemyDmg in enemies)
                 {
@@ -109,6 +111,13 @@ namespace Sinbinder.Dialogue
 
         private void StartDialogue(List<Damageable> allies, List<Damageable> enemies)
         {
+            // Говорят только те, кто рядом с чужими (в пределах тех же 30 м, что и у Rank):
+            // дальше 30 м все равны по близости, и грех выбирал говорящего из любого конца мира.
+            allies = allies.FindAll(a => a != null && !a.IsDead && a.Warrior != null
+                                         && !(a.Warrior is SinbinderPlayer) && Within(a.Warrior, enemies, 30f));
+            enemies = enemies.FindAll(e => e != null && !e.IsDead && e.Warrior != null && Within(e.Warrior, allies, 30f));
+            if (allies.Count == 0 || enemies.Count == 0) return;
+
             _dialogueInProgress = true;
             _lastDialogueTime = Time.time;
             _activeSpeakers.Clear();
@@ -241,6 +250,14 @@ namespace Sinbinder.Dialogue
         /// сортировка идёт по убыванию. Тридцать метров — потолок,
         /// за которым разница уже ничего не значит.
         /// </summary>
+        private static bool Within(Warrior w, List<Damageable> others, float reach)
+        {
+            foreach (var o in others)
+                if (o != null && !o.IsDead && o.Warrior != null
+                    && Vector3.Distance(w.transform.position, o.transform.position) <= reach) return true;
+            return false;
+        }
+
         private float Rank(Warrior w, List<Damageable> others)
         {
             if (w == null) return 0f;

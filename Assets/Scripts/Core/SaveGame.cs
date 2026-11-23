@@ -170,6 +170,9 @@ namespace Sinbinder.Core
             new List<Sinbinder.Gameplay.SavedPersonalExpedition>();
         public bool CryptSandboxOpened;
 
+        // Выжившие стражи личных вылазок (Survivors, план 69 §7). В старых сохранениях нет — никто не помнит.
+        public List<Sinbinder.Gameplay.SavedSurvivor> Survivors = new List<Sinbinder.Gameplay.SavedSurvivor>();
+
         // Older crypt saves record expeditions only after entering the sandbox.
         internal bool OpensCryptSandbox => Scene == Sinbinder.Crypt.CryptMap.SceneName &&
             (CryptSandboxOpened || AutoExpeditions?.Count > 0 || ExpeditionReplays?.Count > 0 ||
