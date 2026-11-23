@@ -743,7 +743,7 @@ msgstr "Fighting"
 msgid "Раненый товарищ"
 msgstr "A wounded comrade"
 
-#: AOS Engine/PhraseGenerator.cs
+#: AOS Engine/PhraseGenerator.cs UI/ExpeditionReplayViewer.cs
 msgid "Добыча"
 msgstr "Loot"
 
@@ -3124,10 +3124,6 @@ msgid "На дороге что-то случилось, и рассказыва
 msgstr "Something happened on the road, and no one would talk about it."
 
 #: Crypt/MissionBoard.cs
-msgid "В отряде несколько бойцов с именем «{0}». Выберите другого бойца."
-msgstr "Several fighters are named “{0}”. Choose another fighter."
-
-#: Crypt/MissionBoard.cs
 msgid "Отряд «{0}» у развилки. Можно дать совет; без него старший решит сам."
 msgstr "Squad “{0}” is at a fork. You can give advice; without it the leader decides alone."
 
@@ -3199,9 +3195,13 @@ msgstr "The Sinbinder came back from “{0}” in person with a find."
 msgid "Греховод вернулся из «{0}». То, что осталось, ждёт следующего визита."
 msgstr "The Sinbinder came back from “{0}”. What remains awaits the next visit."
 
-#: Crypt/MissionBoard.cs UI/MissionMapUI.cs
+#: Crypt/MissionBoard.cs
 msgid "В пути с другим отрядом."
 msgstr "On the road with another party."
+
+#: Crypt/MissionBoard.cs
+msgid "В отряде несколько бойцов с именем «{0}». Выберите другого бойца."
+msgstr "Several fighters are named “{0}”. Choose another fighter."
 
 #: Crypt/MissionBoard.cs
 msgid "Слишком много одновременных экспедиций."
@@ -6980,30 +6980,6 @@ msgid "Убийц рядом больше нет. Что решит душа т�
 msgstr "The killers are no longer nearby. What will the soul decide now?"
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Тот же приказ — и теперь его решение совпало с вашим. Убийц рядом больше нет."
-msgstr "The same order, and now his decision matches yours. The killers are no longer nearby."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Тот же приказ — и теперь её решение совпало с вашим. Убийц рядом больше нет."
-msgstr "The same order, and now her decision matches yours. The killers are no longer nearby."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Убийц рядом больше нет; какой голос перевесил, неизвестно."
-msgstr "No again. The killers are no longer nearby; which voice tipped the balance is unknown."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Среди голосов вновь выделяется {0}."
-msgstr "No again. Among the voices, {0} stands out once more."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Теперь среди голосов выделяется {0}."
-msgstr "No again. Now {0} stands out among the voices."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Причины больше нет — что решит душа теперь?"
-msgstr "The reason is gone — what will the soul decide now?"
-
-#: Gameplay/DreamTutorialDirector.cs
 msgid "Душа угасает у тела. Подойдите и нажмите E — заберите её в банку."
 msgstr "The soul is fading by the body. Walk up and press E — take it into a jar."
 
@@ -7268,28 +7244,24 @@ msgid "Вы пришли к ней в бою — она это запомнит.
 msgstr "You came to her in battle — she will remember it. Her loyalty to you has grown."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."
-msgstr "The same order — and he goes. The reason is gone: the killers are dead."
+msgid "Тот же приказ — и теперь его решение совпало с вашим. Убийц рядом больше нет."
+msgstr "The same order, and now his decision matches yours. The killers are no longer nearby."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Тот же приказ — и она идёт. Причины больше нет: убийцы мертвы."
-msgstr "The same order — and she goes. The reason is gone: the killers are dead."
+msgid "Тот же приказ — и теперь её решение совпало с вашим. Убийц рядом больше нет."
+msgstr "The same order, and now her decision matches yours. The killers are no longer nearby."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Мир другой — и у души нашлась другая причина."
-msgstr "No again. The world is different now — and the soul found another reason."
+msgid "И снова нет. Убийц рядом больше нет; какой голос перевесил, неизвестно."
+msgstr "No again. The killers are no longer nearby; which voice tipped the balance is unknown."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Его всё так же держит {0}."
-msgstr "No again. {0} still holds him."
+msgid "И снова нет. Среди голосов вновь выделяется {0}."
+msgstr "No again. Among the voices, {0} stands out once more."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет. Её всё так же держит {0}."
-msgstr "No again. {0} still holds her."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "И снова нет — но причина другая. Убийц нет, теперь решает {0}."
-msgstr "No again — but for another reason. The killers are gone; now {0} decides."
+msgid "И снова нет. Теперь среди голосов выделяется {0}."
+msgstr "No again. Now {0} stands out among the voices."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Приказ можно и не повторять. Подойдите к нему и нажмите Z — шепните его греху. Что шепнуть, решит его душа."
@@ -10248,6 +10220,10 @@ msgid "Греховод должен лично присутствовать."
 msgstr "The Sinbinder must be there in person."
 
 #: Gameplay/PersonalExpedition.cs
+msgid "Сейчас говорят. Дослушайте — потом в путь."
+msgstr ""
+
+#: Gameplay/PersonalExpedition.cs
 msgid "Воин {0} сейчас не может выйти в экспедицию."
 msgstr "{0} cannot go on an expedition right now."
 
@@ -10266,6 +10242,10 @@ msgstr "Could not build the expedition map."
 #: Gameplay/PersonalExpedition.cs
 msgid "Экспедиция «{0}»: доберитесь до отмеченной цели и вернитесь к бирюзовому знаку."
 msgstr "Expedition “{0}”: reach the marked target and return to the turquoise sign."
+
+#: Gameplay/PersonalExpedition.cs UI/GearPanel.cs
+msgid "{0}: «{1}»"
+msgstr "{0}: “{1}”"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "F — вернуться в склеп"
@@ -11092,12 +11072,12 @@ msgid "ЗА ПРИКАЗ"
 msgstr "FOR THE ORDER"
 
 #: Gameplay/SoulCourt.cs
-msgid "ПРОТИВ"
-msgstr "AGAINST"
-
-#: Gameplay/SoulCourt.cs
 msgid "СВОЙ ВЫБОР"
 msgstr "OWN CHOICE"
+
+#: Gameplay/SoulCourt.cs
+msgid "ПРОТИВ"
+msgstr "AGAINST"
 
 #: Gameplay/SoulCourt.cs
 msgid "ДОБРО"
@@ -11116,14 +11096,6 @@ msgid "Суд души"
 msgstr "The Court of the Soul"
 
 #: Gameplay/SoulCourt.cs
-msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так он и поступит."
-msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so he will act."
-
-#: Gameplay/SoulCourt.cs
-msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так она и поступит."
-msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so she will act."
-
-#: Gameplay/SoulCourt.cs
 msgid "Ниже — весы. Слева — голоса за приказ, справа — за свой выбор."
 msgstr "Below are the scales. On the left are the voices for the order. On the right are those for the soul's own choice."
 
@@ -11140,12 +11112,12 @@ msgid "Судьи, ваше слово. Тише — первыми, громч�
 msgstr "Judges, speak. The quiet first, the loud last. The stronger the voice, the brighter its candle and the further the scales swing."
 
 #: Gameplay/SoulCourt.cs
-msgid "за — {0}    против — {1}    воздержались — {2}"
-msgstr "for — {0}    against — {1}    abstained — {2}"
-
-#: Gameplay/SoulCourt.cs
 msgid "за приказ — {0}    за свой выбор — {1}    воздержались — {2}"
 msgstr "for the order — {0}    for its own choice — {1}    abstained — {2}"
+
+#: Gameplay/SoulCourt.cs
+msgid "за — {0}    против — {1}    воздержались — {2}"
+msgstr "for — {0}    against — {1}    abstained — {2}"
 
 #: Gameplay/SoulCourt.cs
 msgid "воздерж."
@@ -11164,24 +11136,24 @@ msgid "Поэтому я — за приказ."
 msgstr "So I am for the order."
 
 #: Gameplay/SoulCourt.cs
-msgid "Поэтому я — против."
-msgstr "So I am against."
-
-#: Gameplay/SoulCourt.cs
 msgid "Поэтому я — за свой выбор."
 msgstr "So I am for the soul’s own choice."
 
 #: Gameplay/SoulCourt.cs
-msgid "за"
-msgstr "for"
+msgid "Поэтому я — против."
+msgstr "So I am against."
+
+#: Gameplay/SoulCourt.cs UI/ScalesOverhead.cs
+msgid "за свой выбор"
+msgstr "for its own choice"
 
 #: Gameplay/SoulCourt.cs UI/ScalesOverhead.cs
 msgid "против"
 msgstr "against"
 
-#: Gameplay/SoulCourt.cs UI/ScalesOverhead.cs
-msgid "за свой выбор"
-msgstr "for its own choice"
+#: Gameplay/SoulCourt.cs
+msgid "за"
+msgstr "for"
 
 #: Gameplay/SoulCourt.cs
 msgid "Вердикт"
@@ -11190,10 +11162,6 @@ msgstr "Verdict"
 #: Gameplay/SoulCourt.cs
 msgid "Бог Смерти"
 msgstr "God of Death"
-
-#: Gameplay/SoulCourt.cs
-msgid "Так решила душа без Шёпота. Греховод вмешался: воин фактически подчинился приказу, но не по своей воле."
-msgstr "This is what the soul decided without the Whisper. The Sinbinder intervened: the warrior did obey the order, but not of their own will."
 
 #: Gameplay/SoulCourt.cs
 msgid "Так решила душа без Шёпота. Уговор изменил выбор воина: тот согласился следовать приказу."
@@ -11210,6 +11178,10 @@ msgstr "This is how every warrior in your band decides: you give the order, thei
 #: Gameplay/SoulCourt.cs
 msgid "никто"
 msgstr "no one"
+
+#: Gameplay/SoulCourt.cs
+msgid "Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>за свой выбор</color> — {3}"
+msgstr "Scales: <color=#{0}>for the order</color> — {1} · <color=#{2}>for its own choice</color> — {3}"
 
 #: Gameplay/SoulCourt.cs
 msgid "Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>против</color> — {3}"
@@ -11232,12 +11204,8 @@ msgid "Приказ владыки — «{0}». {1} замешкалась. Су
 msgstr "The lord's order — “{0}”. {1} hesitated. Judges, your word."
 
 #: Gameplay/SoulCourt.cs
-msgid "Приказ владыки — «{0}». {1} исполнил. Судьи, ваше слово."
-msgstr "The lord's order — “{0}”. {1} obeyed. Judges, your word."
-
-#: Gameplay/SoulCourt.cs
-msgid "Приказ владыки — «{0}». {1} исполнила. Судьи, ваше слово."
-msgstr "The lord's order — “{0}”. {1} obeyed. Judges, your word."
+msgid "Приказ владыки — «{0}». {1} Судьи, ваше слово."
+msgstr "The master ordered “{0}”. {1} Judges, speak."
 
 #: Gameplay/SoulCourt.cs
 msgid "Отказ. {0} не исполнил приказ."
@@ -11256,12 +11224,20 @@ msgid "{0} замерла: приказ не исполнен."
 msgstr "{0} froze: the order is not carried out."
 
 #: Gameplay/SoulCourt.cs
-msgid "{0} исполнил приказ."
-msgstr "{0} carried out the order."
+msgid "{0} выбрал своё. Решение совпало с приказом."
+msgstr "{0} chose his own course. It matched the order."
 
 #: Gameplay/SoulCourt.cs
-msgid "{0} исполнила приказ."
-msgstr "{0} carried out the order."
+msgid "{0} выбрала своё. Решение совпало с приказом."
+msgstr "{0} chose her own course. It matched the order."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} решил послушаться."
+msgstr "{0} chose to obey."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} решила послушаться."
+msgstr "{0} chose to obey."
 
 #: Gameplay/SoulCourt.cs
 msgid "Почему он не послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
@@ -11278,6 +11254,10 @@ msgstr "Why did he freeze? He did not decide alone — his soul did. Here is its
 #: Gameplay/SoulCourt.cs
 msgid "Почему она замерла? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."
 msgstr "Why did she freeze? She did not decide alone — her soul did. Here is its court: the judges are her thirteen voices, and before them stands she herself."
+
+#: Gameplay/SoulCourt.cs
+msgid "Почему собственное решение совпало с приказом? Вот суд души: здесь решают тринадцать её голосов."
+msgstr "Why did the warrior's own choice match the order? In the court of the soul, thirteen voices decide."
 
 #: Gameplay/SoulCourt.cs
 msgid "Почему он послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."
@@ -11452,36 +11432,12 @@ msgid "Не уходи."
 msgstr "Don't leave."
 
 #: Gameplay/SoulCourt.cs
-msgid "Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>за свой выбор</color> — {3}"
-msgstr "Scales: <color=#{0}>for the order</color> — {1} · <color=#{2}>for its own choice</color> — {3}"
-
-#: Gameplay/SoulCourt.cs
-msgid "Приказ владыки — «{0}». {1} Судьи, ваше слово."
-msgstr "The master ordered “{0}”. {1} Judges, speak."
-
-#: Gameplay/SoulCourt.cs
-msgid "{0} выбрал своё. Решение совпало с приказом."
-msgstr "{0} chose his own course. It matched the order."
-
-#: Gameplay/SoulCourt.cs
-msgid "{0} выбрала своё. Решение совпало с приказом."
-msgstr "{0} chose her own course. It matched the order."
-
-#: Gameplay/SoulCourt.cs
-msgid "{0} решил послушаться."
-msgstr "{0} chose to obey."
-
-#: Gameplay/SoulCourt.cs
-msgid "{0} решила послушаться."
-msgstr "{0} chose to obey."
-
-#: Gameplay/SoulCourt.cs
-msgid "Почему собственное решение совпало с приказом? Вот суд души: здесь решают тринадцать её голосов."
-msgstr "Why did the warrior's own choice match the order? In the court of the soul, thirteen voices decide."
-
-#: Gameplay/SoulCourt.cs
 msgid "Голоса вровень — душа не выбрала ничего."
 msgstr "The voices are even — the soul chose nothing."
+
+#: Gameplay/SoulCourt.cs
+msgid "Решение совпало с приказом по собственной воле. За приказ — {0}. За свой выбор — {1}."
+msgstr "The soul chose the same course of its own accord. For the order: {0}. For its own choice: {1}."
 
 #: Gameplay/SoulCourt.cs
 msgid "Приказ отвергнут."
@@ -11498,26 +11454,6 @@ msgstr "Order refused. Against: {0}. For: {1}. The scales tipped to “against�
 #: Gameplay/SoulCourt.cs
 msgid "Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против»."
 msgstr "The order is rejected. Against: {0}. For: {1}. The scales tipped to “against”."
-
-#: Gameplay/SoulCourt.cs
-msgid "Приказ исполнен."
-msgstr "The order is carried out."
-
-#: Gameplay/SoulCourt.cs
-msgid "Приказ исполнен. За — {0}. Против — никто."
-msgstr "The order is carried out. For: {0}. Against: no one."
-
-#: Gameplay/SoulCourt.cs
-msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за» — на волосок."
-msgstr "Order carried out. For: {0}. Against: {1}. The scales tipped to “for” — by a hair."
-
-#: Gameplay/SoulCourt.cs
-msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за»."
-msgstr "The order is carried out. For: {0}. Against: {1}. The scales tipped to “for”."
-
-#: Gameplay/SoulCourt.cs
-msgid "Решение совпало с приказом по собственной воле. За приказ — {0}. За свой выбор — {1}."
-msgstr "The soul chose the same course of its own accord. For the order: {0}. For its own choice: {1}."
 
 #: Gameplay/SoulCourt.cs
 msgid "Душа решила послушаться."
@@ -11592,12 +11528,12 @@ msgid "Решил один голос — {0}. Без него {1}."
 msgstr "One voice decided it — {0}. Without it, {1}."
 
 #: Gameplay/SoulCourt.cs
-msgid "Причина отказа не установлена."
-msgstr "The reason for the refusal has not been established."
-
-#: Gameplay/SoulCourt.cs
 msgid "Одной причины нет — так решила вся душа разом."
 msgstr "There is no single reason — the whole soul decided at once."
+
+#: Gameplay/SoulCourt.cs
+msgid "Причина отказа не установлена."
+msgstr "The reason for the refusal has not been established."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "Воздерживаюсь: владыке он ни предан, ни чужд."
@@ -12427,6 +12363,182 @@ msgstr "Battered"
 msgid "Цело"
 msgstr "Intact"
 
+#: Gameplay/Survivors.cs
+msgid "Мирон Звонарь"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Ефрем Сухорукий"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Антип Свечник"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Лука Безбородый"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Прохор Немытый"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Устин Вдовец"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Фома Колодезник"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Савва Кривошей"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Бажен Рыжий"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Тихон Соляной"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Ерёма Щербатый"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Радим Копьё"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Неждан Хмурый"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Гордей Плечистый"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Малюта Быстрый"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Любим Кистень"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Брат Евсей"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Брат Корнил"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Брат Игнат"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Брат Аким"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Брат Пимен"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Брат Варлаам"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Брат Сысой"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Брат Феогност"
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "{0}! {1} лежит из-за тебя."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "{0}! Ты убил меня. Я вернулся."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "{0}! Я помню твой удар."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "{0} бежал от вас в прошлый раз — и вернулся не один."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Вы вернулись той же ночью: стража не успела ни уйти, ни залечить раны."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Слух о разграбленной часовне дошёл до Ордена: у алтаря теперь их дозор."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "{0} пришёл с дозором Ордена: обоз, который он охранял, разграбили, и теперь он служит Ордену — он знает вас в лицо."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "{0} — из дозора Ордена: часовню стерегут с тех пор, как её разграбили."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "{0} ждёт здесь: покойник не может уйти от места, где его подняли."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "{0} снова в охране: обоз ходит той же дорогой и с теми же людьми."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "В прошлый раз от его руки погибли ваши: {0}."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "В прошлый раз он бежал от отряда."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Кости с прошлой встречи не срослись: {0:F0} из {1:F0}."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "В прошлый раз он видел Греховода и остался жив."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Опять ты. {0} так и лежит у часовни."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Помню тебя. Твоих я уже считаю: {0}."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Обоз ты разграбил. Теперь я служу Ордену — и тебя узнаю где угодно."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Ты. В тот раз я ушёл. Больше не уйду."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Кости не срастаются, некромант. Я считаю каждую."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "Я тебя видел. Ты ушёл — я остался."
+msgstr ""
+
 #: Gameplay/TrophyChest.cs
 msgid "Карган: «Владыка, взглянем, что Марга Копатель принёс с вылазки. Готов спорить, половину он выкопал у самого лагеря»."
 msgstr "Kargan: “My lord, let's see what Marga the Digger brought back from the sortie. I'd wager he dug up half of it right by the camp.”"
@@ -13183,6 +13295,34 @@ msgstr "No one reached the crypt.\n\nThe souls will dissolve into the Necroether
 msgid "Выход"
 msgstr "Exit"
 
+#: UI/ExpeditionReplayViewer.cs
+msgid "←/→: событие · PgUp/PgDn: бой · Home/End: начало/конец · Space: воспроизведение"
+msgstr "←/→: event · PgUp/PgDn: combat · Home/End: start/end · Space: play/pause"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Выступление"
+msgstr "Departure"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Маршрут"
+msgstr "March"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Решение командира"
+msgstr "Command decision"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Боевой эпизод"
+msgstr "Combat encounter"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Возвращение"
+msgstr "Return"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Событие"
+msgstr "Event"
+
 #: UI/GameOverUI.cs
 msgid "С начала доли"
 msgstr "Restart the act"
@@ -13190,10 +13330,6 @@ msgstr "Restart the act"
 #: UI/GearPanel.cs
 msgid "Мешка Греховода в этой сцене нет."
 msgstr "There is no Sinbinder's bag in this scene."
-
-#: UI/GearPanel.cs
-msgid "{0}: «{1}»"
-msgstr "{0}: “{1}”"
 
 #: UI/GearPanel.cs
 msgid "Плата за вылазку — из рук в руки: {0}."
@@ -13258,10 +13394,6 @@ msgstr "will give it"
 #: UI/GearPanel.cs
 msgid "не отдаст: {0}"
 msgstr "won't give it: {0}"
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "←/→: событие · PgUp/PgDn: бой · Home/End: начало/конец · Space: воспроизведение"
-msgstr "←/→: event · PgUp/PgDn: combat · Home/End: start/end · Space: play/pause"
 
 #: UI/GearPanel.cs
 msgid "Карман: {0}"
@@ -13460,10 +13592,6 @@ msgid "Esc — пропустить"
 msgstr "Esc — skip"
 
 #: UI/MissionMapUI.cs
-msgid "Куда послать отряд?  Esc — отойти от шара"
-msgstr "Where to send a party?  Esc — step away from the orb"
-
-#: UI/MissionMapUI.cs
 msgid "Куда послать отряд?"
 msgstr "Where should the squad go?"
 
@@ -13474,10 +13602,6 @@ msgstr "Resume game"
 #: UI/MissionMapUI.cs
 msgid "Время вылазок остановлено, пока открыта карта."
 msgstr "Expedition timers are paused while the map is open."
-
-#: UI/MissionMapUI.cs
-msgid "Свободных мест в отряде нет. Сначала снимите выбор с другого бойца."
-msgstr "The squad is full. Deselect another fighter first."
 
 #: UI/MissionMapUI.cs
 msgid "AOS-бой остановлен: снимок требует проверки"
@@ -13600,8 +13724,8 @@ msgid "Души может собирать только Греховод."
 msgstr "Only the Sinbinder can gather souls."
 
 #: UI/MissionMapUI.cs
-msgid "Больше за старшим не пойдут. Чтобы взять этого, сперва оставьте кого-нибудь в склепе."
-msgstr "No more will follow the leader. To take this one, first leave someone in the crypt."
+msgid "Свободных мест в отряде нет. Сначала снимите выбор с другого бойца."
+msgstr "The squad is full. Deselect another fighter first."
 
 #: UI/MissionMapUI.cs
 msgid "Советуют послать {0}, а пойдёт один — охраны от этого меньше не станет."
@@ -14024,12 +14148,12 @@ msgid "Не удалось восстановить запись. Выберит
 msgstr "Could not restore the save. Choose another save or start over."
 
 #: UI/ScalesOverhead.cs
-msgid "вровень"
-msgstr "even"
-
-#: UI/ScalesOverhead.cs
 msgid "за приказ"
 msgstr "for the order"
+
+#: UI/ScalesOverhead.cs
+msgid "вровень"
+msgstr "even"
 
 #: UI/ScalesOverhead.cs
 msgid "не услышит"
@@ -14636,6 +14760,86 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Причины больше нет — что решит душа теперь?"
+msgstr "The reason is gone — what will the soul decide now?"
+
+#. нет в коде
+msgid "Тот же приказ — и он идёт. Причины больше нет: убийцы мертвы."
+msgstr "The same order — and he goes. The reason is gone: the killers are dead."
+
+#. нет в коде
+msgid "Тот же приказ — и она идёт. Причины больше нет: убийцы мертвы."
+msgstr "The same order — and she goes. The reason is gone: the killers are dead."
+
+#. нет в коде
+msgid "И снова нет. Мир другой — и у души нашлась другая причина."
+msgstr "No again. The world is different now — and the soul found another reason."
+
+#. нет в коде
+msgid "И снова нет. Его всё так же держит {0}."
+msgstr "No again. {0} still holds him."
+
+#. нет в коде
+msgid "И снова нет. Её всё так же держит {0}."
+msgstr "No again. {0} still holds her."
+
+#. нет в коде
+msgid "И снова нет — но причина другая. Убийц нет, теперь решает {0}."
+msgstr "No again — but for another reason. The killers are gone; now {0} decides."
+
+#. нет в коде
+msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так он и поступит."
+msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so he will act."
+
+#. нет в коде
+msgid "Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так она и поступит."
+msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so she will act."
+
+#. нет в коде
+msgid "Так решила душа без Шёпота. Греховод вмешался: воин фактически подчинился приказу, но не по своей воле."
+msgstr "This is what the soul decided without the Whisper. The Sinbinder intervened: the warrior did obey the order, but not of their own will."
+
+#. нет в коде
+msgid "Приказ владыки — «{0}». {1} исполнил. Судьи, ваше слово."
+msgstr "The lord's order — “{0}”. {1} obeyed. Judges, your word."
+
+#. нет в коде
+msgid "Приказ владыки — «{0}». {1} исполнила. Судьи, ваше слово."
+msgstr "The lord's order — “{0}”. {1} obeyed. Judges, your word."
+
+#. нет в коде
+msgid "{0} исполнил приказ."
+msgstr "{0} carried out the order."
+
+#. нет в коде
+msgid "{0} исполнила приказ."
+msgstr "{0} carried out the order."
+
+#. нет в коде
+msgid "Приказ исполнен."
+msgstr "The order is carried out."
+
+#. нет в коде
+msgid "Приказ исполнен. За — {0}. Против — никто."
+msgstr "The order is carried out. For: {0}. Against: no one."
+
+#. нет в коде
+msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за» — на волосок."
+msgstr "Order carried out. For: {0}. Against: {1}. The scales tipped to “for” — by a hair."
+
+#. нет в коде
+msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за»."
+msgstr "The order is carried out. For: {0}. Against: {1}. The scales tipped to “for”."
+
+#. нет в коде
+msgid "Куда послать отряд?  Esc — отойти от шара"
+msgstr "Where to send a party?  Esc — step away from the orb"
+
+#. нет в коде
+msgid "Больше за старшим не пойдут. Чтобы взять этого, сперва оставьте кого-нибудь в склепе."
+msgstr "No more will follow the leader. To take this one, first leave someone in the crypt."
 
 #. нет в коде
 msgid " · Брат по оружию"
@@ -15900,10 +16104,6 @@ msgstr "Watch, then."
 #. нет в коде
 msgid "Снятый приказ — не приказ. Дальше решают сами."
 msgstr "A cancelled order is no order. From here, they decide for themselves."
-
-#. нет в коде
-msgid "Событие"
-msgstr "Event"
 
 #. нет в коде
 msgid "Советуют послать {0} — у вас {1}."

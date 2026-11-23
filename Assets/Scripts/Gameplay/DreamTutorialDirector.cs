@@ -1315,7 +1315,7 @@ namespace Sinbinder.Gameplay
         /// Суд над решением — каким бы оно ни было. Отказ, колебание, послушание —
         /// суд показывает, чьи голоса это решили.
         /// </summary>
-        private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c, List<AOS.Vote> ballot)
+        private IEnumerator Judge(AOS.Decision d, AOS.DecisionContext c, List<AOS.Vote> originalVotes)
         {
             RefusalResult = d.RefusedCommand ? "отказал" : d.Hesitated ? "колебался"
                 : ActuallyObeyed(d, c) ? "послушался" : "выбрал своё";
@@ -1347,7 +1347,7 @@ namespace Sinbinder.Gameplay
                 bool briefCourt = _courts > 0;
                 // Суд во сне — урок: идёт и при выключенных автоматических судах (force).
                 yield return SoulCourt.Convene(_zombie, d, c, _courtOrder, brief: briefCourt,
-                    originalVotes: ballot, force: true);
+                    originalVotes: originalVotes, force: true);
                 if (SoulCourt.Completed > completedBefore)
                 {
                     _courts++;
