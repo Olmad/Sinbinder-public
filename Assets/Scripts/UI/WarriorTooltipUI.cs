@@ -246,7 +246,8 @@ namespace Sinbinder.UI
                     // The verdict may change while the context object and warrior stay
                     // the same. Refresh from the current vote, not a stale UI cache.
                     // Refresh() already runs at most once per 0.35 seconds.
-                    string scales = SoulCourt.ScalesLine(warrior, actualVote, wrapper.LastContext);
+                    string scales = SoulCourt.ScalesLine(warrior, actualVote, wrapper.LastContext,
+                        originalVotes: wrapper.LastDecisionBallot);
                     if (!string.IsNullOrEmpty(scales)) _text.text += "\n" + scales;
                     if (wrapper.LastWhisperCompelled)
                         _text.text += "\n" + Core.Loc.T(
