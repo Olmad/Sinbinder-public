@@ -1154,11 +1154,12 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Голос каждого модуля: минус — за приказ, плюс — против (как Net судьи).</summary>
-        private static Dictionary<string, float> Sums(Warrior w, Decision d, DecisionContext c)
+        private static Dictionary<string, float> Sums(Warrior w, Decision d, DecisionContext c,
+            IReadOnlyList<Vote> originalVotes = null)
         {
             var rival = Rival(d);
             var sum = new Dictionary<string, float>();
-            foreach (var v in new BehaviourResolver().Ballot(w, c))
+            foreach (var v in originalVotes ?? (IReadOnlyList<Vote>)new BehaviourResolver().Ballot(w, c))
             {
                 if (v.Action != ActionType.ObeyCommand && v.Action != rival) continue;
                 sum.TryGetValue(v.Module, out float net);
@@ -1175,7 +1176,7 @@ namespace Sinbinder.Gameplay
         /// Чей голос малые весы назовут над головой (<see cref="Lean"/>) — ключ модуля. Сон называет
         /// его же: весы писали «против: Похоть», а строка — «теперь решает Жадность» (кадры 17.11).
         /// </summary>
-        public static string Loudest(Warrior w, Decision d, DecisionContext c)
+        public static string Loudest(Warrior w, Decision d, DecisionContext c, IReadOnlyList<Vote> originalVotes = null)
         {
             if (w == null || c == null || !c.HasCommand) return null;
             var verdict = Verdict(d, c);
@@ -1186,7 +1187,7 @@ namespace Sinbinder.Gameplay
             bool against = d.RefusedCommand || d.Hesitated || independent;
             float loud = 0f;
             string top = null;
-            foreach (var kv in Sums(w, d, c))
+            foreach (var kv in Sums(w, d, c, originalVotes))
             {
                 bool winning = against ? kv.Value > 0f : kv.Value < 0f;
                 if (winning && Mathf.Abs(kv.Value) > loud) { loud = Mathf.Abs(kv.Value); top = kv.Key; }
@@ -1194,11 +1195,13 @@ namespace Sinbinder.Gameplay
             return top;
         }
 
-        public static bool Lean(Warrior w, Decision d, DecisionContext c, out float lean, out string voice, out Color colour)
-            => Lean(w, d, c, out lean, out voice, out colour, out _);
+        public static bool Lean(Warrior w, Decision d, DecisionContext c, out float lean, out string voice, out Color colour,
+            IReadOnlyList<Vote> originalVotes = null)
+            => Lean(w, d, c, out lean, out voice, out colour, out _, originalVotes);
 
         internal static bool Lean(Warrior w, Decision d, DecisionContext c,
-            out float lean, out string voice, out Color colour, out SoulCourtVerdictKind verdict)
+            out float lean, out string voice, out Color colour, out SoulCourtVerdictKind verdict,
+            IReadOnlyList<Vote> originalVotes = null)
         {
             lean = 0f; voice = null; colour = Color.white;
             verdict = default;
@@ -1211,7 +1214,9 @@ namespace Sinbinder.Gameplay
             bool against = d.RefusedCommand || d.Hesitated || independent;
             float total = 0f, reach = 1f, loud = 0f;
             string top = null;
-            foreach (var kv in Sums(w, d, c))
+            // A historical decision must use its captured ballot, never a
+            // resimulation of changed emotions, HP, gear or squad strategy.
+            foreach (var kv in Sums(w, d, c, originalVotes))
             {
                 total += kv.Value;
                 reach += Mathf.Abs(kv.Value);
