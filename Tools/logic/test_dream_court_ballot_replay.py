@@ -101,8 +101,13 @@ class DreamCourtBallotReplayTests(unittest.TestCase):
                         event.index("OnRefusal?.Invoke"))
 
         # A mismatched or unavailable historical ballot must not be faked.
-        self.assertIn("mind.HasCurrentCommandDecision", caller)
-        self.assertIn("mind.LastDecisionDetail.Equals(d)", caller)
+        self.assertIn("mind.IsSourceOfLastCommandDecision(d, c)", caller)
+        self.assertIn("private DecisionContext _lastDecisionSourceContext;", wrapper)
+        self.assertIn("object.ReferenceEquals(_lastDecisionSourceContext, sourceContext)", wrapper)
+        self.assertIn("HasCurrentCommandDecision &&", wrapper)
+        self.assertIn("LastDecisionDetail.Equals(decision)", wrapper)
+        self.assertLess(wrapper.index("_lastDecisionSourceContext = context;"),
+                        wrapper.index("AOSEventHub.Instance?.OnCommandRefused"))
         self.assertIn("new List<Vote>(mind.LastDecisionBallot)", caller)
         self.assertIn("Importance(w, d, c, out string why, originalVotes)", caller)
         self.assertIn("Convene(w, d, c.Copy(), originalVotes: originalVotes)", caller)
@@ -111,6 +116,20 @@ class DreamCourtBallotReplayTests(unittest.TestCase):
         self.assertIn("IReadOnlyList<Vote> originalVotes = null", importance)
         self.assertIn("originalVotes ?? (IReadOnlyList<Vote>)new BehaviourResolver().Ballot(w, c)",
                       importance)
+
+    def test_refusal_event_rejects_same_valued_stale_decisions(self):
+        # Two ticks may produce exactly the same Decision on one command.
+        # The event's exact context object must match the saved evaluation.
+        caller = (ROOT / "Assets/Scripts/Gameplay/CourtCaller.cs").read_text(encoding="utf-8")
+        wrapper = (ROOT / "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs").read_text(encoding="utf-8")
+        guard = "mind.IsSourceOfLastCommandDecision(d, c)"
+        self.assertIn(guard, caller)
+        self.assertNotIn(guard, caller.replace(guard,
+            "mind.LastDecisionDetail.Equals(d)"))
+        reference = "object.ReferenceEquals(_lastDecisionSourceContext, sourceContext)"
+        self.assertIn(reference, wrapper)
+        self.assertNotIn(reference,
+                         wrapper.replace(reference, "LastContext != null"))
 
     def test_causal_regressions_detect_missing_provenance(self):
         caller = (ROOT / "Assets/Scripts/Gameplay/CourtCaller.cs").read_text(encoding="utf-8")
