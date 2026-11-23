@@ -14746,3 +14746,11 @@ msgstr "If I had a heel of bread, it wouldn't last until evening."
 #: Dialogue/stage1-fact-review
 msgid "Была бы горбушка — поделился бы. Наверное."
 msgstr "If I had some bread, I'd share it. Probably."
+
+Выступление=Departure
+Маршрут=March
+Решение командира=Command decision
+Боевой эпизод=Combat encounter
+Добыча=Loot
+Возвращение=Return
+Событие=Event
