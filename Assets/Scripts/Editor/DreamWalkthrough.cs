@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -393,21 +394,7 @@ namespace Sinbinder.EditorTools
                         Warp(dream.Hero, dream.LateAt + new Vector3(-1.2f, 0f, -0.6f));
                     }
                     if (!_fallenShot && now - _stepAt > 0.8f)
-                    {
-                        _fallenShot = true;
-                        // Сверху и наискось, на само тело (не на точку засады — тело падает где пришлось):
-                        // сбоку его заслоняли то убийца, то сам Греховод (дубли 20.11). Греховод — за телом
-                        // от камеры, в 1,3 м: жатва берёт душу не дальше 1,8 м (SoulManager._harvestRadius).
-                        var body = dream.Zombie != null ? dream.Zombie.transform.position : dream.LateAt;
-                        Warp(dream.Hero, body + new Vector3(0f, 0f, 1.3f));
-                        // Лежит ли павший: голова ниже 0,7 м над ногами — лёг (кадр 20.11 не дал разглядеть).
-                        var bones = dream.Zombie != null ? dream.Zombie.GetComponentInChildren<Animator>() : null;
-                        var head = bones != null && bones.isHuman ? bones.GetBoneTransform(HumanBodyBones.Head) : null;
-                        Write($"    павший: голова {(head != null ? (head.position.y - body.y).ToString("F2") + " м над ногами" : "не найдена")}, "
-                            + $"Греховод {SinbinderPlayer.Where}, тело {body}");
-                        ShotFrom("сон — пал в засаде, душа у тела", body + new Vector3(0f, 4.5f, -2.8f),
-                                 body, clear: false);
-                    }
+                        _fallenShot = FallenShot(dream, now - _stepAt);
                     if (poke && _fallenShot && now - _stepAt > 1.5f)
                     {
                         var reaper = dream.Hero.GetComponent<SoulHarvester>();
@@ -825,6 +812,98 @@ namespace Sinbinder.EditorTools
             RenderSettings.fog = fog;
             RenderSettings.ambientMode = mode;
             RenderSettings.ambientLight = ambient;
+        }
+
+        private static bool FallenShot(DreamTutorialDirector dream, float elapsed)
+        {
+            var corpse = dream.Zombie;
+            var body = corpse != null ? corpse.transform.position : dream.LateAt;
+            var animator = corpse != null ? corpse.GetComponentInChildren<Animator>() : null;
+            Transform Bone(HumanBodyBones bone) => animator != null && animator.isHuman
+                ? animator.GetBoneTransform(bone) : null;
+
+            var head = Bone(HumanBodyBones.Head);
+            float headHeight = head != null ? head.position.y - body.y : 0f;
+            bool canShoot = SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null && Camera.main != null;
+            // Клип падения занимает около секунды. Жатва в прогоне начинается после 1,5 с.
+            if (canShoot && headHeight > 0.7f && elapsed < 1.35f) return false;
+
+            // Греховод должен стоять в радиусе жатвы (1,8 м).
+            Warp(dream.Hero, body + new Vector3(0f, 0f, 1.3f));
+            Write($"    павший: голова {(head != null ? headHeight.ToString("F2") + " м над землёй" : "не найдена")}, "
+                + $"Греховод {SinbinderPlayer.Where}, тело {body}");
+            if (!canShoot) return true;
+
+            var shoulders = Bone(HumanBodyBones.Chest);
+            var hips = Bone(HumanBodyBones.Hips);
+            var leftFoot = Bone(HumanBodyBones.LeftFoot);
+            var rightFoot = Bone(HumanBodyBones.RightFoot);
+            var headAt = head != null ? head.position : body + Vector3.up * 0.35f;
+            var hipsAt = hips != null ? hips.position : body + Vector3.up * 0.2f;
+            var chestAt = shoulders != null ? shoulders.position : (headAt + hipsAt) * 0.5f;
+            var feetAt = leftFoot != null && rightFoot != null ? (leftFoot.position + rightFoot.position) * 0.5f : body;
+            var soulAt = body + Vector3.up * 0.9f;
+            if (corpse != null)
+                foreach (var indicator in UnityEngine.Object.FindObjectsByType<SoulIndicator>(FindObjectsSortMode.None))
+                    if (indicator.Soul?.Warrior == corpse) { soulAt = indicator.transform.position; break; }
+
+            var blockers = new List<Bounds>();
+            AddFallenShotBlockers(dream.Hero, blockers);
+            foreach (var killer in dream.Killers) AddFallenShotBlockers(killer, blockers);
+
+            var look = Vector3.Lerp((headAt + hipsAt + feetAt) / 3f, soulAt, 0.4f);
+            var side = Vector3.Cross(Vector3.up, headAt - feetAt);
+            side = side.sqrMagnitude > 0.04f ? side.normalized : Vector3.back;
+            var bodyTargets = new[] { headAt, chestAt, hipsAt, feetAt };
+            var from = FallenShotFrom(look, side, chestAt, soulAt, bodyTargets, blockers, out int visible);
+            Write($"    кадр павшего: открыты точки тела и души {visible}/{bodyTargets.Length + 1}; камера {from}");
+            ShotFrom("сон — пал в засаде, душа у тела", from, look, clear: false);
+            return true;
+        }
+
+        private static void AddFallenShotBlockers(Warrior actor, List<Bounds> blockers)
+        {
+            if (actor == null) return;
+            foreach (var renderer in actor.GetComponentsInChildren<Renderer>())
+                if (renderer.enabled && (renderer is SkinnedMeshRenderer || renderer is MeshRenderer)
+                    && renderer.GetComponent<TextMesh>() == null)
+                    blockers.Add(renderer.bounds);
+        }
+
+        private static Vector3 FallenShotFrom(Vector3 look, Vector3 side, Vector3 chest, Vector3 soul,
+                                             Vector3[] bodyTargets, List<Bounds> blockers, out int bestVisible)
+        {
+            var best = look + side * 3.6f + Vector3.up * 3.1f;
+            bestVisible = -1;
+            float bestSeparation = -1f;
+            // Сначала вид вдоль бока тела. Если персонажи закрывают лежащего, ищем с другой стороны и выше.
+            foreach (float height in new[] { 3.1f, 4.6f })
+            foreach (float yaw in new[] { 0f, 180f, 45f, -45f, 135f, -135f, 90f, -90f })
+            {
+                var from = look + Quaternion.AngleAxis(yaw, Vector3.up) * side * 3.6f + Vector3.up * height;
+                int visible = FallenShotOpen(from, soul, blockers) ? 1 : 0;
+                foreach (var target in bodyTargets)
+                    if (FallenShotOpen(from, target, blockers)) visible++;
+                // По возможности огонёк виден рядом с грудью, чтобы свечение не закрывало тело.
+                float separation = Mathf.Min(8f, Vector3.Angle(chest - from, soul - from));
+                if (visible < bestVisible || (visible == bestVisible && separation <= bestSeparation)) continue;
+                best = from;
+                bestVisible = visible;
+                bestSeparation = separation;
+                if (visible == bodyTargets.Length + 1 && separation >= 8f) return best;
+            }
+            return best;
+        }
+
+        private static bool FallenShotOpen(Vector3 from, Vector3 target, List<Bounds> blockers)
+        {
+            var direction = target - from;
+            float distance = direction.magnitude;
+            var ray = new Ray(from, direction / distance);
+            foreach (var blocker in blockers)
+                if (blocker.Contains(from) || (blocker.IntersectRay(ray, out float hit) && hit < distance))
+                    return false;
+            return true;
         }
 
         private static void ShotFrom(string name, Vector3 from, Vector3 look, bool clear = true)

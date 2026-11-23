@@ -148,7 +148,7 @@ namespace Sinbinder.UI
             // Склеп-песочница: состав — с тех, кто стоит в склепе. Поднятые
             // в мастерской иначе в нём не значились бы до смены сцены,
             // а плата лично меняет долг на живых, а не в составе.
-            if (CryptMap.Opened) SquadRoster.Remember(MissionBoard.Squad());
+            if (CryptMap.Opened) SquadRoster.RefreshFromScene(MissionBoard.Squad());
 
             _pickingCommander = false;
             ShowMissions();
@@ -160,6 +160,7 @@ namespace Sinbinder.UI
 
         private void Close()
         {
+            _leftTheBall = false;
             if (_panel != null) _panel.SetActive(false);
             Core.GamePauseController.Instance?.Resume();
         }
@@ -172,10 +173,15 @@ namespace Sinbinder.UI
 
             if (_title != null)
                 _title.text = string.IsNullOrEmpty(_board.LastReport)
-                    ? Loc.T("Куда послать отряд?  Esc — отойти от шара")
+                    ? Loc.T("Куда послать отряд?")
                     : _board.LastReport;
 
             Rows(out float y);
+            _spawned.Add(Row(y, true, Loc.T("Продолжить игру"),
+                MissionBoard.Journeys.Count > 0
+                    ? Loc.T("Время вылазок остановлено, пока открыта карта.") : "",
+                "", Close, 68f));
+            y -= 76f;
 
             // Ongoing operations take precedence over archived reports.
             // A commander remains away until the real resolver finishes on return.
@@ -208,7 +214,8 @@ namespace Sinbinder.UI
                 _spawned.Add(Row(y,true,
                     Loc.F("Отряд: {0}",Loc.Name(journey.MissionName)),
                     Loc.F("Старший: {0} · {1}",Loc.Name(journey.Commander),phase),
-                    eta,journey.Phase==1 ? (System.Action)(() => PickJourneyDecision(commanderId))
+                    eta,journey.CombatBlocked ? null
+                        : journey.Phase==1 ? (System.Action)(() => PickJourneyDecision(commanderId))
                         : journey.Phase==0 ? (System.Action)(() =>
                             { _board.RecallJourney(commanderId); ShowMissions(); })
                         : null,125f));
@@ -374,7 +381,7 @@ namespace Sinbinder.UI
             _party.Clear();
             int count = 0;
             foreach(var member in SquadRoster.Members)
-                if (SquadRoster.CanGo(member) && count < Mathf.Max(0, _chosen.Squad - 1))
+                if (count < Room && string.IsNullOrEmpty(_board.WhyNot(member, _chosen)))
                 {
                     _party.Add(member.Name);
                     count++;
@@ -395,11 +402,10 @@ namespace Sinbinder.UI
         }
 
         /// <summary>Скольких старший возьмёт сверх себя.</summary>
-        private int Room
-            => _personal ? Mathf.Max(0, _chosen.Squad - 1)
-                : Leadership.SquadSize(SquadRoster.TryGet(_leader, out var m) ? m.Leadership : 0f) - 1;
+        private int Room => Mathf.Max(0,
+            (_personal ? _chosen.Squad : MissionBoard.Fits(_leader, _chosen)) - 1);
 
-        /// <summary>Отряд набран. Есть развилка — спросить, что предложить; нет — уходят.</summary>
+        /// <summary>Отправить отряд или начать личную вылазку.</summary>
         private void Gathered()
         {
             _gathering = false;
@@ -422,7 +428,7 @@ namespace Sinbinder.UI
         {
             if (_party.Contains(name)) _party.Remove(name);
             else if (_party.Count < Room) _party.Add(name);
-            else { ShowParty(Loc.T("Больше за старшим не пойдут. Чтобы взять этого, сперва оставьте кого-нибудь в склепе.")); return; }
+            else { ShowParty(Loc.T("Свободных мест в отряде нет. Сначала снимите выбор с другого бойца.")); return; }
             ShowParty(null);
         }
 
@@ -464,11 +470,12 @@ namespace Sinbinder.UI
 
             foreach (var m in members)
             {
-                bool can = SquadRoster.CanGo(m);
+                string why = _board.WhyNot(m, _chosen);
+                bool can = string.IsNullOrEmpty(why);
                 bool goes = can && _party.Contains(m.Name);
                 string name = m.Name;
 
-                _spawned.Add(Row(y, goes, Loc.Name(m.ShownName), PartyLine(m, can, goes), "",
+                _spawned.Add(Row(y, goes, Loc.Name(m.ShownName), can ? PartyLine(m, goes) : why, "",
                     can ? () => Toggle(name) : (System.Action)null, height));
                 y -= step;
             }
@@ -481,10 +488,8 @@ namespace Sinbinder.UI
         }
 
         /// <summary>Идёт ли и что о нём стоит знать, решая: грех словом, долг, братство.</summary>
-        private static string PartyLine(SquadRoster.Member m, bool can, bool goes)
+        private static string PartyLine(SquadRoster.Member m, bool goes)
         {
-            if (!can) return m.IsAway ? Loc.T("В пути с другим отрядом.") : Loc.T(m.Unavailable);
-
             var parts = new List<string> { goes ? Loc.T("идёт") : Loc.T("остаётся в склепе") };
             parts.Add(SoulData.GetSinName(m.Sin).ToLowerInvariant());
             string condition=HealthNote(m);
@@ -614,11 +619,16 @@ namespace Sinbinder.UI
             int before=MissionBoard.Journeys.Count;
             string result=_board.Send(_chosen, commanderName,
                 new List<string>(_party), offer);
-            ShowMissions();
-            // Failed atomic dispatch must be visible, not hidden by the last
-            // successful expedition's stale LastReport.
-            if(MissionBoard.Journeys.Count==before && _title!=null)
-                _title.text=result;
+            if (MissionBoard.Journeys.Count != before)
+            {
+                ShowMissions();
+                return;
+            }
+
+            _party.RemoveWhere(name => !SquadRoster.TryGet(name, out var member) ||
+                !string.IsNullOrEmpty(_board.WhyNot(member, _chosen)));
+            _gathering = true;
+            ShowParty(result);
         }
 
         private static string Foretell(string name)

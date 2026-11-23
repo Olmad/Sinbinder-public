@@ -296,6 +296,7 @@ namespace Sinbinder.Gameplay
             if (!store.RemoveItem(item.Id)) { word = Loc.T("этого в мешке уже нет"); return false; }
 
             if (!Wear(w, item, store)) { store.AddItem(item); word = Loc.T("не взял"); return false; }
+            SquadRoster.SyncEquipment(w);
             Remember(w, "SinbinderGaveMe");
             return true;
         }
@@ -308,6 +309,7 @@ namespace Sinbinder.Gameplay
         {
             if (!WillTake(w, item, out word)) return false;
             if (!Wear(w, item, store)) { word = Loc.T("не взял"); return false; }
+            SquadRoster.SyncEquipment(w);
             return true;
         }
 
@@ -341,7 +343,7 @@ namespace Sinbinder.Gameplay
             if (!WillGive(w, item, out word)) return false;
             if (!store.AddItem(item)) { word = Loc.T("в мешке нет места"); return false; }
 
-            w.Drop(item);
+            if (w.Drop(item)) SquadRoster.SyncEquipment(w);
             Remember(w, "SinbinderTookFromMe");
             return true;
         }

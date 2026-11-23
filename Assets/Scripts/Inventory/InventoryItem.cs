@@ -32,6 +32,16 @@ namespace Sinbinder.Inventory
     }
 
     [System.Serializable]
+    public struct EquippedItem
+    {
+        public GearSlot Slot;
+        public InventoryItem Item;
+
+        internal static bool IsSupported(GearSlot slot) => slot >= GearSlot.Weapon && slot <= GearSlot.Belt;
+        public bool IsValid => Item != null && Item.Fits(Slot);
+    }
+
+    [System.Serializable]
     public class InventoryItem
     {
         [SerializeField] private string _id;
@@ -85,7 +95,7 @@ namespace Sinbinder.Inventory
         public bool Fits(GearSlot place)
         {
             var own = Slot;
-            if (own == GearSlot.None || place == GearSlot.None) return false;
+            if (!EquippedItem.IsSupported(own) || !EquippedItem.IsSupported(place)) return false;
             if (place == GearSlot.Offhand) return own == GearSlot.Offhand || own == GearSlot.Weapon;
             return own == place;
         }

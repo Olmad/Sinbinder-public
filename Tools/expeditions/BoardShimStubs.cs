@@ -22,7 +22,7 @@ namespace UnityEngine
         protected static void Destroy(GameObject obj) { Object.Destroy(obj); }
         protected static void DestroyImmediate(GameObject obj) { Object.DestroyImmediate(obj); }
     }
-    public enum FindObjectsSortMode { InstanceID }
+    public enum FindObjectsSortMode { None, InstanceID }
     public enum FindObjectsInactive { Include }
     public static class Time { public static float deltaTime=0.1f; }
     public static partial class Debug
@@ -32,11 +32,21 @@ namespace UnityEngine
     }
     public static partial class Object
     {
-        public static T FindFirstObjectByType<T>() where T:class => null;
+        public static readonly List<Warrior> SceneWarriors=new List<Warrior>();
+        public static readonly List<PrologueCampSpawner> CampSpawners=new List<PrologueCampSpawner>
+            {new PrologueCampSpawner()};
+        public static T FindFirstObjectByType<T>() where T:class
+            => FindObjectsByType<T>(FindObjectsSortMode.None).FirstOrDefault();
         public static T[] FindObjectsByType<T>(FindObjectsSortMode sort) where T:class
-            => Array.Empty<T>();
+            => FindSceneObjects<T>(false);
         public static T[] FindObjectsByType<T>(FindObjectsInactive inactive,
-            FindObjectsSortMode sort) where T:class => Array.Empty<T>();
+            FindObjectsSortMode sort) where T:class
+            => FindSceneObjects<T>(true);
+        private static T[] FindSceneObjects<T>(bool includeInactive) where T:class
+            => SceneWarriors.Select(w=>(Component:(object)w, GameObject:w.gameObject))
+                .Concat(CampSpawners.Select(s=>(Component:(object)s, GameObject:s.gameObject)))
+                .Where(obj=>!obj.GameObject.WasDestroyed && (includeInactive || obj.GameObject.activeSelf))
+                .Select(obj=>obj.Component).OfType<T>().ToArray();
     }
 }
 namespace Sinbinder.Core
@@ -55,11 +65,17 @@ namespace Sinbinder.Core
     }
     public static class Records
     {
-        public static Record FromMission(string name) => null;
+        public static readonly List<string> MissionRequests=new List<string>();
+        public static Record FromMission(string name)
+        {
+            MissionRequests.Add(name);
+            return null;
+        }
         public static string MetalWord(Record r) => "пластинка";
     }
     public static class SaveSystem
     {
+        public static bool Arriving;
         public static int SaveCount;
         public static List<SavedAutoExpedition> LastSave;
         public static void AutoSave()
@@ -151,8 +167,39 @@ namespace Sinbinder.Gameplay
     {
         public UnityEngine.GameObject gameObject {get;}=
             new UnityEngine.GameObject("Shim Warrior");
+        public bool IsCommander {get; private set;}
+
+        internal void RestoreExpeditionCondition(SquadRoster.Member member)
+        {
+            UnpaidMissions=member.UnpaidMissions;
+            ChangeLoyalty(member.Loyalty-Loyalty);
+            SetHealthFraction(ExpeditionHealthRules.RestoreFraction(member.HealthFraction));
+            IsCommander=member.IsCommander;
+            PocketGold=Math.Max(0,member.Pocket);
+        }
     }
     public sealed class SinbinderPlayer : Warrior {}
+    public sealed class PrologueCampSpawner : UnityEngine.MonoBehaviour
+    {
+        public void Arrive(IReadOnlyList<string> names, bool restoreHealth = false)
+        {
+            foreach(var name in names)
+            {
+                if(!SquadRoster.TryGet(name,out var member) || member.IsAway) continue;
+                var warrior=new Warrior(name,Team.Player);
+                if(!string.IsNullOrEmpty(member.WarriorId)) warrior.Id=member.WarriorId;
+                warrior.gameObject.scene=gameObject.scene;
+                if (restoreHealth) warrior.RestoreExpeditionCondition(member);
+                else
+                {
+                    warrior.UnpaidMissions=member.UnpaidMissions;
+                    warrior.ChangeLoyalty(member.Loyalty-warrior.Loyalty);
+                    warrior.Pocket(member.Pocket);
+                }
+                UnityEngine.Object.SceneWarriors.Add(warrior);
+            }
+        }
+    }
     public static class PersonalExpedition
     {
         public static bool Active;
@@ -187,6 +234,8 @@ namespace Sinbinder.Gameplay
     {
         public static readonly List<Member> Members=new List<Member>();
         public static IEnumerable<Member> Away => Members.Where(m=>m.IsAway);
+        public static bool HasUniqueName(string name)
+            => !string.IsNullOrEmpty(name) && Members.Count(m=>m.Name==name)==1;
         public static bool TryGet(string name,out Member m)
         {
             m=Members.FirstOrDefault(x=>x.Name==name);
@@ -225,6 +274,7 @@ namespace Sinbinder.Gameplay
         }
         public sealed partial class Member
         {
+            public string WarriorId;
             public bool IsAway;
             public string Unavailable;
             public float Leadership=100f;

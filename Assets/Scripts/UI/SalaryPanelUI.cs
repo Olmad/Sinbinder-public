@@ -103,7 +103,7 @@ namespace Sinbinder.UI
             // подкрепление и сразу побег. Нашёл прогон DemoWalkthrough.
             if (_askOnArrival)
             {
-                StartCoroutine(AskWhenArrived());
+                if (!Crypt.CryptMap.Opened) StartCoroutine(AskWhenArrived());
                 return;
             }
 
@@ -283,8 +283,7 @@ namespace Sinbinder.UI
         /// <summary>
         /// Кому платят за эту ночь: кто её пережил. Поднятый в мастерской
         /// склепа её не переживал — этой ночью он охотился на вас, — и плата
-        /// ему, как и обида за неё, была бы ложью. Его нет в составе отряда:
-        /// состав пишется при уходе со сцены.
+        /// за набег начисляется бойцам, которые пришли с отрядом.
         /// </summary>
         private static IEnumerable<Warrior> Squad()
         {
@@ -292,7 +291,7 @@ namespace Sinbinder.UI
             if (all == null) yield break;
 
             foreach (var w in all)
-                if (w != null && (!SquadRoster.HasSquad || SquadRoster.TryGet(w.DisplayName, out _)))
+                if (w != null && SquadRoster.OwedRaidPay(w))
                     yield return w;
         }
 

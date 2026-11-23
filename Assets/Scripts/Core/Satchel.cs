@@ -190,15 +190,17 @@ namespace Sinbinder.Core
         /// инициализатор: так «забыть» и «завести» — одно место,
         /// и они не могут разойтись.
         /// </summary>
-        public static void Forget()
+        public static void Forget() => RestoreLayout(StartingJars, 0);
+
+        internal static void RestoreLayout(int count, int selected)
         {
             for (int i = 0; i < Max; i++) _jars[i] = default;
 
-            _count = System.Math.Min(StartingJars, Max);
+            _count = count;
             for (int i = 0; i < _count; i++)
                 _jars[i] = new Slot { Kind = CarryKind.Jar };
 
-            _selected = 0;
+            _selected = selected;
             _ready = true;
         }
 

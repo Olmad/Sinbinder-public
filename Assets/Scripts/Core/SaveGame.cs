@@ -3,15 +3,18 @@ using System.Collections.Generic;
 
 namespace Sinbinder.Core
 {
-    /// <summary>Душа на полке, как она ложится в файл.</summary>
+    /// <summary>Состояние собранной души.</summary>
     [System.Serializable]
     public class SavedSoul
     {
+        public string Id;
         public string Name;
         public int Moral;
         public int Level;
         public float[] Spectra;
         public int Quality;
+        public bool HasMemorySeed;
+        public MemorySeed Memory;
 
         /// <summary>
         /// Пол, ремесло и заслуженное при жизни имя.
@@ -42,6 +45,8 @@ namespace Sinbinder.Core
     public class SavedMember
     {
         public string Name;
+        public string WarriorId;
+        public bool JoinedAfterRaid;
         public int Sin;
         public int Moral;
         public int Gender;
@@ -58,6 +63,8 @@ namespace Sinbinder.Core
         // Надетое и карман (docs/34-GEAR.md §9.4). Вещь — [Serializable],
         // JsonUtility пишет её список как есть.
         public List<Inventory.InventoryItem> Gear = new List<Inventory.InventoryItem>();
+        public bool HasEquipmentLayout;
+        public List<Inventory.EquippedItem> Equipment;
         public int Pocket;
 
         /// <summary>
@@ -102,11 +109,8 @@ namespace Sinbinder.Core
     /// Снимок игры.
     ///
     /// Сохраняется <b>состояние склепа между вылазками</b>: отряд, полка
-    /// душ, казна, улучшения. Положение тел на поле и середина боя —
-    /// нет, и это не упущение: бой длится минуту, а решает его движок,
-    /// у которого нет скрытого состояния. Переигрывать середину боя
-    /// незачем — а вот переигрывать вылазку очень хочется, и именно
-    /// поэтому есть режим, где нельзя.
+    /// душ, казна, улучшения. Положение тел и текущий ход боя
+    /// остаются в сцене.
     ///
     /// Плоские поля и массивы: <c>JsonUtility</c> не умеет ни словари,
     /// ни свойства, ни вложенные обобщения. Узнаётся это обычно на пустом
@@ -143,6 +147,7 @@ namespace Sinbinder.Core
 
         public List<SavedMember> Squad = new();
         public List<SavedSoul> Shelf = new();
+        public SavedSoulCustody SoulCustody;
 
         public int Gold;
 
@@ -163,6 +168,13 @@ namespace Sinbinder.Core
         // Absent on old save files: these locations start unvisited.
         public List<Sinbinder.Gameplay.SavedPersonalExpedition> PersonalExpeditions =
             new List<Sinbinder.Gameplay.SavedPersonalExpedition>();
+        public bool CryptSandboxOpened;
+
+        // Older crypt saves record expeditions only after entering the sandbox.
+        internal bool OpensCryptSandbox => Scene == Sinbinder.Crypt.CryptMap.SceneName &&
+            (CryptSandboxOpened || AutoExpeditions?.Count > 0 || ExpeditionReplays?.Count > 0 ||
+             PersonalExpeditions?.Count > 0 || !string.IsNullOrEmpty(AutoExpeditionReport));
+
         // Delayed automatic operations, including assigned warriors and travel stage.
         public List<Sinbinder.Crypt.SavedAutoExpedition> AutoExpeditions =
             new List<Sinbinder.Crypt.SavedAutoExpedition>();

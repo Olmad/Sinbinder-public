@@ -3124,6 +3124,10 @@ msgid "На дороге что-то случилось, и рассказыва
 msgstr "Something happened on the road, and no one would talk about it."
 
 #: Crypt/MissionBoard.cs
+msgid "В отряде несколько бойцов с именем «{0}». Выберите другого бойца."
+msgstr "Several fighters are named “{0}”. Choose another fighter."
+
+#: Crypt/MissionBoard.cs
 msgid "Отряд «{0}» у развилки. Можно дать совет; без него старший решит сам."
 msgstr "Squad “{0}” is at a fork. You can give advice; without it the leader decides alone."
 
@@ -11092,6 +11096,10 @@ msgid "ПРОТИВ"
 msgstr "AGAINST"
 
 #: Gameplay/SoulCourt.cs
+msgid "СВОЙ ВЫБОР"
+msgstr "OWN CHOICE"
+
+#: Gameplay/SoulCourt.cs
 msgid "ДОБРО"
 msgstr "GOOD"
 
@@ -11116,6 +11124,14 @@ msgid "Ниже — весы. Слева — голоса за приказ, с�
 msgstr "Below are the scales. Left: voices for the order; right: against. Whichever way the scales tip, so she will act."
 
 #: Gameplay/SoulCourt.cs
+msgid "Ниже — весы. Слева — голоса за приказ, справа — за свой выбор."
+msgstr "Below are the scales. On the left are the voices for the order. On the right are those for the soul's own choice."
+
+#: Gameplay/SoulCourt.cs
+msgid "Ниже — весы. Слева — голоса за приказ, справа — против."
+msgstr "Below are the scales. Voices for the order are on the left, and those against it are on the right."
+
+#: Gameplay/SoulCourt.cs
 msgid "Перед судом — приказ владыки: «{0}». Судьи, встаньте и назовитесь."
 msgstr "Before the court is the master's order: “{0}”. Judges, rise and name yourselves."
 
@@ -11126,6 +11142,10 @@ msgstr "Judges, speak. The quiet first, the loud last. The stronger the voice, t
 #: Gameplay/SoulCourt.cs
 msgid "за — {0}    против — {1}    воздержались — {2}"
 msgstr "for — {0}    against — {1}    abstained — {2}"
+
+#: Gameplay/SoulCourt.cs
+msgid "за приказ — {0}    за свой выбор — {1}    воздержались — {2}"
+msgstr "for the order — {0}    for its own choice — {1}    abstained — {2}"
 
 #: Gameplay/SoulCourt.cs
 msgid "воздерж."
@@ -11148,12 +11168,20 @@ msgid "Поэтому я — против."
 msgstr "So I am against."
 
 #: Gameplay/SoulCourt.cs
+msgid "Поэтому я — за свой выбор."
+msgstr "So I am for the soul’s own choice."
+
+#: Gameplay/SoulCourt.cs
 msgid "за"
 msgstr "for"
 
 #: Gameplay/SoulCourt.cs UI/ScalesOverhead.cs
 msgid "против"
 msgstr "against"
+
+#: Gameplay/SoulCourt.cs UI/ScalesOverhead.cs
+msgid "за свой выбор"
+msgstr "for its own choice"
 
 #: Gameplay/SoulCourt.cs
 msgid "Вердикт"
@@ -11166,6 +11194,10 @@ msgstr "God of Death"
 #: Gameplay/SoulCourt.cs
 msgid "Так решила душа без Шёпота. Греховод вмешался: воин фактически подчинился приказу, но не по своей воле."
 msgstr "This is what the soul decided without the Whisper. The Sinbinder intervened: the warrior did obey the order, but not of their own will."
+
+#: Gameplay/SoulCourt.cs
+msgid "Так решила душа без Шёпота. Уговор изменил выбор воина: тот согласился следовать приказу."
+msgstr "This is what the soul decided without the Whisper. Persuaded by the Whisper, the warrior agreed to follow the order."
 
 #: Gameplay/SoulCourt.cs
 msgid "Это голоса, записанные при решении. Помимо них, на итог могли повлиять вещи, перки и установка отряда."
@@ -11420,6 +11452,34 @@ msgid "Не уходи."
 msgstr "Don't leave."
 
 #: Gameplay/SoulCourt.cs
+msgid "Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>за свой выбор</color> — {3}"
+msgstr "Scales: <color=#{0}>for the order</color> — {1} · <color=#{2}>for its own choice</color> — {3}"
+
+#: Gameplay/SoulCourt.cs
+msgid "Приказ владыки — «{0}». {1} Судьи, ваше слово."
+msgstr "The master ordered “{0}”. {1} Judges, speak."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} выбрал своё. Решение совпало с приказом."
+msgstr "{0} chose his own course. It matched the order."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} выбрала своё. Решение совпало с приказом."
+msgstr "{0} chose her own course. It matched the order."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} решил послушаться."
+msgstr "{0} chose to obey."
+
+#: Gameplay/SoulCourt.cs
+msgid "{0} решила послушаться."
+msgstr "{0} chose to obey."
+
+#: Gameplay/SoulCourt.cs
+msgid "Почему собственное решение совпало с приказом? Вот суд души: здесь решают тринадцать её голосов."
+msgstr "Why did the warrior's own choice match the order? In the court of the soul, thirteen voices decide."
+
+#: Gameplay/SoulCourt.cs
 msgid "Голоса вровень — душа не выбрала ничего."
 msgstr "The voices are even — the soul chose nothing."
 
@@ -11454,6 +11514,26 @@ msgstr "Order carried out. For: {0}. Against: {1}. The scales tipped to “for�
 #: Gameplay/SoulCourt.cs
 msgid "Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за»."
 msgstr "The order is carried out. For: {0}. Against: {1}. The scales tipped to “for”."
+
+#: Gameplay/SoulCourt.cs
+msgid "Решение совпало с приказом по собственной воле. За приказ — {0}. За свой выбор — {1}."
+msgstr "The soul chose the same course of its own accord. For the order: {0}. For its own choice: {1}."
+
+#: Gameplay/SoulCourt.cs
+msgid "Душа решила послушаться."
+msgstr "The soul chose to obey."
+
+#: Gameplay/SoulCourt.cs
+msgid "Душа решила послушаться. За — {0}. Против — никто."
+msgstr "The soul chose to obey. For: {0}. Against: no one."
+
+#: Gameplay/SoulCourt.cs
+msgid "Душа решила послушаться. За — {0}. Против — {1}. Весы склонились к «за» — на волосок."
+msgstr "The soul chose to obey. For: {0}. Against: {1}. The scales tipped in favor by a hair."
+
+#: Gameplay/SoulCourt.cs
+msgid "Душа решила послушаться. За — {0}. Против — {1}. Весы склонились к «за»."
+msgstr "The soul chose to obey. For: {0}. Against: {1}. The scales tipped in favor."
 
 #: Gameplay/SoulCourt.cs
 msgid "Голосов за приказ больше, но {0} — громче всех: весы решает сила голоса, а не число."
@@ -13179,6 +13259,10 @@ msgstr "will give it"
 msgid "не отдаст: {0}"
 msgstr "won't give it: {0}"
 
+#: UI/ExpeditionReplayViewer.cs
+msgid "←/→: событие · PgUp/PgDn: бой · Home/End: начало/конец · Space: воспроизведение"
+msgstr "←/→: event · PgUp/PgDn: combat · Home/End: start/end · Space: play/pause"
+
 #: UI/GearPanel.cs
 msgid "Карман: {0}"
 msgstr "Pocket: {0}"
@@ -13378,6 +13462,22 @@ msgstr "Esc — skip"
 #: UI/MissionMapUI.cs
 msgid "Куда послать отряд?  Esc — отойти от шара"
 msgstr "Where to send a party?  Esc — step away from the orb"
+
+#: UI/MissionMapUI.cs
+msgid "Куда послать отряд?"
+msgstr "Where should the squad go?"
+
+#: UI/MissionMapUI.cs
+msgid "Продолжить игру"
+msgstr "Resume game"
+
+#: UI/MissionMapUI.cs
+msgid "Время вылазок остановлено, пока открыта карта."
+msgstr "Expedition timers are paused while the map is open."
+
+#: UI/MissionMapUI.cs
+msgid "Свободных мест в отряде нет. Сначала снимите выбор с другого бойца."
+msgstr "The squad is full. Deselect another fighter first."
 
 #: UI/MissionMapUI.cs
 msgid "AOS-бой остановлен: снимок требует проверки"

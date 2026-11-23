@@ -252,6 +252,8 @@ namespace Sinbinder.Crypt
         /// </summary>
         public void AdvanceJourneys(float gameDelta, bool canDeliver = true)
         {
+            if (SaveSystem.Arriving) return;
+
             // The playable personal expedition is a virtual map inside
             // the crypt scene. Never materialize an automatic crew there.
             if (PersonalExpedition.Active) canDeliver=false;
@@ -263,6 +265,7 @@ namespace Sinbinder.Crypt
             for (int i=ActiveJourneys.Count-1;i>=0;i--)
             {
                 var journey=ActiveJourneys[i];
+                if (journey.CombatBlocked) continue;
                 journey.SecondsRemaining=ExpeditionJourneyTiming.Advance(
                     journey.SecondsRemaining,gameDelta);
                 if (!ExpeditionJourneyTiming.Finished(journey.SecondsRemaining)) continue;
@@ -316,7 +319,6 @@ namespace Sinbinder.Crypt
                 {
                     // ONE genuine AOS round per 2 seconds of game time,
                     // not a previously simulated film played frame by frame.
-                    if(journey.CombatBlocked) continue;
                     if(AdvanceEncounterRound(journey))
                     {
                         journey.Phase=2;
@@ -367,8 +369,10 @@ namespace Sinbinder.Crypt
                         }
                         continue;
                     }
+                    if (!TryPrepareReturn(journey, out var bodies, out var spawner))
+                        continue;
                     ActiveJourneys.RemoveAt(i);
-                    CompleteJourney(journey);
+                    CompleteJourney(journey, bodies, spawner);
                 }
             }
         }
@@ -378,7 +382,7 @@ namespace Sinbinder.Crypt
         {
             foreach (var journey in ActiveJourneys)
             {
-                if (journey.Commander!=commanderName || journey.Phase!=1) continue;
+                if (journey.Commander!=commanderName || journey.Phase!=1 || journey.CombatBlocked) continue;
                 Mission mission=default;
                 foreach(var candidate in MissionCatalog.All())
                     if(candidate.Name==journey.MissionName) { mission=candidate; break; }
@@ -608,7 +612,7 @@ namespace Sinbinder.Crypt
         {
             foreach (var journey in ActiveJourneys)
             {
-                if (journey.Commander!=commanderName || journey.Phase!=0) continue;
+                if (journey.Commander!=commanderName || journey.Phase!=0 || journey.CombatBlocked) continue;
                 journey.Recalled=true;
                 journey.Phase=2;
                 journey.SecondsRemaining=ReturnSeconds;
@@ -637,7 +641,8 @@ namespace Sinbinder.Crypt
             return journey.Recalled || Inventory.PlayerInventory.Instance!=null;
         }
 
-        private void CompleteJourney(SavedAutoExpedition journey)
+        private void CompleteJourney(SavedAutoExpedition journey,
+            Dictionary<string, Warrior> bodies, PrologueCampSpawner spawner)
         {
             Mission found=default;
             bool exists=false;
@@ -661,7 +666,7 @@ namespace Sinbinder.Crypt
             if (journey.Recalled)
             {
                 SquadRoster.ComeBack(journey.Party,journey.Party);
-                Settle(journey.Party,journey.Party);
+                Settle(bodies, journey.Party, spawner);
                 LastReport=Loc.F("Отряд «{0}» вернулся по вашему приказу. Боя и добычи не было.",
                     Loc.Name(journey.Commander));
                 LastReplay=new ExpeditionReplayData(Loc.Name(found.Name),
@@ -679,7 +684,7 @@ namespace Sinbinder.Crypt
                 return;
             }
             ResolveReturned(found,journey.Commander,away,
-                new List<string>(journey.Party),journey);
+                new List<string>(journey.Party),journey,bodies,spawner);
         }
 
 
@@ -716,15 +721,19 @@ namespace Sinbinder.Crypt
         {
             if (!string.IsNullOrEmpty(member.Unavailable)) return Loc.T(member.Unavailable);
             if (member.IsAway) return Loc.T("В пути с другим отрядом.");
+            if (!SquadRoster.HasUniqueName(member.Name)) return AmbiguousWarrior(member.Name);
             return "";
         }
+
+        private static string AmbiguousWarrior(string name)
+            => Loc.F("В отряде несколько бойцов с именем «{0}». Выберите другого бойца.", Loc.Name(name));
 
         /// <summary>Сколько людей сейчас может уйти. Ушедшие с другим отрядом — не здесь.</summary>
         public int Ready()
         {
             int ready = 0;
             foreach (var m in SquadRoster.Members)
-                if (SquadRoster.CanGo(m)) ready++;
+                if (SquadRoster.CanGo(m) && SquadRoster.HasUniqueName(m.Name)) ready++;
             return ready;
         }
 
@@ -777,8 +786,6 @@ namespace Sinbinder.Crypt
         {
             if (ActiveJourneys.Count>=MaxActiveJourneys)
                 return Loc.T("Слишком много одновременных экспедиций.");
-            if (Ready() == 0)
-                return Loc.T("Послать некого.");
 
             // Вылазка — только те, кого послали сейчас. Отряд, ушедший
             // из лагеря, ещё в пути и вернётся в эпилоге: до 29 сентября
@@ -787,9 +794,9 @@ namespace Sinbinder.Crypt
             // старшего с того отряда (SquadRoster.ChooseCommander).
             var before = new HashSet<string>();
             foreach (var m in SquadRoster.Away) before.Add(m.Name);
-            if (!SquadRoster.TryGet(commanderName, out var commander) ||
-                !SquadRoster.CanGo(commander))
-                return Loc.T("Выбранный старший недоступен.");
+            if (!SquadRoster.TryGet(commanderName, out var commander) || !SquadRoster.CanGo(commander))
+                return Ready() == 0 ? Loc.T("Послать некого.") : Loc.T("Выбранный старший недоступен.");
+            if (!SquadRoster.HasUniqueName(commanderName)) return AmbiguousWarrior(commanderName);
             if (before.Contains(commanderName))
                 return Loc.F("{0} уже в пути.", Loc.Name(commanderName));
 
@@ -797,8 +804,7 @@ namespace Sinbinder.Crypt
             // SendAway silently skipped unavailable soldiers, making the
             // on-screen party differ from the group actually sent.
             var selected=new HashSet<string>();
-            int maxSize=System.Math.Min(mission.Squad,
-                Leadership.SquadSize(commander.Leadership));
+            int maxSize=Fits(commanderName, mission);
             if (companions!=null)
                 foreach (var name in companions)
                 {
@@ -807,6 +813,7 @@ namespace Sinbinder.Crypt
                         !SquadRoster.TryGet(name,out var member) ||
                         !SquadRoster.CanGo(member))
                         return Loc.T("Неверный состав: один из спутников недоступен или указан повторно.");
+                    if (!SquadRoster.HasUniqueName(name)) return AmbiguousWarrior(name);
                 }
             if (selected.Count+1>maxSize)
                 return Loc.T("Старший не может вести столько спутников.");
@@ -831,8 +838,15 @@ namespace Sinbinder.Crypt
             // Hide their scene objects too; otherwise one warrior can fight
             // beside the player in the crypt while simultaneously on a raid.
             foreach (var warrior in Squad())
-                if (party.Contains(warrior.DisplayName))
-                    warrior.gameObject.SetActive(false);
+            {
+                if (warrior.gameObject.scene != gameObject.scene) continue;
+                foreach (var member in away)
+                    if (MatchesMember(warrior, member))
+                    {
+                        warrior.gameObject.SetActive(false);
+                        break;
+                    }
+            }
             Sent++;
             ActiveJourneys.Add(new SavedAutoExpedition
             {
@@ -851,7 +865,8 @@ namespace Sinbinder.Crypt
 
         private void ResolveReturned(Mission mission, string commanderName,
             List<SquadRoster.Member> away, List<string> party,
-            SavedAutoExpedition journey)
+            SavedAutoExpedition journey, Dictionary<string, Warrior> bodies,
+            PrologueCampSpawner spawner)
         {
             // Use the event already decided and simulated at the destination.
             // Re-running AOS here would change the past on every load.
@@ -934,9 +949,7 @@ namespace Sinbinder.Crypt
                         AOS.EmotionType.Sadness,0.9f);
             }
 
-            // Ушедших видно в склепе — сцена догоняет состав: не вернувшихся
-            // в ней больше нет, вернувшимся должны.
-            Settle(party, survivors);
+            Settle(bodies, survivors, spawner);
 
             var shares = new List<ExpeditionLootShare>();
             int coinsForLord = 0;
@@ -978,9 +991,10 @@ namespace Sinbinder.Crypt
                 foreach(var share in shares)
                 {
                     Warrior present = null;
-                    foreach(var w in Squad())
-                        if(w.DisplayName == share.Name && !w.IsDead)
-                        {present = w;break;}
+                    if (SquadRoster.TryGet(share.Name, out var member))
+                        foreach (var w in Squad())
+                            if (w.gameObject.scene == gameObject.scene && MatchesMember(w, member))
+                            { present = w; break; }
                     if(present!=null) present.Pocket(share.Coins);
                     else SquadRoster.CreditPocket(share.Name,share.Coins);
                     Log(Loc.F("{0} оставил себе из вылазки {1} монет.",
@@ -994,9 +1008,12 @@ namespace Sinbinder.Crypt
                 }
 
                 // Пластинка — награда вылазки песочницы (37-DEMO §8.4): тема по месту, не сила.
-                var record = Core.Records.FromMission(mission.Name);
-                if (secured && record != null)
-                    Log(Loc.F("С вылазки привезли: {0} — «{1}». Граммофон в склепе.", Core.Records.MetalWord(record), Loc.T(record.Title)));
+                if (secured)
+                {
+                    var record = Core.Records.FromMission(mission.Name);
+                    if (record != null)
+                        Log(Loc.F("С вылазки привезли: {0} — «{1}». Граммофон в склепе.", Core.Records.MetalWord(record), Loc.T(record.Title)));
+                }
             }
 
             LastReplay = BuildReplay(mission, commanderName, party, chosen,
@@ -1089,36 +1106,77 @@ namespace Sinbinder.Crypt
                     yield return w;
         }
 
-        /// <summary>
-        /// Сцена — по составу после вылазки. Вылазка считается разом, без
-        /// сцены, а ушедшие стоят в склепе: не вернувшийся оставался бы
-        /// стоять, а вернувшийся — без долга, который записан в составе,
-        /// и при следующем снятии состава долг стёрся бы.
-        /// </summary>
-        private static void Settle(List<string> party, IReadOnlyList<string> survivors)
+        // Snapshot bodies while the roster still contains the entire party.
+        // A cold load skips away members, so allow settlement only when the
+        // current scene can recreate any surviving bodies that are missing.
+        private bool TryPrepareReturn(SavedAutoExpedition journey,
+            out Dictionary<string, Warrior> bodies, out PrologueCampSpawner spawner)
+        {
+            var scene = gameObject.scene;
+            var warriors = Object.FindObjectsByType<Warrior>(
+                FindObjectsInactive.Include, FindObjectsSortMode.InstanceID);
+            bodies = new Dictionary<string, Warrior>();
+            foreach (var name in journey.Party)
+            {
+                if (!SquadRoster.TryGet(name, out var member)) continue;
+                Warrior body = null;
+                foreach (var w in warriors)
+                {
+                    if (w == null || w is SinbinderPlayer || w.Team != Team.Player ||
+                        w.gameObject.scene != scene || !MatchesMember(w, member)) continue;
+                    body = w;
+                    if (!w.IsDead) break;
+                }
+                bodies[name] = body;
+            }
+
+            spawner = null;
+            var survivors = journey.Recalled ? journey.Party : journey.Survivors;
+            if (survivors == null) return true;
+            foreach (var entry in bodies)
+            {
+                var w = entry.Value;
+                if ((w != null && !w.IsDead) || !survivors.Contains(entry.Key)) continue;
+                foreach (var camp in Object.FindObjectsByType<PrologueCampSpawner>(FindObjectsSortMode.None))
+                    if (camp.gameObject.scene == scene)
+                    {
+                        spawner = camp;
+                        return true;
+                    }
+                return false;
+            }
+            return true;
+        }
+
+        private static bool MatchesMember(Warrior w, SquadRoster.Member member)
+            => string.IsNullOrEmpty(member.WarriorId)
+                ? w.DisplayName == member.Name : w.Id == member.WarriorId;
+
+        private static void Settle(Dictionary<string, Warrior> bodies,
+            IReadOnlyList<string> survivors, PrologueCampSpawner spawner)
         {
             var stay = new HashSet<string>(survivors);
-            var gone = new List<Warrior>();
-
-            foreach (var w in Object.FindObjectsByType<Warrior>(
-                FindObjectsInactive.Include,FindObjectsSortMode.InstanceID))
+            var arrivals = new List<string>();
+            foreach (var entry in bodies)
             {
-                if (w==null || w is SinbinderPlayer || w.Team!=Team.Player ||
-                    !party.Contains(w.DisplayName)) continue;
-                if (!stay.Contains(w.DisplayName)) { gone.Add(w); continue; }
-                if (!SquadRoster.TryGet(w.DisplayName, out var m)) continue;
-
-                w.UnpaidMissions = m.UnpaidMissions;
-                w.ChangeLoyalty(m.Loyalty - w.Loyalty);
-                w.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(m.HealthFraction));
+                var w = entry.Value;
+                if (!stay.Contains(entry.Key))
+                {
+                    if (w == null) continue;
+                    if (Application.isPlaying) Destroy(w.gameObject);
+                    else DestroyImmediate(w.gameObject);
+                    continue;
+                }
+                if (w == null || w.IsDead)
+                {
+                    arrivals.Add(entry.Key);
+                    continue;
+                }
+                if (!SquadRoster.TryGet(entry.Key, out var member)) continue;
+                w.RestoreExpeditionCondition(member);
                 w.gameObject.SetActive(true);
             }
-
-            foreach (var w in gone)
-            {
-                if (Application.isPlaying) Destroy(w.gameObject);
-                else DestroyImmediate(w.gameObject);
-            }
+            if (spawner != null && arrivals.Count > 0) spawner.Arrive(arrivals, restoreHealth: true);
         }
 
         private static List<string> Names(List<SquadRoster.Member> away)

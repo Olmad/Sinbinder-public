@@ -300,7 +300,8 @@ namespace Sinbinder.Gameplay
             // Первая сцена пролога заводит канон, дальнейшие берут то, что
             // от отряда осталось: выбор командира на доле 3 и потери в бою
             // обязаны дожить до последней сцены (00-GDD.md §8).
-            if (!SquadRoster.HasSquad)
+            bool sandbox = Crypt.CryptMap.IsOpenIn(gameObject.scene);
+            if (!SquadRoster.HasSquad && !sandbox)
             {
                 SquadRoster.Set(Canon());
                 RatBanner.Reset();
@@ -327,7 +328,8 @@ namespace Sinbinder.Gameplay
                 if (!m.IsAway) squad.Add(m);
 
             for (int i = 0; i < squad.Count; i++)
-                SpawnMember(squad[i], i, squad.Count);
+                SpawnMember(squad[i], PlaceInCircle(i, squad.Count), transform.position,
+                    restoreHealth: sandbox);
 
             SpawnPlayer();
 
@@ -523,10 +525,6 @@ namespace Sinbinder.Gameplay
 
             return seed;
         }
-        /// <summary>Место в круге, лицом к костру: в лагере смотрят на огонь, а не наружу.</summary>
-        private Warrior SpawnMember(SquadRoster.Member member, int index, int total)
-            => SpawnMember(member, PlaceInCircle(index, total), transform.position);
-
         /// <summary>
         /// Один воин по описанию — создатель полигона (<see cref="Crypt.WarriorForge"/>,
         /// docs/53-GENERATOR.md §9). Тем же путём, что лагерь: душа, ремесло, тело,
@@ -550,7 +548,7 @@ namespace Sinbinder.Gameplay
         /// были только строкой эпилога — в склепе их не было, и после конца
         /// истории ни заплатить им, ни послать их было нельзя.
         /// </summary>
-        public void Arrive(IReadOnlyList<string> names)
+        public void Arrive(IReadOnlyList<string> names, bool restoreHealth = false)
         {
             if (names == null || names.Count == 0) return;
 
@@ -562,11 +560,13 @@ namespace Sinbinder.Gameplay
             foreach (var name in names)
                 if (SquadRoster.TryGet(name, out var m) && !m.IsAway) party.Add(m);
 
+            var setup = Object.FindFirstObjectByType<AOS.AOSSceneSetup>();
             for (int i = 0; i < party.Count; i++)
             {
                 var at = transform.position
                        + new Vector3((i - (party.Count - 1) * 0.5f) * ArriveGap, 0f, -ArriveBehind);
-                SpawnMember(party[i], at, at + Vector3.forward * 10f);
+                var warrior = SpawnMember(party[i], at, at + Vector3.forward * 10f, restoreHealth);
+                if (setup != null) setup.SetupWarrior(warrior.gameObject);
             }
 
             Debug.Log($"[ПРОЛОГ] Вернулись с вылазки и вошли: {party.Count}.");
@@ -575,7 +575,8 @@ namespace Sinbinder.Gameplay
         /// <summary>Шаг между вернувшимися в ряду и насколько ряд позади отряда, метров.</summary>
         private const float ArriveGap = 1.6f, ArriveBehind = 3f;
 
-        private Warrior SpawnMember(SquadRoster.Member member, Vector3 at, Vector3 look)
+        private Warrior SpawnMember(SquadRoster.Member member, Vector3 at, Vector3 look,
+            bool restoreHealth = false)
         {
             var go = new GameObject(member.Name);
             go.transform.SetParent(transform);
@@ -595,25 +596,27 @@ namespace Sinbinder.Gameplay
             // Слава не зарабатывается на месте: она пришла с ним.
             // Дальше её читают те, кто встречает его через строй.
             if (member.Legend) warrior.Reputation.LegendaryUnlocked = true;
-            warrior.Initialize(soul, member.Shell, _relSystem, member.IsCommander, Team.Player);
+            warrior.Initialize(soul, member.Shell, _relSystem, member.IsCommander, Team.Player, member.WarriorId);
 
             // Имя, заслуженное в прошлой доле, — при нём (SquadRoster.Member.Title).
             AOS.TitleManager.Bestow(warrior, member.Title);
-            warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
-            warrior.UnpaidMissions = member.UnpaidMissions;
 
-            // Что было на нём, то на нём и осталось (docs/34-GEAR.md §9.4):
-            // сбежавший уносит своё. По порядку мест — лучшее оружие
-            // снова ляжет в главную руку, щит во вторую.
-            if (member.Gear != null)
-                foreach (var item in member.Gear) warrior.Give(item);
-            warrior.Pocket(member.Pocket);
+            // Сбежавший уносит своё, включая раскладку по местам.
+            warrior.RestoreEquipment(member.Equipment, member.Gear);
+            if (!restoreHealth)
+            {
+                warrior.ChangeLoyalty(member.Loyalty - warrior.Loyalty);
+                warrior.UnpaidMissions = member.UnpaidMissions;
+                warrior.Pocket(member.Pocket);
+            }
 
             // Ноги, урон, усталость, значок над головой — всё общее сразу.
             // Собиралось это только в UnitFactory, которым пролог
             // не пользуется: воины выходили без агента и не могли сделать
             // ни шага, а без значка не работала первая ступень лестницы.
             WarriorRig.Attach(go);
+            if (restoreHealth)
+                warrior.RestoreExpeditionCondition(member);
 
             // Жатва душ: сцена 4 учит ей, а научить некому, если её
             // некому и делать. Раньше жнец висел только в тестовой сцене.

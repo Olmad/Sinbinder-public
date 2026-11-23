@@ -143,24 +143,29 @@ internal static class Program
         string courtSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulCourt.cs");
         // Production classifier, not a duplicate copy of its arithmetic.
         // A flag saying "obeyed" cannot turn Attack into a completed Hold.
-        Check(SoulCourtVerdict.Classify(true, false, false, false) ==
+        Check(SoulCourtVerdict.Classify(true, false, false, false, false) ==
               SoulCourtVerdictKind.Refused &&
-              SoulCourtVerdict.Classify(true, false, false, true) ==
+              SoulCourtVerdict.Classify(true, false, true, false, true) ==
               SoulCourtVerdictKind.Refused,
             "Court cannot call an action obeyed just because refusal flag is missing");
-        Check(SoulCourtVerdict.Classify(true, true, false, true) ==
+        Check(SoulCourtVerdict.Classify(true, true, true, false, true) ==
               SoulCourtVerdictKind.Obeyed &&
-              SoulCourtVerdict.Classify(true, true, false, false) ==
+              SoulCourtVerdict.Classify(true, true, true, false, false) ==
               SoulCourtVerdictKind.Obeyed,
-            "Court accepts real matching action even with stale refusal flag");
-        Check(SoulCourtVerdict.Classify(true, true, true, false) ==
+            "Court recognizes a deliberate obey decision that matches the command");
+        Check(SoulCourtVerdict.Classify(true, true, false, false, false) ==
+              SoulCourtVerdictKind.IndependentMatch &&
+              SoulCourtVerdict.Classify(true, true, false, false, true) ==
+              SoulCourtVerdictKind.IndependentMatch,
+            "Court recognizes an independently chosen action that matches the command");
+        Check(SoulCourtVerdict.Classify(true, true, true, true, false) ==
               SoulCourtVerdictKind.Hesitated &&
-              SoulCourtVerdict.Classify(true, false, true, true) ==
+              SoulCourtVerdict.Classify(true, false, false, true, true) ==
               SoulCourtVerdictKind.Hesitated,
             "hesitation is never misreported as completed obedience or refusal");
-        Check(SoulCourtVerdict.Classify(false, false, false, true) ==
+        Check(SoulCourtVerdict.Classify(false, false, false, false, true) ==
               SoulCourtVerdictKind.Refused &&
-              SoulCourtVerdict.Classify(false, false, false, false) ==
+              SoulCourtVerdict.Classify(false, false, false, false, false) ==
               SoulCourtVerdictKind.Obeyed,
             "legacy no-command court outcome is not manufactured from absent context");
 
@@ -222,9 +227,12 @@ internal static class Program
               courtSource.Contains("return d.Weighed ? Loc.T("),
             "Court never attributes a stale counterfactual cause to a corrected action verdict");
         Check(courtSource.Split(new[] { "var verdict = Verdict(d, c);" },
-              StringSplitOptions.None).Length == 4 &&
-              courtSource.Contains("bool against = d.RefusedCommand || d.Hesitated;") &&
-              courtSource.Contains("host._aim = Final(d, total, reach);"),
+              StringSplitOptions.None).Length == 3 &&
+              courtSource.Contains("\n            verdict = Verdict(d, c);") &&
+              courtSource.Contains("bool against = d.RefusedCommand || d.Hesitated || independent;") &&
+              courtSource.Contains("host._aim = Final(d, total, reach, independent);") &&
+              courtSource.Contains("lean = Final(d, total, reach, independent);") &&
+              courtSource.Contains("Loudest(judges, d.RefusedCommand || d.Hesitated || independent)"),
             "court, overhead leading voice and scale direction share the same action-based verdict");
 
         Check(!dreamTrace.Contains("DrawCourtChoice") &&
@@ -447,15 +455,26 @@ internal static class Program
         int validateSave = saveSource.IndexOf("if (save.Squad == null || save.Shelf == null");
         int firstMutation = saveSource.IndexOf("Gameplay.CardTable.BeforeSaveOrLoad();", saveSource.IndexOf("public static bool Restore(SaveGame save)"));
         Check(validateSave >= 0 && firstMutation > validateSave &&
-              saveSource.Contains("save.Squad.Exists(m => m == null)") &&
-              saveSource.Contains("save.Shelf.Exists(s => s == null)"),
-              "corrupt squad or soul shelf rejected before Restore changes live state");
+              saveSource.Contains("save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment)))") &&
+              saveSource.Contains("save.Shelf.Exists(s => !IsValidSoul(s))") &&
+              saveSource.Contains("!SoulCustody.IsValid(save.SoulCustody, save.Shelf)"),
+              "corrupt squad, equipment and soul ownership rejected before Restore changes live state");
         Check(saveSource.Contains("catch (System.ArgumentException e)") &&
               saveSource.Contains("catch (System.UnauthorizedAccessException e)"),
               "malformed JSON and denied access fail safely in SaveSystem.Read");
         Check(saveSource.Contains("foreach (var m in save.Squad)") &&
               saveSource.Contains("foreach (var s in save.Shelf)"),
               "valid squad and soul restoration paths remain present");
+        int arrivedStart = saveSource.IndexOf("private static void Arrived(");
+        int arrivedSandbox = saveSource.IndexOf("if (scene.name == CryptMap.SceneName && restored.OpensCryptSandbox)", arrivedStart);
+        int arrivedSouls = saveSource.IndexOf("RestoreSouls(restored, scene);", arrivedStart);
+        int checkpoint = saveSource.IndexOf("MarkCheckpoint(scene.name, scene, captureLiveEquipment: false);", arrivedStart);
+        Check(arrivedSandbox > arrivedStart && arrivedSouls > arrivedSandbox && checkpoint > arrivedSouls,
+              "the destination reopens the saved crypt sandbox and receives its souls before the arrival checkpoint");
+        var deviceSource = System.IO.File.ReadAllText("Assets/Scripts/Crypt/BindingDevice.cs");
+        Check(deviceSource.Contains("if (!SaveSystem.Arriving)") &&
+              deviceSource.Contains("SoulManager.Instance?.PutBack(new SoulManager.Kept(_soul, _quality));"),
+              "unloading a socket returns its soul only on ordinary scene transitions");
 
         // A missing destination scene must fail before Restore mutates live state.
         // Positive paths: same part without reload and valid raid-host scenes
@@ -464,16 +483,31 @@ internal static class Program
         int restoreStart = saveSource.IndexOf("public static bool Restore(SaveGame save)", returnToStart);
         string returnToBody = returnToStart >= 0 && restoreStart > returnToStart
             ? saveSource.Substring(returnToStart, restoreStart - returnToStart) : "";
-        int sceneGuard = returnToBody.IndexOf("!Application.CanStreamedLevelBeLoaded(RaidEvent.HostOf(save.Scene))");
-        int restoreCall = returnToBody.IndexOf("if (!Restore(save)) return false;");
+        int sceneGuard = returnToBody.IndexOf("changeScene && !Application.CanStreamedLevelBeLoaded(scene)");
+        int restoreCall = returnToBody.IndexOf("if (!Restore(save, keepScene: !changeScene)) return false;");
+        int arrivalGuard = returnToBody.IndexOf("if (save == null || Arriving) return false;");
+        Check(arrivalGuard >= 0 && arrivalGuard < restoreCall,
+              "a second load cannot replace a scene transition already in progress");
         Check(sceneGuard >= 0 && restoreCall > sceneGuard &&
               returnToBody.Substring(sceneGuard, restoreCall - sceneGuard).Contains("return false;"),
               "missing destination scene rejects save before live state restoration");
-        Check(returnToBody.Contains("(reload || save.Scene != Here)") &&
-              returnToBody.Contains("if (save.Scene == Here && !reload) return true;") &&
-              returnToBody.Contains("string scene = RaidEvent.HostOf(save.Scene);") &&
+        Check(returnToBody.Contains("reload || save.Scene != Here || sandboxChanged") &&
+              returnToBody.Contains("WorkshopRecruitsChanged(save)") &&
+              returnToBody.Contains("if (!changeScene) return true;") &&
+              returnToBody.Contains("string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;") &&
               returnToBody.Contains("SceneManager.LoadScene(scene);"),
               "same-scene and valid hosted raid destination still follow original restore paths");
+        Check(returnToBody.Contains("save.Scene == CryptMap.SceneName && save.OpensCryptSandbox != CryptMap.Opened"),
+              "loading a different crypt story stage rebuilds the scene and restores the saved sandbox state");
+        int cryptSquadGuard = returnToBody.IndexOf("CryptSquadChanged(save)");
+        Check(cryptSquadGuard >= 0 && cryptSquadGuard < sceneGuard &&
+              returnToBody.Contains("CryptSquadChanged(SaveGame save) => save.OpensCryptSandbox") &&
+              returnToBody.Contains("warrior.gameObject.activeInHierarchy"),
+              "quickload checks the saved crypt squad before choosing whether to rebuild the scene");
+        Check(saveSource.Contains("w.Id == m.WarriorId") &&
+              saveSource.Contains("restoreCryptCondition && !member.IsAway") &&
+              saveSource.Contains("warrior.RestoreExpeditionCondition(member);"),
+              "same-lineup crypt quickload restores the saved condition of fighters in the crypt");
         Check(!returnToBody.Contains("состояние возвращено, место — нет") &&
               !returnToBody.Contains("return true;\n            }\n\n            Arriving = true;"),
               "missing scene cannot be reported as successful partial restoration");

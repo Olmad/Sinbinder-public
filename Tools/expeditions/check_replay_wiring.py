@@ -45,6 +45,18 @@ assert 'foreach(var frame in Frames) yield return frame' in data
 assert 'Frames.Count' in viewer and 'GUI.BeginScrollView' in viewer
 print("PASS: automatic mission replay retains all source events and opens timeline viewer")
 
+assert 'if (!_running && _index >= _data.Frames.Count - 1) Seek(0);' in viewer
+assert '_clock -= FrameSeconds;' in viewer
+for key, command in (
+    ('LeftArrow', 'Seek(_index - 1)'), ('RightArrow', 'Seek(_index + 1)'),
+    ('PageUp', 'SeekCombat(-1)'), ('PageDown', 'SeekCombat(1)'),
+    ('Home', 'Seek(0)'), ('End', 'Seek(_data.Frames.Count - 1)'), ('Space', 'TogglePlayback()'),
+):
+    assert f'Input.GetKeyDown(KeyCode.{key})) {command};' in viewer
+assert 'frame.Kind == ExpeditionReplayKind.CombatAction' in viewer
+assert '_stage?.Show(_index,' in viewer
+print("PASS: 3D replay seeks recorded events and restarts completed playback")
+
 # AOS decision != executed effect: a fighter who actually flees leaves the
 # encounter, and a converted enemy must not take a turn for the old side.
 resolver=(r/"Assets/Scripts/AOS Engine/AutoBattleResolver.cs").read_text(encoding="utf-8")

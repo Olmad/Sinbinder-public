@@ -18,8 +18,11 @@ namespace UnityEngine
     public static class Application { public static bool isPlaying=true; }
     public static partial class Object
     {
-        public static void Destroy(GameObject obj) {}
-        public static void DestroyImmediate(GameObject obj) {}
+        public static void Destroy(GameObject obj)
+        {
+            if(obj!=null) obj.WasDestroyed=true;
+        }
+        public static void DestroyImmediate(GameObject obj) => Destroy(obj);
     }
     public sealed class Transform
     {
@@ -29,8 +32,11 @@ namespace UnityEngine
     {
         public readonly string name;
         public readonly Transform transform=new Transform();
+        public int scene;
+        public bool activeSelf {get;private set;}=true;
+        public bool WasDestroyed {get;internal set;}
         public GameObject(string name) { this.name=name; }
-        public void SetActive(bool active) {}
+        public void SetActive(bool active) => activeSelf=active;
         public T AddComponent<T>() where T : new() => new T();
     }
 }
@@ -89,6 +95,7 @@ namespace Sinbinder.Core
 namespace Sinbinder.Inventory
 {
     public sealed partial class InventoryItem {}
+    public struct EquippedItem {}
 }
 namespace Sinbinder.Gameplay
 {
@@ -111,6 +118,7 @@ namespace Sinbinder.Gameplay
             public int UnpaidMissions, Pocket;
             public Core.MemorySeed Seed;
             public List<Inventory.InventoryItem> Gear=new List<Inventory.InventoryItem>();
+            public List<Inventory.EquippedItem> Equipment;
         }
     }
     public partial class Warrior
@@ -123,6 +131,7 @@ namespace Sinbinder.Gameplay
         public Core.SoulData Soul;
         public Core.ShellType Shell;
         public int UnpaidMissions;
+        public int PocketGold {get;private set;}
         public float HP, MaxHP, Attack, Loyalty;
         public ActionType PreferredAction = ActionType.Attack;
         public bool ThrowDecision;
@@ -148,8 +157,12 @@ namespace Sinbinder.Gameplay
         {
             Id=stableId;Team=team;HP=dead ? 0f : MaxHP*fraction;
         }
-        public void Give(Inventory.InventoryItem item) {}
-        public void Pocket(int coins) {}
+        public void RestoreEquipment(IReadOnlyList<Inventory.EquippedItem> equipment,
+            IReadOnlyList<Inventory.InventoryItem> legacy) {}
+        public void Pocket(int coins)
+        {
+            if(coins>0) PocketGold+=coins;
+        }
         public void TakeDamage(float damage)
         {
             HP=Math.Max(0f,HP-Math.Max(0f,damage));

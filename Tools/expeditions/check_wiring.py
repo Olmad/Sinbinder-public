@@ -35,7 +35,7 @@ assert "ActiveJourneys.Add(new SavedAutoExpedition" in m
 assert "SecondsRemaining=OutboundSeconds" in m
 assert "journey.Phase=1;" in m and "journey.Phase=2;" in m
 assert "if (journey.Phase==0 || journey.Phase==1)" in m
-assert "CompleteJourney(journey);" in m
+assert "CompleteJourney(journey, bodies, spawner);" in m
 assert "ResolveReturned(found,journey.Commander" in m
 assert "new Expedition.CombatEncounter(away,mission.Guards" in m
 assert "SquadRoster.ComeBack(party, survivors)" in m
@@ -59,9 +59,13 @@ assert "var reserved=new HashSet<string>();" in m
 assert "if (!valid || !item.Party.Contains(item.Commander)) continue;" in m
 assert "if (selected.Count+1>maxSize)" in m
 assert "SquadRoster.SendAway(commanderName, companions);" in m
-assert "if(MissionBoard.Journeys.Count==before && _title!=null)" in ui
+assert "if (MissionBoard.Journeys.Count != before)" in ui
+assert "_gathering = true;\n            ShowParty(result);" in ui
+assert "MissionBoard.Fits(_leader, _chosen)" in ui and "int maxSize=Fits(commanderName, mission);" in m
+assert "if (journey.CombatBlocked) continue;" in m
 roster=(r/"Assets/Scripts/Gameplay/SquadRoster.cs").read_text(encoding="utf-8")
-assert "if (alreadyAway) continue;" in roster
+assert "if (previous.IsAway) continue;" in roster
+assert "SquadRoster.RefreshFromScene(MissionBoard.Squad());" in ui
 
 # Causal contract: encounter first, recorded result on return, no replay reroll,
 # winner not merely body count, no absent warrior in a second scene.
@@ -115,11 +119,12 @@ body=(r/"Assets/Scripts/Gameplay/Damageable.cs").read_text(encoding="utf-8")
 warrior=(r/"Assets/Scripts/Gameplay/Warrior.cs").read_text(encoding="utf-8")
 rules=(r/"Assets/Scripts/Gameplay/ExpeditionHealthRules.cs").read_text(encoding="utf-8")
 assert "public float HealthFraction;" in roster
-assert "m.HealthFraction=ExpeditionHealthRules.Capture(w.HP,w.MaxHP)" in roster
+assert "HealthFraction = ExpeditionHealthRules.Capture(warrior.HP, warrior.MaxHP)" in roster
 assert "public static void ApplyExpeditionHealth(string name, float fraction)" in roster
 assert "journey.SurvivorHealth=CopyHealth(fight.Health);" in m
 assert "SquadRoster.ApplyExpeditionHealth(condition.Name" in m
-assert "w.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(m.HealthFraction));" in m
+assert "w.RestoreExpeditionCondition(member);" in m
+assert "SetHealthFraction(ExpeditionHealthRules.RestoreFraction(member.HealthFraction));" in warrior
 assert "w.SetHealthFraction(ExpeditionHealthRules.RestoreFraction(m.HealthFraction));" in fight
 assert "public void SetHealthFraction(float fraction)" in warrior
 assert "public void SetHealthFraction(float fraction)" in body
@@ -217,6 +222,35 @@ assert "Возврат и выдача добычи заблокированы" 
 assert "journey.ReturnBlocked" in ui
 assert "Награды не выданы" in ui
 print("PASS: invalid squad data preserves trip and exposes recovery-required status")
+
+# Cold loads skip away roster members. Settlement must wait for a local
+# spawner when needed, and the real arrival path must restore HP and AOS.
+camp=(r/"Assets/Scripts/Gameplay/PrologueCampSpawner.cs").read_text(encoding="utf-8")
+prepare=m.index("if (!TryPrepareReturn(journey, out var bodies, out var spawner))")
+assert prepare < m.index("ActiveJourneys.RemoveAt(i);",prepare)
+assert "spawner.Arrive(arrivals, restoreHealth: true);" in m
+assert "if (!m.IsAway) squad.Add(m);" in camp
+arrive=camp.split("public void Arrive(",1)[1].split("private Warrior SpawnMember(",1)[0]
+assert "var warrior = SpawnMember(" in arrive and "setup.SetupWarrior(warrior.gameObject);" in arrive
+assert "warrior.RestoreExpeditionCondition(member);" in camp
+print("PASS: cold-loaded survivors settle through the local camp spawner with saved HP and AOS")
+
+demo=(r/"Assets/Scripts/UI/DemoEndUI.cs").read_text(encoding="utf-8")
+director=(r/"Assets/Scripts/Gameplay/PrologueDirector.cs").read_text(encoding="utf-8")
+arrival=(r/"Assets/Scripts/Gameplay/CryptArrival.cs").read_text(encoding="utf-8")
+salary=(r/"Assets/Scripts/UI/SalaryPanelUI.cs").read_text(encoding="utf-8")
+assert "CryptSandboxOpened = CryptMap.IsOpenIn(scene)" in save
+assert "public bool CryptSandboxOpened;" in savegame
+assert "AutoExpeditions?.Count > 0" in savegame
+assert "restored.OpensCryptSandbox" in save.split("private static void Arrived(",1)[1].split("MarkCheckpoint(",1)[0]
+assert "_endsAfterSeconds > 0f && Crypt.CryptMap.Opened" in director
+assert "if (Crypt.CryptMap.Opened)" in arrival
+assert "if (!Crypt.CryptMap.Opened) StartCoroutine(AskWhenArrived());" in salary
+assert "if (SaveSystem.Arriving) return;" in m
+assert "automaticParty.UnionWith(journey.Party);" in demo
+assert "if (!automaticParty.Contains(m.Name)) away.Add(m);" in demo
+assert "SquadRoster.ComeBack(party, survivors, clearCommander: true);" in demo
+print("PASS: an opened sandbox resumes without prologue or settlement in the outgoing scene")
 
 # AOS is now committed in actual independent rounds, never a precomputed
 # film. Every checkpoint has original actor identities, active-side indices,

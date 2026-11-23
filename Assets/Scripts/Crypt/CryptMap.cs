@@ -31,6 +31,8 @@ namespace Sinbinder.Crypt
     /// </summary>
     public class CryptMap : MonoBehaviour
     {
+        internal const string SceneName = "Crypt_Entrance";
+
         [Tooltip("Стол с шаром и доска вылазок.")]
         [SerializeField] private GameObject _zone;
 
@@ -54,6 +56,9 @@ namespace Sinbinder.Crypt
 
         /// <summary>Открыть песочницу: стол встаёт, если выключатель включён.</summary>
         public static void Open() => Opened = true;
+
+        internal static bool IsOpenIn(UnityEngine.SceneManagement.Scene scene)
+            => Opened && _here != null && _here.gameObject.scene == scene;
 
         /// <summary>Доска вылазок склепа. Автопрогону: куда посылать.</summary>
         public static MissionBoard Board => _here != null ? _here._board : null;

@@ -38,7 +38,7 @@ namespace Sinbinder.Gameplay
         /// <summary>Сколько судей за столом в этот раз.</summary>
         public static int Seated { get; private set; }
 
-        /// <summary>Чем кончился суд: refused, hesitated, obeyed.</summary>
+        /// <summary>Чем кончился суд: refused, hesitated, obeyed, independent_match.</summary>
         public static string Outcome { get; private set; }
 
         /// <summary>Судьи последнего суда словами — для отчёта прогона.</summary>
@@ -723,12 +723,16 @@ namespace Sinbinder.Gameplay
                     + $"command={c.CommandType}, recorded={recordedRefusal}, actual={verdict}");
             }
             Outcome = verdict == SoulCourtVerdictKind.Hesitated ? "hesitated"
-                : verdict == SoulCourtVerdictKind.Refused ? "refused" : "obeyed";
+                : verdict == SoulCourtVerdictKind.Refused ? "refused"
+                : verdict == SoulCourtVerdictKind.IndependentMatch ? "independent_match" : "obeyed";
+            bool independent = verdict == SoulCourtVerdictKind.IndependentMatch;
+            CommandKind orderKind = given ?? (System.Enum.TryParse(c.CommandType, out CommandKind recorded)
+                ? recorded : CommandKind.None);
             var rival = Rival(d);
             var judges = Seat(w, c, rival, out float total, originalVotes);
             Seated = judges.Count;
             var voting = judges.FindAll(j => !j.Abstains);
-            var decisive = Loudest(judges, d.RefusedCommand || d.Hesitated);
+            var decisive = Loudest(judges, d.RefusedCommand || d.Hesitated || independent);
             if (decisive != null) Decided.Add(decisive);
             Bench = string.Join(", ", voting.ConvertAll(j => $"{j.Module} {(j.ForOrder ? "+" : "-")} {Mathf.Abs(j.Net):F0}"));
             Debug.Log($"[СУД] {w.DisplayName}: {Outcome}; против приказа — {rival}; голосуют: {Bench}; "
@@ -740,7 +744,7 @@ namespace Sinbinder.Gameplay
             // 1. Отказ — на поле, лицом к воину.
             camera.SaveCameraPosition();
             yield return camera.FocusOn(w.transform);
-            box.Say(null, Headline(w, d));
+            box.Say(null, Headline(w, verdict));
             Spoken++;
             yield return UI.Letterbox.Hold(2.8f);
 
@@ -759,7 +763,8 @@ namespace Sinbinder.Gameplay
                 Loc.Name(w.DisplayName) + "\n<color=#B8B0A0>" + Loc.T("подсудимый") + "</color>", new Color(1f, 0.95f, 0.85f), 0.022f, true);
             // Подписи — у чаш, а не у середины: «за приказ» у левой, «против» у правой.
             var forTag = host.AddTag(Hall + ScalesAt + new Vector3(-1.2f, BeamRise - PanDrop + 0.02f, -0.15f), Loc.T("ЗА ПРИКАЗ"), ForOrderTone, 0.026f, true);
-            var againstTag = host.AddTag(Hall + ScalesAt + new Vector3(1.2f, BeamRise - PanDrop + 0.02f, -0.15f), Loc.T("ПРОТИВ"), AgainstTone, 0.026f, true);
+            var againstTag = host.AddTag(Hall + ScalesAt + new Vector3(1.2f, BeamRise - PanDrop + 0.02f, -0.15f),
+                independent ? Loc.T("СВОЙ ВЫБОР") : Loc.T("ПРОТИВ"), AgainstTone, 0.026f, true);
             // Счёт — внизу кадра, над подсудимым: у весов ему тесно между головами судей и компасом.
             var tally = host.AddTag(Vector3.zero, "", new Color(0.95f, 0.93f, 0.88f), 0.024f, true);
             if (tally != null) tally.Fixed = new Vector2(0.5f, 0.21f);
@@ -812,14 +817,14 @@ namespace Sinbinder.Gameplay
                 foreach (var j in judges) Show(j.Tag as Tag);
                 host._cSwing = 180f;
                 host._cAim = MoralAngle(moral);
-                yield return Line(box, host, court, Summon(w, d, given));
+                yield return Line(box, host, court, Summon(w, verdict, orderKind));
                 goto Stances;
             }
 
             // Первый суд объясняет себя сам: кто судьи, кто перед ними, что значат
             // компас, весы и огонь.
             Show(accusedTag);
-            yield return Line(box, host, court, Opening(w, d));
+            yield return Line(box, host, court, Opening(w, verdict));
 
             // Компас — кто он по натуре: крутится и встаёт на своё.
             Step = "compass";
@@ -833,14 +838,14 @@ namespace Sinbinder.Gameplay
             Step = "scales";
             Show(forTag); Show(againstTag);
             host.StartCoroutine(camera.FocusOnPoint(Hall + ScalesAt, Hall + ScalesFrom, null, push: 12f));
-            yield return Line(box, host, court, Grammar.Pick(w.Gender,
-                Loc.T("Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так он и поступит."),
-                Loc.T("Ниже — весы. Слева — голоса за приказ, справа — против. Куда склонятся весы, так она и поступит.")));
+            yield return Line(box, host, court, independent
+                ? Loc.T("Ниже — весы. Слева — голоса за приказ, справа — за свой выбор.")
+                : Loc.T("Ниже — весы. Слева — голоса за приказ, справа — против."));
 
             Step = "hall";
             host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
             yield return Line(box, host, court,
-                Loc.F("Перед судом — приказ владыки: «{0}». Судьи, встаньте и назовитесь.", OrderWords(given ?? w.Command.Kind)));
+                Loc.F("Перед судом — приказ владыки: «{0}». Судьи, встаньте и назовитесь.", OrderWords(orderKind)));
 
             // 4. Знакомство (автор, 05.11: «сначала познакомить с персонажами,
             // чтобы при знакомстве проиграли приветственные анимации, желательно
@@ -884,7 +889,9 @@ namespace Sinbinder.Gameplay
             void Count()
             {
                 if (tally == null) return;
-                tally.Text.text = Loc.F("за — {0}    против — {1}    воздержались — {2}", ayes, nays, quiet);
+                tally.Text.text = independent
+                    ? Loc.F("за приказ — {0}    за свой выбор — {1}    воздержались — {2}", ayes, nays, quiet)
+                    : Loc.F("за — {0}    против — {1}    воздержались — {2}", ayes, nays, quiet);
             }
             Count();
             Show(tally);
@@ -937,14 +944,16 @@ namespace Sinbinder.Gameplay
                 host._aim = Tilt(running, reach);
                 // «Поэтому» — связь причины с голосом (автор 06.11: «при чём тут тот или иной судья»).
                 string stance = j.Abstains ? Loc.T("Воздерживаюсь.")
-                              : j.ForOrder ? Loc.T("Поэтому я — за приказ.") : Loc.T("Поэтому я — против.");
+                              : j.ForOrder ? Loc.T("Поэтому я — за приказ.")
+                              : independent ? Loc.T("Поэтому я — за свой выбор.") : Loc.T("Поэтому я — против.");
                 if (j.ForOrder) ayes++; else nays++;
                 Count();
                 if (j.Tag is Tag tag)
                 {
+                    string alternative = independent ? Loc.T("за свой выбор") : Loc.T("против");
                     string mark = j.Abstains ? $"<color=#{Hex(NeutralTone)}>{Loc.T("воздерж.")}</color>"
                                 : j.ForOrder ? $"<color=#{Hex(ForOrderTone)}>{Loc.T("за")}</color>"
-                                             : $"<color=#{Hex(AgainstTone)}>{Loc.T("против")}</color>";
+                                             : $"<color=#{Hex(AgainstTone)}>{alternative}</color>";
                     tag.Text.text = j.Title + "\n" + mark;
                 }
                 yield return Line(box, j.Voice, j.Title, Words(j, rival, c, w) + " " + stance);
@@ -957,18 +966,18 @@ namespace Sinbinder.Gameplay
             Toll(hall.transform, 0.5f, 0.55f);   // ниже первого: решено
             host.StartCoroutine(SpotOff(spot));
             host.StartCoroutine(camera.FocusOnPoint(look, overview, null, push: 20f, fov: WideFov, reach: OverviewPush));
-            bool refused = d.RefusedCommand || d.Hesitated;
-            host._aim = Final(d, total, reach);
+            bool orderLost = d.RefusedCommand || d.Hesitated || independent;
+            host._aim = Final(d, total, reach, independent);
             if (!d.Hesitated)
-                foreach (var j in voting) host.StartCoroutine(Settle(j, refused ? !j.ForOrder : j.ForOrder));
+                foreach (var j in voting) host.StartCoroutine(Settle(j, orderLost ? !j.ForOrder : j.ForOrder));
             if (orderFire != null)
-                host.StartCoroutine(refused ? Die(orderFire, orderFlame) : Blaze(orderFire));
-            // Ваше место — вместе со свечой приказа: отказ гасит и его свет.
+                host.StartCoroutine(orderLost ? Die(orderFire, orderFlame) : Blaze(orderFire));
+            // Ваше место гаснет вместе со свечой приказа, когда этот голос не победил.
             if (_seatFire != null)
-                host.StartCoroutine(refused ? Die(_seatFire, _seatFlame) : Blaze(_seatFire));
-            if (refused && _seatSpot != null)
+                host.StartCoroutine(orderLost ? Die(_seatFire, _seatFlame) : Blaze(_seatFire));
+            if (orderLost && _seatSpot != null)
                 host.StartCoroutine(Die(_seatSpot, null));
-            if (refused && _seatBeam != null)
+            if (orderLost && _seatBeam != null)
                 host.StartCoroutine(Fade(_seatBeam, 1.4f));
 
             // Слово Смерти — одно на суд (автор, 07.11: «Голос Смерти — прекрасен, но им нельзя
@@ -976,7 +985,7 @@ namespace Sinbinder.Gameplay
             // Так же Смерть не многословна»). Колокол отзвучал — Смерть называет решение;
             // кто за, кто против и почему — голос суда. Ничьей Смерть не судит: решения нет.
             string verdictTitle = Loc.T("Вердикт");
-            string sentence = Sentence(w, d, voting);
+            string sentence = Sentence(verdict, voting);
             int cut = d.Hesitated ? -1 : sentence.IndexOf(". ", System.StringComparison.Ordinal);
             if (!d.Hesitated)
             {
@@ -986,7 +995,7 @@ namespace Sinbinder.Gameplay
             if (d.Hesitated || cut > 0)
                 yield return Line(box, host, verdictTitle, d.Hesitated ? sentence : sentence.Substring(cut + 2));
             // Голосов «за» больше, а приказ отвергнут — новичок решит, что суд считает неправильно.
-            string weight = Weight(d, voting);
+            string weight = independent ? null : Weight(d, voting);
             if (weight != null) yield return Line(box, host, verdictTitle, weight);
 
             string why = Why(w, d, c);
@@ -994,7 +1003,7 @@ namespace Sinbinder.Gameplay
                 yield return Line(box, host, verdictTitle, why);
             if (compelledByWhisper)
                 yield return Line(box, host, verdictTitle,
-                    Loc.T("Так решила душа без Шёпота. Греховод вмешался: воин фактически подчинился приказу, но не по своей воле."));
+                    Loc.T("Так решила душа без Шёпота. Уговор изменил выбор воина: тот согласился следовать приказу."));
 
             if (originalVotes != null)
                 yield return Line(box, host, court,
@@ -1136,8 +1145,12 @@ namespace Sinbinder.Gameplay
                     .ConvertAll(kv => $"<color=#{Hex(Glow(kv.Key))}>{UI.SelectedUnitPanelUI.VoiceName(kv.Key, w.Soul)}</color>");
                 return string.Join(", ", names);
             }
-            return Loc.F("Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>против</color> — {3}",
-                         Hex(ForOrderTone), Names(pro), Hex(AgainstTone), Names(con));
+            string forVoices = Names(pro), againstVoices = Names(con);
+            return Verdict(d, c) == SoulCourtVerdictKind.IndependentMatch
+                ? Loc.F("Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>за свой выбор</color> — {3}",
+                        Hex(ForOrderTone), forVoices, Hex(AgainstTone), againstVoices)
+                : Loc.F("Весы: <color=#{0}>за приказ</color> — {1} · <color=#{2}>против</color> — {3}",
+                        Hex(ForOrderTone), forVoices, Hex(AgainstTone), againstVoices);
         }
 
         /// <summary>Голос каждого модуля: минус — за приказ, плюс — против (как Net судьи).</summary>
@@ -1169,7 +1182,8 @@ namespace Sinbinder.Gameplay
             // The same local-copy rule as in Convene: do not modify recorded votes.
             if (c.HasCommand && !d.Hesitated)
                 d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;
-            bool against = d.RefusedCommand || d.Hesitated;
+            bool independent = verdict == SoulCourtVerdictKind.IndependentMatch;
+            bool against = d.RefusedCommand || d.Hesitated || independent;
             float loud = 0f;
             string top = null;
             foreach (var kv in Sums(w, d, c))
@@ -1181,14 +1195,20 @@ namespace Sinbinder.Gameplay
         }
 
         public static bool Lean(Warrior w, Decision d, DecisionContext c, out float lean, out string voice, out Color colour)
+            => Lean(w, d, c, out lean, out voice, out colour, out _);
+
+        internal static bool Lean(Warrior w, Decision d, DecisionContext c,
+            out float lean, out string voice, out Color colour, out SoulCourtVerdictKind verdict)
         {
             lean = 0f; voice = null; colour = Color.white;
+            verdict = default;
             if (w == null || c == null || !c.HasCommand) return false;
-            var verdict = Verdict(d, c);
+            verdict = Verdict(d, c);
             // The same local-copy rule as in Convene: do not modify recorded votes.
             if (c.HasCommand && !d.Hesitated)
                 d.RefusedCommand = verdict == SoulCourtVerdictKind.Refused;
-            bool against = d.RefusedCommand || d.Hesitated;
+            bool independent = verdict == SoulCourtVerdictKind.IndependentMatch;
+            bool against = d.RefusedCommand || d.Hesitated || independent;
             float total = 0f, reach = 1f, loud = 0f;
             string top = null;
             foreach (var kv in Sums(w, d, c))
@@ -1199,7 +1219,7 @@ namespace Sinbinder.Gameplay
                 if (winning && Mathf.Abs(kv.Value) > loud) { loud = Mathf.Abs(kv.Value); top = kv.Key; }
             }
             if (top == null) return false;
-            lean = Final(d, total, reach);
+            lean = Final(d, total, reach, independent);
             voice = UI.SelectedUnitPanelUI.VoiceName(top, w.Soul);
             colour = Glow(top);
             return true;
@@ -1261,25 +1281,24 @@ namespace Sinbinder.Gameplay
             => SoulCourtVerdict.Classify(
                 c != null && c.HasCommand,
                 c != null && c.SatisfiedBy(d.Action),
+                d.Action == ActionType.ObeyCommand,
                 d.Hesitated, d.RefusedCommand);
 
         /// <summary>
         /// Слово Смерти в коротком суде: приказ и что сделал воин — и слово судьям.
         /// </summary>
-        private static string Summon(Warrior w, Decision d, CommandKind? given)
+        private static string Summon(Warrior w, SoulCourtVerdictKind verdict, CommandKind given)
         {
-            string order = OrderWords(given ?? w.Command.Kind), name = Loc.Name(w.DisplayName);
-            if (d.RefusedCommand)
+            string order = OrderWords(given), name = Loc.Name(w.DisplayName);
+            if (verdict == SoulCourtVerdictKind.Refused)
                 return Grammar.Pick(w.Gender,
                     Loc.F("Приказ владыки — «{0}». {1} отказал. Судьи, ваше слово.", order, name),
                     Loc.F("Приказ владыки — «{0}». {1} отказала. Судьи, ваше слово.", order, name));
-            if (d.Hesitated)
+            if (verdict == SoulCourtVerdictKind.Hesitated)
                 return Grammar.Pick(w.Gender,
                     Loc.F("Приказ владыки — «{0}». {1} замешкался. Судьи, ваше слово.", order, name),
                     Loc.F("Приказ владыки — «{0}». {1} замешкалась. Судьи, ваше слово.", order, name));
-            return Grammar.Pick(w.Gender,
-                Loc.F("Приказ владыки — «{0}». {1} исполнил. Судьи, ваше слово.", order, name),
-                Loc.F("Приказ владыки — «{0}». {1} исполнила. Судьи, ваше слово.", order, name));
+            return Loc.F("Приказ владыки — «{0}». {1} Судьи, ваше слово.", order, Headline(w, verdict));
         }
 
         /// <summary>Самый громкий голос стороны, что победила: он и решил.</summary>
@@ -1352,7 +1371,7 @@ namespace Sinbinder.Gameplay
         /// <summary>Что душа выбрала вместо приказа — или что тянуло её прочь.</summary>
         private static ActionType Rival(Decision d)
         {
-            if (d.RefusedCommand) return d.Action;
+            if (!d.Hesitated && d.Action != ActionType.ObeyCommand) return d.Action;
             if (d.TopContender != ActionType.ObeyCommand) return d.TopContender;
             return d.RunnerUp;
         }
@@ -1423,33 +1442,39 @@ namespace Sinbinder.Gameplay
         // Слова
         // ──────────────────────────────────
 
-        private static string Headline(Warrior w, Decision d)
+        private static string Headline(Warrior w, SoulCourtVerdictKind verdict)
         {
             string name = Loc.Name(w.DisplayName);
-            if (d.RefusedCommand)
+            if (verdict == SoulCourtVerdictKind.Refused)
                 return Grammar.Pick(w.Gender, Loc.F("Отказ. {0} не исполнил приказ.", name),
                                               Loc.F("Отказ. {0} не исполнила приказ.", name));
-            if (d.Hesitated)
+            if (verdict == SoulCourtVerdictKind.Hesitated)
                 return Grammar.Pick(w.Gender, Loc.F("{0} замер: приказ не исполнен.", name),
                                               Loc.F("{0} замерла: приказ не исполнен.", name));
-            return Grammar.Pick(w.Gender, Loc.F("{0} исполнил приказ.", name),
-                                          Loc.F("{0} исполнила приказ.", name));
+            if (verdict == SoulCourtVerdictKind.IndependentMatch)
+                return Grammar.Pick(w.Gender,
+                    Loc.F("{0} выбрал своё. Решение совпало с приказом.", name),
+                    Loc.F("{0} выбрала своё. Решение совпало с приказом.", name));
+            return Grammar.Pick(w.Gender, Loc.F("{0} решил послушаться.", name),
+                                          Loc.F("{0} решила послушаться.", name));
         }
 
         /// <summary>
         /// Первая строка в зале — вопрос, на который суд ответит: игрок только
         /// что видел поступок и не знает почему. Суд — ответ.
         /// </summary>
-        private static string Opening(Warrior w, Decision d)
+        private static string Opening(Warrior w, SoulCourtVerdictKind verdict)
         {
-            if (d.RefusedCommand)
+            if (verdict == SoulCourtVerdictKind.Refused)
                 return Grammar.Pick(w.Gender,
                     Loc.T("Почему он не послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."),
                     Loc.T("Почему она не послушалась? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."));
-            if (d.Hesitated)
+            if (verdict == SoulCourtVerdictKind.Hesitated)
                 return Grammar.Pick(w.Gender,
                     Loc.T("Почему он замер? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."),
                     Loc.T("Почему она замерла? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."));
+            if (verdict == SoulCourtVerdictKind.IndependentMatch)
+                return Loc.T("Почему собственное решение совпало с приказом? Вот суд души: здесь решают тринадцать её голосов.");
             return Grammar.Pick(w.Gender,
                 Loc.T("Почему он послушался? Решал не он один — решала его душа. Вот её суд: судьи — тринадцать его голосов, перед ними — он сам."),
                 Loc.T("Почему она послушалась? Решала не она одна — решала её душа. Вот её суд: судьи — тринадцать её голосов, перед ними — она сама."));
@@ -1554,9 +1579,9 @@ namespace Sinbinder.Gameplay
         /// До 05.11 здесь стояло «гордыня громче, чем верность» — а верность
         /// была громче (40 против 36), проиграла она сумме против.
         /// </summary>
-        private static string Sentence(Warrior w, Decision d, List<Judge> judges)
+        private static string Sentence(SoulCourtVerdictKind verdict, List<Judge> judges)
         {
-            if (d.Hesitated)
+            if (verdict == SoulCourtVerdictKind.Hesitated)
                 return Loc.T("Голоса вровень — душа не выбрала ничего.");
 
             float proSum = 0f, conSum = 0f;
@@ -1566,7 +1591,12 @@ namespace Sinbinder.Gameplay
             string against = Roll(judges.FindAll(j => !j.ForOrder));
             string pro = Roll(judges.FindAll(j => j.ForOrder));
 
-            if (d.RefusedCommand)
+            if (verdict == SoulCourtVerdictKind.IndependentMatch)
+                return Loc.F("Решение совпало с приказом по собственной воле. За приказ — {0}. За свой выбор — {1}.",
+                    string.IsNullOrEmpty(pro) ? Loc.T("никто") : pro,
+                    string.IsNullOrEmpty(against) ? Loc.T("никто") : against);
+
+            if (verdict == SoulCourtVerdictKind.Refused)
             {
                 if (string.IsNullOrEmpty(against)) return Loc.T("Приказ отвергнут.");
                 if (string.IsNullOrEmpty(pro)) return Loc.F("Приказ отвергнут. Против — {0}. За приказ — никто.", against);
@@ -1575,11 +1605,11 @@ namespace Sinbinder.Gameplay
                     : Loc.F("Приказ отвергнут. Против — {0}. За — {1}. Весы склонились к «против».", against, pro);
             }
 
-            if (string.IsNullOrEmpty(pro)) return Loc.T("Приказ исполнен.");
-            if (string.IsNullOrEmpty(against)) return Loc.F("Приказ исполнен. За — {0}. Против — никто.", pro);
+            if (string.IsNullOrEmpty(pro)) return Loc.T("Душа решила послушаться.");
+            if (string.IsNullOrEmpty(against)) return Loc.F("Душа решила послушаться. За — {0}. Против — никто.", pro);
             return hair
-                ? Loc.F("Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за» — на волосок.", pro, against)
-                : Loc.F("Приказ исполнен. За — {0}. Против — {1}. Весы склонились к «за».", pro, against);
+                ? Loc.F("Душа решила послушаться. За — {0}. Против — {1}. Весы склонились к «за» — на волосок.", pro, against)
+                : Loc.F("Душа решила послушаться. За — {0}. Против — {1}. Весы склонились к «за».", pro, against);
         }
 
         /// <summary>
@@ -1638,11 +1668,11 @@ namespace Sinbinder.Gameplay
         private const float MinLean = 14f;
 
         /// <summary>Где встанет стрелка: по сумме всех голосов, но не против самого решения.</summary>
-        private static float Final(Decision d, float total, float reach)
+        private static float Final(Decision d, float total, float reach, bool independent = false)
         {
             float a = Tilt(total, reach);
             if (d.Hesitated) return Mathf.Clamp(a, -4f, 4f);
-            if (d.RefusedCommand) return Mathf.Min(a, -MinLean);
+            if (d.RefusedCommand || independent) return Mathf.Min(a, -MinLean);
             return Mathf.Max(a, MinLean);
         }
 

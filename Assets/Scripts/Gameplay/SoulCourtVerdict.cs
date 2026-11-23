@@ -7,13 +7,13 @@ namespace Sinbinder.Gameplay
     /// in DecisionContext.SatisfiedBy; the caller passes that result through.
     /// This rule is free of Unity state so it can be tested independently.
     /// </summary>
-    public enum SoulCourtVerdictKind { Obeyed, Refused, Hesitated }
+    public enum SoulCourtVerdictKind { Obeyed, Refused, Hesitated, IndependentMatch }
 
     public static class SoulCourtVerdict
     {
         public static SoulCourtVerdictKind Classify(
             bool hasCommand, bool actionSatisfiesCommand,
-            bool hesitated, bool reportedRefusal)
+            bool choseObedience, bool hesitated, bool reportedRefusal)
         {
             // Hesitation is no completed action, even when the held-position
             // command would otherwise accept Idle.
@@ -21,9 +21,10 @@ namespace Sinbinder.Gameplay
 
             // Snapshot of the ORIGINAL command, never the warrior's current one.
             if (hasCommand)
-                return actionSatisfiesCommand
-                    ? SoulCourtVerdictKind.Obeyed
-                    : SoulCourtVerdictKind.Refused;
+            {
+                if (!actionSatisfiesCommand) return SoulCourtVerdictKind.Refused;
+                return choseObedience ? SoulCourtVerdictKind.Obeyed : SoulCourtVerdictKind.IndependentMatch;
+            }
 
             // Backward-compatible no-command diagnostics. Normal Courts have
             // HasCommand; never infer execution from a command not in evidence.

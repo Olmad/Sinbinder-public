@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/server-prototype
+      - "feature/sinbinder-canonical-integration-*"
       - claude/3d-horror-survival-game-ckrslc
     paths:
       - "Assets/Scripts/Gameplay/ExpeditionCollectionPolicy.cs"

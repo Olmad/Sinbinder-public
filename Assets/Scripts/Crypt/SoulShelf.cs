@@ -40,11 +40,21 @@ namespace Sinbinder.Crypt
         private ShelfPlace _place;
         private int _firstIndex;
         private int _knownCount = -1;
+        private bool _started;
+        private bool _loadedFromSave;
 
         void Start()
         {
-            if (_seedWhenEmpty) Seed();
+            if (_seedWhenEmpty && !_loadedFromSave) Seed();
             Rebuild();
+            _started = true;
+        }
+
+        // Число банок после загрузки может быть тем же, а души в них другие.
+        internal void OnLoaded()
+        {
+            _loadedFromSave = true;
+            if (_started) Rebuild();
         }
 
         void Update()
@@ -67,6 +77,7 @@ namespace Sinbinder.Crypt
             foreach (var jar in _jars)
                 if (jar != null)
                 {
+                    jar.gameObject.SetActive(false);
                     if (Application.isPlaying) Destroy(jar.gameObject);
                     else DestroyImmediate(jar.gameObject);
                 }
@@ -79,9 +90,7 @@ namespace Sinbinder.Crypt
             _knownCount = list != null ? list.Count : 0;
             _firstIndex = 0;
 
-            if (list == null || list.Count == 0) return;
-
-            int shown = Mathf.Min(_slots, list.Count);
+            int shown = Mathf.Min(_slots, _knownCount);
 
             for (int i = 0; i < shown; i++)
             {
@@ -105,7 +114,13 @@ namespace Sinbinder.Crypt
         /// </summary>
         private void MakePlace(int after)
         {
-            if (_place != null) Destroy(_place.gameObject);
+            if (_place != null)
+            {
+                _place.gameObject.SetActive(false);
+                if (Application.isPlaying) Destroy(_place.gameObject);
+                else DestroyImmediate(_place.gameObject);
+                _place = null;
+            }
             if (after >= _slots) return;           // полка полна
 
             var go = new GameObject("Свободное место");

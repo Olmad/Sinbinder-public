@@ -88,14 +88,15 @@ namespace Sinbinder.UI
             if (!force && !Transparency.Shows(Detail.Moments)) return;
             float now = Time.unscaledTime;
             if (!force && NextFor.TryGetValue(w, out float next) && now < next) return;
-            if (!SoulCourt.Lean(w, d, c, out float lean, out string voice, out Color colour)) return;
+            if (!SoulCourt.Lean(w, d, c, out float lean, out string voice, out Color colour, out var verdict)) return;
             NextFor[w] = now + Cooldown;
 
-            string label = d.Hesitated
+            Color side = verdict == SoulCourtVerdictKind.Obeyed ? SoulCourt.ForOrderTone : SoulCourt.AgainstTone;
+            string stance = verdict == SoulCourtVerdictKind.IndependentMatch ? Loc.T("за свой выбор")
+                : verdict == SoulCourtVerdictKind.Refused ? Loc.T("против") : Loc.T("за приказ");
+            string label = verdict == SoulCourtVerdictKind.Hesitated
                 ? Loc.T("вровень")
-                : $"<color=#{ColorUtility.ToHtmlStringRGB(d.RefusedCommand ? SoulCourt.AgainstTone : SoulCourt.ForOrderTone)}>"
-                  + (d.RefusedCommand ? Loc.T("против") : Loc.T("за приказ")) + ":</color> "
-                  + $"<color=#{ColorUtility.ToHtmlStringRGB(colour)}>{voice}</color>";
+                : Paint(side, stance + ":") + " " + Paint(colour, voice);
             Get().Add(w, lean, label, compass: force);
         }
 

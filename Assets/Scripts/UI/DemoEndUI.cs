@@ -194,10 +194,14 @@ namespace Sinbinder.UI
         /// </summary>
         private string Comeback(out Outcome outcome)
         {
-            var away = new List<SquadRoster.Member>();
-            foreach (var m in SquadRoster.Away) away.Add(m);
+            var automaticParty = new HashSet<string>();
+            foreach (var journey in Crypt.MissionBoard.Journeys)
+                automaticParty.UnionWith(journey.Party);
 
-            _returned.Clear();
+            var away = new List<SquadRoster.Member>();
+            foreach (var m in SquadRoster.Away)
+                if (!automaticParty.Contains(m.Name)) away.Add(m);
+
             outcome = Outcome.None;
             if (away.Count == 0) return "";
 
@@ -210,11 +214,13 @@ namespace Sinbinder.UI
 
             var leader = away[0];
             var survivors = Expedition.Resolve(away);
+            var party = away.ConvertAll(member => member.Name);
 
             // Вернувшиеся — снова в составе: им платить и их посылать, если
             // игрок останется в склепе. Не вернувшиеся из него вычеркнуты;
             // старший вылазки больше не старший — вылазка кончилась.
-            SquadRoster.ComeBack(survivors);
+            SquadRoster.ComeBack(party, survivors, clearCommander: true);
+            _returned.Clear();
             _returned.AddRange(survivors);
 
             var sb = new StringBuilder();
@@ -263,6 +269,7 @@ namespace Sinbinder.UI
             Audio.Music.Play(Audio.Track.Crypt, 3f);
 
             Object.FindFirstObjectByType<PrologueCampSpawner>()?.Arrive(_returned);
+            _returned.Clear();
             SquadRoster.Remember(Crypt.MissionBoard.Squad());
             Crypt.CryptMap.Open();
 

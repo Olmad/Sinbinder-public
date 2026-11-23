@@ -2,12 +2,15 @@
 // The little tactical diagram is explicitly schematic: old BattleRecord
 // contains decisions, actors, targets and outcomes, but NO world positions.
 using UnityEngine;
+using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
 namespace Sinbinder.UI
 {
     public sealed class ExpeditionReplayViewer : MonoBehaviour
     {
+        private const float FrameSeconds = 1.1f;
+        private const float TimelineRowHeight = 27f;
         private static ExpeditionReplayViewer _open;
         private static int _closedFrame = -1;
         public static bool IsOpen => _open != null;
@@ -15,13 +18,13 @@ namespace Sinbinder.UI
 
         public static void Open(ExpeditionReplayData data)
         {
-            if (data == null || data.Frames.Count == 0) return;
+            if (data?.Frames == null || data.Frames.Count == 0) return;
             if (_open != null) Destroy(_open.gameObject);
             var go = new GameObject("Просмотр полной записи экспедиции");
             _open = go.AddComponent<ExpeditionReplayViewer>();
             _open._data = data;
             _open._index = 0;
-            _open._running = true;
+            _open._running = data.Frames.Count > 1;
             // Opening via the developer console must not leave live AOS
             // actions running underneath a full-screen historical replay.
             // When opened from MissionMapUI, that panel already owns pause.
@@ -65,17 +68,65 @@ namespace Sinbinder.UI
         {
             if (_data == null) { Close(); return; }
             if (Input.GetKeyDown(KeyCode.Escape)) { Close(); return; }
-            if (_running && _index < _data.Frames.Count - 1)
+            if (!ReadPlaybackInput() && _running && _index < _data.Frames.Count - 1)
             {
                 _clock += Time.unscaledDeltaTime * _speed;
-                if (_clock >= 1.1f)
+                if (_clock >= FrameSeconds)
                 {
-                    _clock = 0f;
+                    _clock -= FrameSeconds;
                     _index++;
-                    if (_index == _data.Frames.Count - 1) _running = false;
+                    if (_index == _data.Frames.Count - 1)
+                    {
+                        _running = false;
+                        _clock = 0f;
+                    }
                 }
             }
-            _stage?.Show(_index, _running ? Mathf.Clamp01(_clock / 1.1f) : 0.6f);
+            _stage?.Show(_index, _running ? Mathf.Clamp01(_clock / FrameSeconds) : 0.6f);
+        }
+
+        private bool ReadPlaybackInput()
+        {
+            if (Input.GetKeyDown(KeyCode.Home)) Seek(0);
+            else if (Input.GetKeyDown(KeyCode.End)) Seek(_data.Frames.Count - 1);
+            else if (Input.GetKeyDown(KeyCode.LeftArrow)) Seek(_index - 1);
+            else if (Input.GetKeyDown(KeyCode.RightArrow)) Seek(_index + 1);
+            else if (Input.GetKeyDown(KeyCode.PageUp)) SeekCombat(-1);
+            else if (Input.GetKeyDown(KeyCode.PageDown)) SeekCombat(1);
+            else if (Input.GetKeyDown(KeyCode.Space)) TogglePlayback();
+            else return false;
+            return true;
+        }
+
+        private void Seek(int index)
+        {
+            _index = Mathf.Clamp(index, 0, _data.Frames.Count - 1);
+            _running = false;
+            _clock = 0f;
+            _scroll.y = Mathf.Max(0f, (_index - 2) * TimelineRowHeight);
+        }
+
+        private void SeekCombat(int direction)
+        {
+            for (int index = _index + direction;
+                 index >= 0 && index < _data.Frames.Count;
+                 index += direction)
+            {
+                var frame = _data.Frames[index];
+                if (frame != null && frame.Kind == ExpeditionReplayKind.CombatAction)
+                {
+                    Seek(index);
+                    return;
+                }
+            }
+        }
+
+        private void TogglePlayback()
+        {
+            if (_data.Frames.Count <= 1) return;
+            if (!_running && _index >= _data.Frames.Count - 1) Seek(0);
+            _running = !_running;
+            _clock = 0f;
         }
 
         private void OnDestroy()
@@ -138,26 +189,29 @@ namespace Sinbinder.UI
                 frame.Description + ObservedEffect(frame),
                 _item);
 
-            GUI.Label(new Rect(mapRect.x,top+58f+mapHeight,w-30f,31f),
-                _stage != null
-                    ? "3D-показ всех записанных AOS-событий. Расстановка условная: автобой не хранит координаты."
-                    : "Схематическая хронология: точные координаты в старой записи отсутствуют.",
-                _item);
+            string stageNote = _stage != null
+                ? "3D-показ всех записанных AOS-событий. Расстановка условная: автобой не хранит координаты."
+                : "Схематическая хронология: точные координаты в старой записи отсутствуют.";
+            var playbackNotes = new GUIContent(stageNote + "\n" +
+                Loc.T("←/→: событие · PgUp/PgDn: бой · Home/End: начало/конец · Space: воспроизведение"));
+            float notesY = top + 58f + mapHeight;
+            float notesHeight = _item.CalcHeight(playbackNotes, w - 30f);
+            GUI.Label(new Rect(mapRect.x, notesY, w - 30f, notesHeight), playbackNotes, _item);
 
-            float y=top+89f+mapHeight;
+            float y = notesY + notesHeight + 8f;
             float buttonW=Mathf.Min(150f,(w-40f)/5f);
-            if(GUI.Button(new Rect(left+15f,y,buttonW,34f),"|<")){_index=0;_running=false;}
+            if(GUI.Button(new Rect(left+15f,y,buttonW,34f),"|<")) Seek(0);
             if(GUI.Button(new Rect(left+18f+buttonW,y,buttonW,34f),"< Назад"))
-            { _index=Mathf.Max(0,_index-1);_running=false; }
+                Seek(_index - 1);
             if(GUI.Button(new Rect(left+21f+2*buttonW,y,buttonW,34f),_running?"Пауза":"Играть"))
-            { _running=!_running;_clock=0f; }
+                TogglePlayback();
             if(GUI.Button(new Rect(left+24f+3*buttonW,y,buttonW,34f),"Вперёд >"))
-            { _index=Mathf.Min(_data.Frames.Count-1,_index+1);_running=false; }
+                Seek(_index + 1);
             if(GUI.Button(new Rect(left+27f+4*buttonW,y,buttonW,34f),"x"+_speed.ToString("0")))
                 _speed=_speed>=4f?1f:_speed*2f;
 
             float logY=y+43f, logH=Mathf.Max(80f,top+h-logY-17f);
-            float rowH=27f;
+            const float rowH = TimelineRowHeight;
             var view=new Rect(left+15f,logY,w-30f,logH);
             var content=new Rect(0f,0f,view.width-22f,_data.Frames.Count*rowH+4f);
             _scroll=GUI.BeginScrollView(view,_scroll,content);
@@ -173,7 +227,7 @@ namespace Sinbinder.UI
                     (step.HasOutcome ? step.Resolved?" · исполнено":" · без результата" : "")+
                     " · "+(string.IsNullOrEmpty(step.Actor)?"":step.Actor+": ")+step.Description;
                 if(GUI.Button(new Rect(0f,i*rowH,content.width,rowH),line,GUI.skin.label))
-                { _index=i;_running=false;_clock=0f; }
+                    Seek(i);
             }
             GUI.EndScrollView();
         }
