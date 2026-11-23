@@ -1283,7 +1283,7 @@ namespace Sinbinder.Gameplay
         private static string Sentence(Warrior w, Decision d, List<Judge> judges)
         {
             if (d.Hesitated)
-                return Loc.T("Голоса вровень — душа не выбрала ничего.");
+                return Loc.T("Два сильнейших решения слишком близки по весу — душа замешкалась.");
 
             float proSum = 0f, conSum = 0f;
             foreach (var j in judges) if (j.ForOrder) proSum += Mathf.Abs(j.Net); else conSum += Mathf.Abs(j.Net);
