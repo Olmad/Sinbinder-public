@@ -117,6 +117,25 @@ class CorrectedTextRegressions(unittest.TestCase):
                 self.assertIn('msgid "' + ru + '"\nmsgstr "' + en + '"',
                               self.locale)
 
+    def test_court_hesitation_is_small_margin_not_exact_tie(self):
+        # The AOS decision hesitates for a *relative* margin below a
+        # threshold; the two highest choices need not have equal scores.
+        resolver = read("Assets/Scripts/AOS Engine/BehaviorResolver.cs")
+        scene = read("Assets/Scripts/Gameplay/SoulCourt.cs")
+        self.assertIn("float confidence = alone ? 1f : gap / loudness;", resolver)
+        self.assertIn("Hesitated = confidence < HesitationShare", resolver)
+        sentence = scene.split("private static string Sentence(", 1)[1].split(
+            "private static string Weight(", 1)[0]
+        phrase = "Два сильнейших решения слишком близки по весу — душа замешкалась."
+        self.assertIn('if (d.Hesitated)\n                return Loc.T("' + phrase + '");',
+                      sentence)
+        self.assertNotIn("Голоса вровень — душа не выбрала ничего.", sentence)
+        self.assertEqual(1, self.locale.count('msgid "' + phrase + '"'))
+        found = re.search(r'^msgid "' + re.escape(phrase) +
+                          r'"\nmsgstr "([^"]+)"', self.locale, re.MULTILINE)
+        self.assertIsNotNone(found)
+        self.assertEqual("The two strongest choices were too close in weight, so the soul hesitated.", found.group(1))
+
     def test_court_abstention_avoids_unsupported_world_facts(self):
         # A small order/rival net is not evidence that the world contains
         # no threats, debts, loot or memories. Inspect the production path,
