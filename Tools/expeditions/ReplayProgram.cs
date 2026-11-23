@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.IO;
+using Sinbinder.Core;
 using Sinbinder.Gameplay;
 
 static class Program
@@ -8,6 +10,35 @@ static class Program
     static void Test(bool condition, string why) {if(!condition)throw new Exception("FAIL "+why);tests++;}
     static void Main()
     {
+        // Exercise the real game gettext parser, not a hand-written PO
+        // approximation. Seven route phases must be translated in EN.
+        string repoRoot=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+            "..","..","..","..",".."));
+        string catalog=File.ReadAllText(Path.Combine(repoRoot,
+            "Assets","Resources","Lang","en.txt"));
+        string viewerSource=File.ReadAllText(Path.Combine(repoRoot,
+            "Assets","Scripts","UI","ExpeditionReplayViewer.cs"));
+        var stageLabels=new (string kind,string ru,string en)[]{
+            ("Departure","Выступление","Departure"),
+            ("March","Маршрут","March"),
+            ("CommandDecision","Решение командира","Command decision"),
+            ("CombatAction","Боевой эпизод","Combat encounter"),
+            ("Loot","Добыча","Loot"),
+            ("Return","Возвращение","Return"),
+            ("_","Событие","Event")
+        };
+        Test(Loc.Use("en",catalog)>0,"PO catalog loaded by production Loc parser");
+        foreach(var (kind,ru,en) in stageLabels)
+        {
+            Test(viewerSource.Contains(kind+" => Loc.T(\\\""+ru+"\\\")"),
+                "replay stage "+kind+" is routed to Loc.T");
+            Test(Loc.T(ru)==en,
+                "actual production Loc parser translates "+ru+" to "+en);
+        }
+        Loc.Use("ru",null);
+        Test(Loc.T("Выступление")=="Выступление",
+            "switching to Russian retains authored labels");
+
         var replay=new ExpeditionReplayData("Соляной обоз","Марга",new[]{"Марга","Вейн","Марга"});
         replay.Append(ExpeditionReplayKind.Departure,"Марга","Вышли из склепа.");
         replay.Append(ExpeditionReplayKind.March,"Марга","Идут по дороге.");
