@@ -14747,10 +14747,22 @@ msgstr "If I had a heel of bread, it wouldn't last until evening."
 msgid "Была бы горбушка — поделился бы. Наверное."
 msgstr "If I had some bread, I'd share it. Probably."
 
-Выступление=Departure
-Маршрут=March
-Решение командира=Command decision
-Боевой эпизод=Combat encounter
-Добыча=Loot
-Возвращение=Return
-Событие=Event
+#: UI/ExpeditionReplayViewer.cs
+msgid "Выступление"
+msgstr "Departure"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Маршрут"
+msgstr "March"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Решение командира"
+msgstr "Command decision"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Боевой эпизод"
+msgstr "Combat encounter"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Возвращение"
+msgstr "Return"
