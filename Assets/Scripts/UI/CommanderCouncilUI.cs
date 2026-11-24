@@ -291,6 +291,9 @@ namespace Sinbinder.UI
             ShowDetail(null);
             Build(options);
 
+            // Сперва — шар: куда идти, и только потом — кто поведёт.
+            ShowMap();
+
             Modal.Open(_panel);
             Core.GamePauseController.Instance?.Pause();
         }
@@ -578,14 +581,182 @@ namespace Sinbinder.UI
             // Заголовок «Цель вылазки» — на карте (Map); первая строка — что на ней.
             return Loc.T("Огни на карте — два отряда уже в пути: у часовни и у каменоломни. "
                  + "Брошенная застава свободна — туда и пойдёт отряд.") + Break
-                 + Loc.T("Разведка донесла: за холмами стоит брошенная застава. "
-                 + "Взять там есть что, и потому там небезопасно.") + Break
-                 + Loc.F("Карган: «Там довольно опасно, владыка. Я бы послал {0}. "
+                 + Scouts() + Break + Advice() + Break + Leaving();
+        }
+
+        private static string Scouts() => Loc.T("Разведка донесла: за холмами стоит брошенная застава. "
+                 + "Взять там есть что, и потому там небезопасно.");
+
+        private string Advice() => Loc.F("Карган: «Там довольно опасно, владыка. Я бы послал {0}. "
                  + "Рядовой столько не уведёт — за ним пойдут трое. "
-                 + "Пошлёте меньше — рискуете всеми, кто пойдёт».", Leadership.Count(_requiredSquad)) + Break
-                 + Loc.T("Отряд уйдёт сразу и вернётся не скоро — в лагере с вами "
+                 + "Пошлёте меньше — рискуете всеми, кто пойдёт».", Leadership.Count(_requiredSquad));
+
+        private static string Leaving() => Loc.T("Отряд уйдёт сразу и вернётся не скоро — в лагере с вами "
                  + "останутся только те, кого вы не пошлёте. Вернётся не весь "
                  + "и не таким, каким уходил.");
+
+        // ---------- до выбора: шар с картой и карточка места ----------
+
+        /// <summary>Куда идёт отряд — имя места на карте (<see cref="ReliefMap"/>); в лагере его зовут брошенной.</summary>
+        private const string Outpost = "Сожжённая застава";
+
+        /// <summary>Где уже стоят отряды — их огни в шаре гаснут на тревоге (<see cref="CrystalBall"/>).</summary>
+        private static string[] Away => new[] { "Придорожная часовня", "Затопленная каменоломня" };
+
+        private static readonly Color Heading = new(0.95f, 0.90f, 0.80f);
+        private static readonly Color Body = new(0.86f, 0.83f, 0.78f);
+        private static readonly Color Dim = new(0.68f, 0.64f, 0.58f);
+
+        /// <summary>Шаг до столбцов — шар или карточка; столбцы под ним выключены.</summary>
+        private GameObject _stage;
+        private Text _hint;
+
+        /// <summary>
+        /// Первый шаг совета — шар с картой окрестностей, та же земля, что в стекле на столе
+        /// и потом на карте склепа (замысел автора: «открывается карта, несколько мест интереса
+        /// с уже отправленными отрядами и одно свободное — куда и отправляется»). Это и есть
+        /// обучение вылазке: место → что о нём известно → кто поведёт → кого возьмёт.
+        /// Нажать можно только заставу — остальные заняты.
+        /// </summary>
+        private void ShowMap()
+        {
+            if (_panel == null || _done) return;
+            Columns(false);
+            if (_title != null) _title.text = Loc.T("Военный совет: куда послать отряд");
+
+            var stage = Stage(out float w, out float h);
+            float ball = Mathf.Min(h - 8f, w * 0.52f);
+            var sphere = ReliefMap.Ball(stage, ball, new Vector2(0f, -4f));
+            // Огни крупные: земля в шаре светлая, а огни — то, о чём Карган говорит первым.
+            foreach (var place in Away) ReliefMap.Glow(sphere, place, SquadLight, 70f);
+
+            ReliefMap.Point(sphere, ReliefMap.Camp, Loc.T("Лагерь"), Loc.T("вы здесь"),
+                            new Color(0.75f, 0.70f, 0.62f), true, _font, null, home: true);
+            foreach (var place in Away)
+            {
+                string p = place;
+                // Яркая, но без нажатия: кнопку Point вешает только при click.
+                ReliefMap.Point(sphere, p, Loc.Name(p), Loc.T("там ваш отряд"), SquadLight, true, _font,
+                    null, () => Hint($"<size=24>{Loc.Name(p)}</size>\n"
+                        + Loc.T("Туда уже ушёл ваш отряд — огонь над местом его. Вернутся — расскажут, что нашли.")));
+            }
+            string free = $"<size=24>{Loc.T("Брошенная застава")}</size>\n"
+                        + Loc.T("Туда не ушёл никто. Нажмите — прочтёте, что о ней известно.");
+            ReliefMap.Point(sphere, Outpost, Loc.T("Брошенная застава"), Loc.T("свободна"), FreePlace, true, _font,
+                ShowPlace, () => Hint(free));
+
+            float x = ball + 28f, tw = Mathf.Max(240f, w - x);
+            Words(stage, x, -6f, tw, 40f, Loc.T("Окрестности лагеря"), 28, Heading);
+            Words(stage, x, -54f, tw, 170f, Loc.T("Карган: «Вот наши края, владыка. Огни в шаре — наши отряды: "
+                + "один ушёл к придорожной часовне, другой — к затопленной каменоломне. Пока огонь горит — "
+                + "они живы. Свободна одна брошенная застава — туда и пошлём»."), 20, Body);
+            Words(stage, x, -232f, tw, 56f, Loc.T("Нажмите на заставу в шаре — прочтёте, что о ней известно."), 18, Dim);
+            _hint = Words(stage, x, -300f, tw, 200f, free, 20, Body);
+            Press(stage, x, -(h - 70f), tw, 64f, Loc.T("Брошенная застава →"), ShowPlace);
+        }
+
+        private void Hint(string text)
+        {
+            if (_hint != null) _hint.text = text;
+        }
+
+        /// <summary>
+        /// Карточка заставы: кадр места, что донесла разведка и что советует Карган — слева;
+        /// как ходят в вылазку — справа. «К карте» — назад, дальше — выбор старшего.
+        /// </summary>
+        private void ShowPlace()
+        {
+            if (_panel == null || _done) return;
+            if (_title != null) _title.text = Loc.T("Военный совет: брошенная застава");
+
+            var stage = Stage(out float w, out float h);
+            float top = -ReliefMap.Header(stage, 0f, 250f, Outpost, Loc.T("Брошенная застава"), _font) - 20f;
+            float half = (w - 36f) * 0.5f, room = h + top - 92f;
+            Words(stage, 0f, top, half, room, Scouts() + Break + Advice(), 20, Body);
+            Words(stage, half + 36f, top, half, room,
+                Loc.T("Отряд поведёт старший — вы останетесь в лагере. Бой там решат сами души: "
+                    + "как кто поступит, когда станет трудно, сказано у каждого имени.") + Break
+                + Loc.T("Сперва выберите старшего, потом — кого он возьмёт с собой.") + Break
+                + Leaving(), 20, Body);
+            Press(stage, 0f, -(h - 70f), 300f, 64f, Loc.T("← К карте"), ShowMap);
+            Press(stage, w - 440f, -(h - 70f), 440f, 64f, Loc.T("Решить, кто поведёт →"), ShowColumns);
+        }
+
+        /// <summary>К столбцам: кто поведёт. Шар больше не нужен.</summary>
+        private void ShowColumns()
+        {
+            DropStage();
+            Columns(true);
+            if (_done) return;
+            if (_gathering) BuildParty();
+            else { ShowDetail(_picked); Build(FindOptions()); }
+        }
+
+        private void DropStage()
+        {
+            if (_stage == null) return;
+            _stage.SetActive(false);
+            Destroy(_stage);
+            _stage = null;
+            _hint = null;
+        }
+
+        /// <summary>Три столбца совета — выключить на время шара или вернуть.</summary>
+        private void Columns(bool on)
+        {
+            if (_rows != null) _rows.gameObject.SetActive(on);
+            if (_detail != null && _detail.transform.parent != null) _detail.transform.parent.gameObject.SetActive(on);
+            if (_quest != null && _quest.transform.parent != null) _quest.transform.parent.gameObject.SetActive(on);
+        }
+
+        /// <summary>Чистый лист под заголовком панели, там же, где столбцы.</summary>
+        private RectTransform Stage(out float width, out float height)
+        {
+            DropStage();
+            _stage = new GameObject("Совет — шар и место", typeof(RectTransform));   // ключ: имя объекта
+            _stage.transform.SetParent(_panel.transform, false);
+            var rt = (RectTransform)_stage.transform;
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(20f, 24f); rt.offsetMax = new Vector2(-20f, -84f);
+            // Раскладка ещё не посчитана — размеры панели из сборщика (1280×760).
+            width = rt.rect.width > 100f ? rt.rect.width : 1240f;
+            height = rt.rect.height > 100f ? rt.rect.height : 652f;
+            return rt;
+        }
+
+        private Text Words(RectTransform parent, float x, float top, float width, float height,
+                           string text, int size, Color colour)
+        {
+            var go = new GameObject("Текст", typeof(RectTransform));   // ключ: имя объекта
+            go.transform.SetParent(parent, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f); rt.pivot = new Vector2(0f, 1f);
+            rt.sizeDelta = new Vector2(width, height);
+            rt.anchoredPosition = new Vector2(x, top);
+            var label = go.AddComponent<Text>();
+            label.font = _font; label.fontSize = size; label.text = text; label.color = colour;
+            label.supportRichText = true; label.raycastTarget = false;
+            label.horizontalOverflow = HorizontalWrapMode.Wrap; label.verticalOverflow = VerticalWrapMode.Truncate;
+            label.alignment = TextAnchor.UpperLeft;
+            return label;
+        }
+
+        private void Press(RectTransform parent, float x, float top, float width, float height,
+                           string text, System.Action onClick)
+        {
+            var go = new GameObject(text, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f); rt.pivot = new Vector2(0f, 1f);
+            rt.sizeDelta = new Vector2(width, height);
+            rt.anchoredPosition = new Vector2(x, top);
+            var plate = go.AddComponent<Image>();
+            plate.color = new Color(0.14f, 0.12f, 0.10f, 0.95f);
+            var button = go.AddComponent<Button>();
+            button.targetGraphic = plate;
+            button.onClick.AddListener(() => onClick());
+            var label = Words(rt, 0f, -16f, width, height - 16f, text, 26, new Color(0.91f, 0.89f, 0.85f));
+            label.alignment = TextAnchor.UpperCenter;
         }
 
         /// <summary>
@@ -964,6 +1135,8 @@ namespace Sinbinder.UI
         {
             if (_done) return;
             _done = true;
+            DropStage();
+            Columns(true);
 
             SquadRoster.ChooseCommander(warrior.DisplayName);
 
