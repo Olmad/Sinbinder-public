@@ -45,6 +45,15 @@ namespace Sinbinder.Gameplay
             return "Измените условия или воина";
         }
 
+        public const string PairShort = "Учитывайте обе причины отказа";
+        public const string PairPrefix = "Две причины — попробуйте изменить обе: ";
+
+        // Two-factor counterfactuals need both interventions, not just the
+        // first one. Keep the lower strip compact; full advice is on hover.
+        public static string NextPair(string first, string second, System.Func<string, string> translate)
+            => translate(PairPrefix) + translate(Short(first)) + "; "
+                + translate(Short(second)) + ".";
+
         public static string Next(string factor, string voice = null)
         {
             switch (factor)
