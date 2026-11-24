@@ -51,8 +51,68 @@ static class BoardShimTests
         var json=JsonSerializer.Serialize(journeys,options);
         return JsonSerializer.Deserialize<List<SavedAutoExpedition>>(json,options);
     }
+    // Invoke the production replay builder with completed encounter facts.
+    // The Unity API shim supplies Loc/scene dependencies, not the replay logic.
+    static ExpeditionReplayData ReplayFor(Sinbinder.AOS.MissionAction? chosen,
+        bool fought, bool won, int survivors, int takenCoins, int coinsForLord)
+    {
+        var names=survivors>0 ? new List<string>{"Командир"} : new List<string>();
+        var outcome=new SavedAutoExpedition {
+            EncounterResolved=true, EncounterFought=fought, BattleWon=won,
+            Survivors=names, TakenCoins=takenCoins
+        };
+        var builder=typeof(MissionBoard).GetMethod("BuildReplay",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Check(builder!=null,"production MissionBoard.BuildReplay exists");
+        return (ExpeditionReplayData)builder.Invoke(null,new object[]{
+            Find("Соляной обоз"),"Командир",new List<string>{"Командир"},
+            chosen,outcome,names,new List<ExpeditionLootShare>(),coinsForLord,
+            ExpeditionObjectiveRules.Secured(fought,won,survivors)
+        });
+    }
+    static void ReplayTextChecks()
+    {
+        var raid=Sinbinder.AOS.MissionAction.TakeEverything;
+        var defeated=ReplayFor(raid,true,false,1,12,0);
+        var won=ReplayFor(raid,true,true,1,12,9);
+        var lost=ReplayFor(raid,true,false,0,0,0);
+        foreach(var replay in new[]{defeated,won,lost})
+        {
+            var decision=replay.Frames.Single(f=>f.Kind==ExpeditionReplayKind.CommandDecision);
+            Check(decision.Description=="Решение командира: Возьмите всё.",
+                "the same command is recorded as intent regardless of outcome");
+            Check(!decision.Description.Contains("разгромлена") &&
+                  !decision.Description.Contains("захвачен"),
+                "command frame never asserts an achieved victory");
+        }
+        Check(defeated.Frames.Any(f=>f.Description.Contains("отступил без добычи")) &&
+              !defeated.Frames.Any(f=>f.Description.Contains("кошеля Греховода")),
+            "failed raid reports no loot and does not show a purse allocation");
+        Check(lost.Frames.Any(f=>f.Description.Contains("Отряд погиб")) &&
+              !lost.Frames.Any(f=>f.Description.Contains("кошеля Греховода")),
+            "total loss cannot report an allocated reward");
+        Check(won.Frames.Any(f=>f.Description=="С павших противников взяли монет: 12.") &&
+              won.Frames.Any(f=>f.Description=="Доля добычи для кошеля Греховода: 9 монет.") &&
+              !won.Frames.Any(f=>f.Description.Contains("казну")),
+            "successful battle preserves actual coins and intended purse share");
+        var peaceful=ReplayFor(Sinbinder.AOS.MissionAction.TakeGoodsSparePeople,false,false,1,0,15);
+        Check(peaceful.Frames.Any(f=>f.Description.Contains("Обоз разгрузили без боя")) &&
+              peaceful.Frames.Any(f=>f.Description=="Доля добычи для кошеля Греховода: 15 монет.") &&
+              !peaceful.Frames.Any(f=>f.Description.Contains("павших противников")),
+            "peaceful seizure has no invented fallen enemy loot");
+        var passed=ReplayFor(Sinbinder.AOS.MissionAction.LetThemPass,false,false,1,0,0);
+        Check(passed.Frames.Any(f=>f.Description.Contains("командир разрешил проход")) &&
+              passed.Frames.Any(f=>f.Description=="Доля добычи для кошеля Греховода: 0 монет.") &&
+              !passed.Frames.Any(f=>f.Description.Contains("павших противников")),
+            "peaceful passage records zero coin allocation without fabricated combat");
+        var unspecified=ReplayFor(null,false,false,1,0,0);
+        Check(!unspecified.Frames.Any(f=>f.Kind==ExpeditionReplayKind.CommandDecision),
+            "missing choice cannot fabricate a command to let the caravan pass");
+    }
+
     public static void Run()
     {
+        ReplayTextChecks();
         Reset();
         SquadRoster.Members.AddRange(new [] { Make("Командир"),Make("Боец1"),Make("Боец2") });
         var mission=Find("Придорожная часовня");

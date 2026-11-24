@@ -3264,32 +3264,36 @@ msgid "Отряд направился к месту «{0}»."
 msgstr ""
 
 #: Crypt/MissionBoard.cs
+msgid "Решение командира: {0}"
+msgstr "Commander's decision: {0}"
+
+#: Crypt/MissionBoard.cs
 msgid "Обоз разгрузили без боя и отпустили возчиков."
-msgstr ""
+msgstr "The squad unloaded the caravan without a fight and let the drivers go."
 
 #: Crypt/MissionBoard.cs
 msgid "Столкновения не было: командир разрешил проход."
-msgstr ""
+msgstr "There was no fight: the commander let the caravan pass."
 
 #: Crypt/MissionBoard.cs
 msgid "С павших противников взяли монет: {0}."
-msgstr ""
+msgstr "Coins taken from fallen enemies: {0}."
 
 #: Crypt/MissionBoard.cs
 msgid "Оставил себе {0} монет."
 msgstr ""
 
 #: Crypt/MissionBoard.cs
-msgid "Общая добыча, вернувшаяся в казну: {0} монет."
-msgstr ""
+msgid "Доля добычи для кошеля Греховода: {0} монет."
+msgstr "Share allocated to the Sinbinder's purse: {0} coins."
 
 #: Crypt/MissionBoard.cs
 msgid "Охрана удержала груз. Отряд отступил без добычи."
-msgstr ""
+msgstr "The guards held the cargo. The squad withdrew without loot."
 
 #: Crypt/MissionBoard.cs
 msgid "Отряд погиб; добыча осталась на месте."
-msgstr ""
+msgstr "The squad perished; the loot was left behind."
 
 #: Crypt/MissionBoard.cs
 msgid "Вернулись: {0}."
