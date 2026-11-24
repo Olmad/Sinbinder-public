@@ -183,7 +183,8 @@ internal static class Program
               dreamTrace.Contains("bool briefCourt = _courts > 0;") &&
               dreamTrace.Contains("if (SoulCourt.Completed > completedBefore)") &&
               dreamTrace.Contains("_courts++;") &&
-              dreamTrace.Contains("originalVotes: ballot, force: true);"),
+              // 23.11 (529cad48): the Judge parameter is named originalVotes, as in ScalesOverhead and CourtCaller.
+              dreamTrace.Contains("originalVotes: originalVotes, force: true);"),
             "dream court judges the SAME AOS decision with its original ballot, full first then brief");
         // Source-backed evidence, not a guessed duration: only the fully
         // finished Court increments Completed and produces a Unity wall-clock

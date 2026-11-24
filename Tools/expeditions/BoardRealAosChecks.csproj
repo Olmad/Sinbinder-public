@@ -28,6 +28,7 @@
     <Compile Include="../../Assets/Scripts/Crypt/MissionCatalog.cs" />
     <Compile Include="../../Assets/Scripts/Crypt/JunctionCatalog.cs" />
     <Compile Include="../../Assets/Scripts/Crypt/MissionBoard.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMapPlan.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMemoryVote.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMemoryLedger.cs" />
     <Compile Include="../../Assets/Scripts/Core/LocationManager.cs" />

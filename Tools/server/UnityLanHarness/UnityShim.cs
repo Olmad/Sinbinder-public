@@ -258,6 +258,8 @@ namespace UnityEngine
     public static class Application
     {
         public static bool isBatchMode { get { return true; } }
+        // 20.11 (1321509e): SinbinderLanBootstrap спрашивает, есть ли в сборке сцена Crypt_Test. В обвязке сцен нет.
+        public static bool CanStreamedLevelBeLoaded(string sceneName) { return false; }
         public static int? LastExitCode { get; private set; }
         public static void Quit(int exitCode = 0) { LastExitCode = exitCode; }
     }

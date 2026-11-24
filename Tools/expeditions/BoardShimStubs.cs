@@ -29,6 +29,10 @@ namespace UnityEngine
     {
         public static readonly List<string> Warnings=new List<string>();
         public static void LogWarning(object obj) => Warnings.Add(obj?.ToString() ?? "");
+#if !BOARD_REAL_AOS
+        // 23.11: доска пишет в журнал принесённый слух (MissionBoard.Hear). В BOARD_REAL_AOS — свой Log в Extras.
+        public static void Log(object obj) {}
+#endif
     }
     public static partial class Object
     {
@@ -203,6 +207,30 @@ namespace Sinbinder.Gameplay
     public static class PersonalExpedition
     {
         public static bool Active;
+        // 23.11 (69 §7 п.2): павшие в авто-бою стражи и охотники, которых несёт слух.
+        public static readonly List<string> Fell = new List<string>();
+        public static void GuardsFellElsewhere(string placeId, int fallen) => Fell.Add(placeId + ":" + fallen);
+        public static List<string> SendHunters(params string[] from) => new List<string>();
+    }
+    // 23.11: выжившие места (Gameplay/Survivors.cs) и шаг времени вылазок (Gameplay/Sorties.cs). Доске нужны
+    // только их входы; сами правила выживших здесь не проверяются — у них нет Unity-свободной копии.
+    public sealed class SavedSurvivor
+    {
+        public string Name;
+        public int Sin;
+        public bool Undead;
+        public float Health = 1f;
+    }
+    public static class Survivors
+    {
+        public static List<SavedSurvivor> At(string place) => new List<SavedSurvivor>();
+        public static int AfterAutoBattle(string place, IList<string> foes, IList<string> party, AOS.BattleRecord record,
+            IDictionary<string, float> health = null) => 0;
+    }
+    public static class Sorties
+    {
+        public static int Count;
+        public static void Tick() => Count++;
     }
     public static class Leadership
     {
