@@ -89,6 +89,20 @@ internal static class Program
               pauseMenuSource.Contains("Автоматический Суд души"),
             "manual U review and required tutorial work when automatic CourtCaller is disabled");
 
+        // The camp-only view invitation must not consume its once-per-game flag
+        // in the dream, and must not remain visible after returning to first person.
+        string viewHint = System.IO.File.ReadAllText("Assets/Scripts/UI/ViewHintUI.cs");
+        int scope = viewHint.IndexOf("SceneManager.GetActiveScene().name != \"Prologue_Camp\"", StringComparison.Ordinal);
+        int transition = viewHint.IndexOf("if (_wasEyes && !eyes) _pending = true;", StringComparison.Ordinal);
+        int show = viewHint.IndexOf("if (_pending && !eyes && !busy) Show();", StringComparison.Ordinal);
+        Check(scope >= 0 && transition > scope && show > transition &&
+              viewHint.Contains("_wasEyes = false;") && viewHint.Contains("_pending = false;"),
+            "dream and other non-camp scenes cannot consume the camp invitation");
+        Check(viewHint.Contains("if (cam == null || cam.FirstPersonNow)") &&
+              viewHint.Contains("if (_group != null) _group.alpha = 0f;") &&
+              viewHint.Contains("тихая строка о Tab и секретах лагеря."),
+            "camp tactical hint is dismissed on returning to first person and logs the actual key");
+
         // Source-linked AOS explanation viewport fitting: the *real* Unity
         // tooltip uses this solver, not a duplicated CI-only calculation.
         Check(TooltipViewportFit.Scale(280f, 130f, 1280f, 720f, 12f) == 1f,
