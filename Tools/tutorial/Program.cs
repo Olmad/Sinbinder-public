@@ -15,6 +15,23 @@ internal static class Program
 
     public static int Main()
     {
+        // Source-linked checks: the visible movement hint follows Tab both ways;
+        // a move order is not a promise of AOS obedience.
+        string movementHint = System.IO.File.ReadAllText("Assets/Scripts/UI/MovementHintUI.cs");
+        Check(movementHint.Contains("if (_showing)\\n            {\\n                // Tab") &&
+              movementHint.Contains("string line = Line();") &&
+              movementHint.Contains("if (_text.text != line) _text.text = line;") &&
+              movementHint.Contains("!view.FirstPersonNow") &&
+              movementHint.Contains("Loc.T(fromAbove ? FromAbove : Eyes)"),
+            "visible movement hint refreshes from actual camera mode, not its initial mode");
+        string commandHint = System.IO.File.ReadAllText("Assets/Scripts/UI/CommandHintUI.cs");
+        string hintCatalog = System.IO.File.ReadAllText("Assets/Resources/Lang/en.txt");
+        Check(commandHint.Contains("Loc.N(\"ЛКМ по воину — выделить. ПКМ по земле — приказ двигаться.\")") &&
+              !commandHint.Contains("он пойдёт туда") &&
+              hintCatalog.Contains("msgid \"ЛКМ по воину — выделить. ПКМ по земле — приказ двигаться.\"") &&
+              hintCatalog.Contains("msgstr \"LMB on a warrior — select. RMB on the ground — order them to move.\""),
+            "move instruction describes an order, not guaranteed obedience, in RU and EN");
+
         // The first five minutes are measured from the actual new-game click.
         // This is source-linked instrumentation: Unity must still produce logs
         // before anybody may claim to have measured a player's experience.
