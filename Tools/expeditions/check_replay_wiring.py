@@ -61,7 +61,7 @@ assert "public int Round;" in data
 assert "ev.HealDealt,ev.Round,ev.TargetName,true," in board and "ev.Resolved,ev.TargetKilled" in board
 assert "frame.Damage,frame.Healing,frame.Round" in board
 assert "Round = frame.Round" in archive
-assert 'frame.Round>0 ? "\\nХод AOS: "+frame.Round' in viewer
+assert 'Loc.F("Ход AOS: {0}",frame.Round)' in viewer and 'frame.Round>0' in viewer
 print("PASS: factual AOS round provenance retained through save and replay")
 
 # An AOS BattleEvent's attempted attack power is not the actual HP removed.
