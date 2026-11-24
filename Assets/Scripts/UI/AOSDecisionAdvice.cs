@@ -34,18 +34,25 @@ namespace Sinbinder.UI
             => c != null && c.HasCommand && (d.RefusedCommand || d.Hesitated);
 
         private static string Voice(Decision decision)
-            => !string.IsNullOrEmpty(decision.DecisiveVoice)
-                ? decision.DecisiveVoice : decision.TopModule;
+            => decision.Weighed ? decision.DecisiveVoice : decision.TopModule;
+
+        private static bool HasPair(Decision decision)
+            => decision.Weighed && decision.Decisive != Counterfactual.Factor.None
+                && decision.DecisiveAlso != Counterfactual.Factor.None;
 
         public static string Next(Decision decision, DecisionContext context)
         {
             if (!NeedsHelp(decision, context)) return "";
+            if (HasPair(decision))
+                return OrderAdvice.NextPair(decision.Decisive.ToString(),
+                    decision.DecisiveAlso.ToString(), Loc.T);
             return Loc.T(OrderAdvice.Next(Factor(decision, context), Voice(decision)));
         }
 
         public static string NextShort(Decision decision, DecisionContext context)
         {
             if (!NeedsHelp(decision, context)) return "";
+            if (HasPair(decision)) return Loc.T(OrderAdvice.PairShort);
             return Loc.T(OrderAdvice.Short(Factor(decision, context), Voice(decision)));
         }
 
