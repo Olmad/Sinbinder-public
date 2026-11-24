@@ -119,6 +119,42 @@ internal static class Program
               tooltipSource.Contains("_nativePanelScale.y * fit"),
             "WarriorTooltipUI uses source-tested viewport fit and restores native proportions");
 
+        // Actual production Loc parser, exact catalog, source-linked role recovery.
+        string roleDreamSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/DreamTutorialDirector.cs");
+        int roleRecoveryStart = roleDreamSource.IndexOf("private string RoleRecoveryGoal()", StringComparison.Ordinal);
+        int roleRecoveryEnd = roleDreamSource.IndexOf("private string CurrentGoal()", StringComparison.Ordinal);
+        string roleRecovery = roleRecoveryStart >= 0 && roleRecoveryEnd > roleRecoveryStart
+            ? roleDreamSource.Substring(roleRecoveryStart, roleRecoveryEnd - roleRecoveryStart) : "";
+        Check(roleRecovery.Contains("if (!view.FirstPersonNow)") &&
+              roleRecovery.Contains("if (needsWarrior && !view.WarriorModeNow)") &&
+              roleRecovery.Contains("if (needsCommander && !view.CommanderModeNow)") &&
+              roleRecovery.Contains("if (needsCommander)") &&
+              roleRecovery.Contains("_stage == Stage.Practice") &&
+              roleDreamSource.Contains("string recovery = RoleRecoveryGoal();") &&
+              roleDreamSource.Contains("Loc.T(RoleRecoveryGoal() ?? _line)"),
+            "short and detailed goals recover actual Tab/V mode before requesting combat or orders");
+        Check(roleDreamSource.Contains("Loc.T(\"ПКМ по земле — отдайте приказ двигаться.\")") &&
+              !roleDreamSource.Contains("Правой кнопкой — по земле: он пойдёт туда.") &&
+              !roleDreamSource.Contains("Правой кнопкой — по земле: она пойдёт туда."),
+            "dream command lesson does not promise obedience");
+        Sinbinder.Core.Loc.Use("en", System.IO.File.ReadAllText("Assets/Resources/Lang/en.txt"));
+        Check(Sinbinder.Core.Loc.T("ПКМ по земле — отдайте приказ двигаться.") == "RMB on the ground — give a move order.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("ЛКМ — выберите соратника. ПКМ — отдайте приказ.") == "LMB — select a companion. RMB — give an order.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("V — переключитесь с Командира на Воина.") == "V — switch from Commander to Warrior.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("ЛКМ — удар, ПКМ — блок. Попробуйте оба.") == "LMB — strike, RMB — block. Try both.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("B — обнажите оружие.") == "B — draw your weapon.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("Tab — посмотрите глазами Греховода.") == "Tab — switch to the Sinbinder's first-person view.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("V — Командир; ЛКМ — выбор, ПКМ — приказ.") == "V — Commander; LMB — select, RMB — order.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("V: переключись в режим Воина. ЛКМ удар, ПКМ блок.") == "V: switch to Warrior mode. LMB to strike, RMB to block.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("B — достань оружие. Только обнажённым оружием можно атаковать.") == "B — draw your weapon. You can only attack with a drawn weapon.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("Посох всегда в руке. Впереди у дороги — чучело: подойдите к нему.") == "Your staff is always in your hand. There is a practice dummy by the road ahead: approach it.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("Впереди у дороги — чучело: подойдите к нему.") == "There is a practice dummy by the road ahead: approach it.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("Ударьте чучело ЛКМ и подержите блок ПКМ.") == "Strike the dummy with LMB and hold RMB to block.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("Tab: перейди от тактического вида к первому лицу.") == "Tab: switch from tactical view to first person.", "dream role EN translation");
+        Check(Sinbinder.Core.Loc.T("Убийцы пали. Tab: перейди от тактического вида к первому лицу.") == "The killers have fallen. Tab: switch from tactical view to first person.", "dream role EN translation");
+        Sinbinder.Core.Loc.Use("ru", null);
+        Check(Sinbinder.Core.Loc.T("ПКМ по земле — отдайте приказ двигаться.") == "ПКМ по земле — отдайте приказ двигаться.", "dream role RU fallback");
+
         // Two-plate crypt puzzle. A distant ally must never activate a seal.
         Check(DreamTutorialChecks.OnSeal(-1.8f, 25.8f, -1.8f, 25.8f), "warrior stands on seal center");
         Check(DreamTutorialChecks.OnSeal(-0.45f, 25.8f, -1.8f, 25.8f), "seal includes 1.35m edge");
