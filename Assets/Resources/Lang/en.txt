@@ -14746,3 +14746,23 @@ msgstr "If I had a heel of bread, it wouldn't last until evening."
 #: Dialogue/stage1-fact-review
 msgid "Была бы горбушка — поделился бы. Наверное."
 msgstr "If I had some bread, I'd share it. Probably."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Выступление"
+msgstr "Departure"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Маршрут"
+msgstr "March"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Решение командира"
+msgstr "Command decision"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Боевой эпизод"
+msgstr "Combat encounter"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Возвращение"
+msgstr "Return"

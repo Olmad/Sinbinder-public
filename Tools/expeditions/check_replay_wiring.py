@@ -28,6 +28,28 @@ assert 'Time.unscaledDeltaTime' in viewer
 assert 'Схематическая реконструкция' in viewer
 assert 'foreach(var frame in Frames) yield return frame' in data
 assert 'Frames.Count' in viewer and 'GUI.BeginScrollView' in viewer
+locale=(r/"Assets/Resources/Lang/en.txt").read_text(encoding="utf-8")
+# Stage names are player-facing in BOTH timeline and current-frame header.
+# Check production enum wiring and actual gettext PO format used by Core.Loc.Parse.
+labels = (
+    ("Departure", "Выступление", "Departure"),
+    ("March", "Маршрут", "March"),
+    ("CommandDecision", "Решение командира", "Command decision"),
+    ("CombatAction", "Боевой эпизод", "Combat encounter"),
+    ("Loot", "Добыча", "Loot"),
+    ("Return", "Возвращение", "Return"),
+    (None, "Событие", "Event"),
+)
+stage = viewer.split("private static string StageName(", 1)[1]
+for kind, ru, en in labels:
+    branch = ("ExpeditionReplayKind." + kind if kind is not None else "_")
+    assert branch + ' => Loc.T("' + ru + '")' in stage, (branch, ru)
+    key = 'msgid "' + ru + '"'
+    assert locale.count(key) == 1, (ru, "missing or duplicate PO key")
+    assert key + '\nmsgstr "' + en + '"' in locale, (ru, "not loaded by Loc.Parse")
+assert "Выступление=Departure" not in locale, "legacy key=value is not a valid PO translation"
+print("PASS: seven replay stage labels use actual Loc.T + PO translations")
+
 print("PASS: automatic mission replay retains all source events and opens timeline viewer")
 
 # AOS decision != executed effect: a fighter who actually flees leaves the
@@ -61,7 +83,7 @@ assert "public int Round;" in data
 assert "ev.HealDealt,ev.Round,ev.TargetName,true," in board and "ev.Resolved,ev.TargetKilled" in board
 assert "frame.Damage,frame.Healing,frame.Round" in board
 assert "Round = frame.Round" in archive
-assert 'frame.Round>0 ? "\\nХод AOS: "+frame.Round' in viewer
+assert 'Loc.F("Ход AOS: {0}",frame.Round)' in viewer and 'frame.Round>0' in viewer
 print("PASS: factual AOS round provenance retained through save and replay")
 
 # An AOS BattleEvent's attempted attack power is not the actual HP removed.
