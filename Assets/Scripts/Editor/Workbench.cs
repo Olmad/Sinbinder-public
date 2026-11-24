@@ -25,7 +25,8 @@ namespace Sinbinder.EditorTools
     /// поиск и перенос предметов, чтение и запись полей, вызов методов, перекомпиляция без перезапуска.
     ///
     /// Команда — файл Logs/workbench/in/&lt;id&gt;.cmd (одна строка), ответ — Logs/workbench/out/&lt;id&gt;.txt.
-    /// Клиент — D:\Claude\runs\wb.ps1. Простоял 20 минут без команд — выходит сам: ОЗУ на ПК автора мало.
+    /// Клиент — D:\Claude\runs\wb.ps1 (несколько команд через « ;; », рецепты — «wb.ps1 run &lt;имя&gt;»).
+    /// Простоял 45 минут без команд — выходит сам: ОЗУ на ПК автора мало.
     /// Пока верстак держит проект, другая Unity его не откроет: перед «Собрать игру.cmd» — «wb quit».
     ///
     /// Запускать только на скрытом рабочем столе (D:\Claude\runs\HiddenDesk.cs, это делает «wb.ps1 start»):
@@ -39,7 +40,8 @@ namespace Sinbinder.EditorTools
         private const string DreamActive = "Sinbinder.DreamWalkthrough.Active";
         private const string Root = "Logs/workbench";
         private const string Shots = Root + "/shots";
-        private const float IdleQuit = 20f * 60f;
+        // 24.11: было 20 мин — холодный подъём стоит до трёх минут, а перерыв на чтение кадров дольше двадцати.
+        private const float IdleQuit = 45f * 60f;
 
         private const string Help =
             "ping — жив ли, что открыто\n" +
@@ -54,6 +56,7 @@ namespace Sinbinder.EditorTools
             "find <часть имени> — предметы и где стоят; move <имя> x,y,z — перенести (агента — Warp)\n" +
             "get Тип.Член | Тип#член — значение (# — у первого такого в сцене); set Тип.Член <знач>\n" +
             "call Тип.Метод [арг…] | Тип#Метод — вызвать; числа через точку, вектор x,y,z, enum по имени\n" +
+            "buttons — видимые кнопки UI; click <надпись или имя> — нажать, как игрок; hover <надпись> — навести\n" +
             "log [n] — последние строки журнала Unity; quit — выйти";
 
         private static readonly List<string> Recent = new();
@@ -239,8 +242,9 @@ namespace Sinbinder.EditorTools
                     return null;
                 case "open":
                     if (EditorApplication.isPlaying) return "ОШИБКА: сначала stop";
-                    EditorSceneManager.OpenScene(Arg(a, 1));
-                    return "открыта " + Arg(a, 1);
+                    string scene = ScenePath(Arg(a, 1));
+                    EditorSceneManager.OpenScene(scene);
+                    return "открыта " + scene;
                 case "play":
                     if (EditorApplication.isPlaying) return "уже играет";
                     Pend(id, "play");
@@ -270,6 +274,11 @@ namespace Sinbinder.EditorTools
                 case "get": return Show(Member(Arg(a, 1), null, false));
                 case "set": Member(Arg(a, 1), Arg(a, 2), true); return "ок: " + Show(Member(Arg(a, 1), null, false));
                 case "call": return Show(Call(Arg(a, 1), a.Skip(2).ToArray()));
+                case "buttons":
+                    var all = Buttons().Select(b => (b.interactable ? "" : "(неактивна) ") + Name(b)).ToList();
+                    return all.Count == 0 ? "видимых кнопок нет" : string.Join("\n", all);
+                case "click": return Click(string.Join(" ", a.Skip(1)));
+                case "hover": return Hover(string.Join(" ", a.Skip(1)));
                 case "log":
                     int n = a.Count > 1 ? int.Parse(a[1]) : 30;
                     return Recent.Count == 0 ? "(журнал пуст с последней перезагрузки)" : string.Join("\n", Recent.Skip(Math.Max(0, Recent.Count - n)));
@@ -289,6 +298,61 @@ namespace Sinbinder.EditorTools
 
         private static string Arg(List<string> a, int i)
             => i < a.Count ? a[i] : throw new ArgumentException($"не хватает аргумента №{i}");
+
+        /// <summary>Сцена по пути или по имени («Prologue_Camp»).</summary>
+        private static string ScenePath(string name)
+        {
+            if (name.EndsWith(".unity", StringComparison.OrdinalIgnoreCase)) return name;
+            return AssetDatabase.FindAssets("t:Scene " + name).Select(AssetDatabase.GUIDToAssetPath)
+                       .FirstOrDefault(p => Path.GetFileNameWithoutExtension(p) == name)
+                   ?? throw new ArgumentException("нет сцены «" + name + "»");
+        }
+
+        // ── кнопки UI: нажать, как игрок ──
+
+        private static IEnumerable<UnityEngine.UI.Button> Buttons()
+            => UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID)
+                   .Where(b => b.isActiveAndEnabled);
+
+        /// <summary>Надпись кнопки (первый текст внутри) или имя объекта.</summary>
+        private static string Name(Component c)
+        {
+            var t = c.GetComponentInChildren<UnityEngine.UI.Text>(false);
+            return t != null && !string.IsNullOrWhiteSpace(t.text) ? t.text.Split('\n')[0].Trim() : c.name;
+        }
+
+        /// <summary>Сперва точное совпадение надписи или имени, потом — часть.</summary>
+        private static T Pick<T>(IEnumerable<T> items, string what, out int count) where T : Component
+        {
+            var list = items.ToList();
+            var hits = list.Where(c => Name(c) == what || c.name == what).ToList();
+            if (hits.Count == 0)
+                hits = list.Where(c => Name(c).IndexOf(what, StringComparison.OrdinalIgnoreCase) >= 0
+                                    || c.name.IndexOf(what, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+            count = hits.Count;
+            return hits.FirstOrDefault();
+        }
+
+        private static string Click(string what)
+        {
+            var b = Pick(Buttons(), what, out int count);
+            if (b == null) return "ОШИБКА: нет кнопки «" + what + "»; buttons — список";
+            if (!b.interactable) return "ОШИБКА: кнопка «" + Name(b) + "» неактивна";
+            b.onClick.Invoke();
+            return "нажата «" + Name(b) + "»" + (count > 1 ? $" (подходит {count}, взята первая)" : "");
+        }
+
+        private static string Hover(string what)
+        {
+            var triggers = UnityEngine.Object.FindObjectsByType<UnityEngine.EventSystems.EventTrigger>(
+                FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID).Where(t => t.isActiveAndEnabled);
+            var t = Pick(triggers, what, out int count);
+            if (t == null) return "ОШИБКА: не на что навести «" + what + "»";
+            UnityEngine.EventSystems.ExecuteEvents.Execute(t.gameObject,
+                new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current),
+                UnityEngine.EventSystems.ExecuteEvents.pointerEnterHandler);
+            return "наведено на «" + Name(t) + "»" + (count > 1 ? $" (подходит {count}, взято первое)" : "");
+        }
 
         // ── сон ──
 
