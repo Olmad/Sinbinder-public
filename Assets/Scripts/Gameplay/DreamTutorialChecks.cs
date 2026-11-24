@@ -42,6 +42,12 @@ namespace Sinbinder.Gameplay
             return heldSeconds >= SealHoldSeconds;
         }
 
+        /// <summary>Only a recorded decision for the exact lesson order is evidence.
+        /// The order may already have completed/cleared when the dream observes it.</summary>
+        public static bool MatchesOrderedDecision(bool contextHasCommand,
+            uint expectedRevision, uint recordedRevision)
+            => contextHasCommand && expectedRevision == recordedRevision;
+
         /// <summary>
         /// Only accept a new decision after the expected player order.
         /// Reading LastDecisionDetail alone can accidentally credit a previous

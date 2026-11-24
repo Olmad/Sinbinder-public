@@ -73,6 +73,27 @@ internal static class Program
               !contextSource.Contains("case \"Move\""),
             "dream calls obedience only what the engine's order accepts, never a free Flee/Attack");
 
+        // Exercise the exact pure rule used by both dream lesson paths.
+        Check(DreamTutorialChecks.MatchesOrderedDecision(true, 42u, 42u),
+            "dream accepts a recorded decision for its exact order even after completion");
+        Check(!DreamTutorialChecks.MatchesOrderedDecision(true, 42u, 41u) &&
+              !DreamTutorialChecks.MatchesOrderedDecision(true, 42u, 43u) &&
+              !DreamTutorialChecks.MatchesOrderedDecision(false, 42u, 42u),
+            "dream rejects previous orders, replacement orders and decisions without a command");
+        Check(dreamTrace.Contains("mind.LastDecisionCommandRevision") &&
+              dreamTrace.Contains("mind.LastContext != null && mind.LastContext.HasCommand") &&
+              dreamTrace.Contains("if (HasLessonDecision(mind))") &&
+              dreamTrace.Contains("bool fresh = HasLessonDecision(mind);") &&
+              dreamTrace.Split(new[] { "_decisionOrderRevision = _zombie.CommandRevision;" },
+                  StringSplitOptions.None).Length == 4 &&
+              !dreamTrace.Contains("_mindBefore"),
+            "both first court paths and the retest capture the actual command revision");
+        Check(dreamTrace.Contains("!_decisionManualDecideTried") &&
+              dreamTrace.Contains("_decisionManualDecideTried = true;") &&
+              dreamTrace.Split(new[] { "_zombie.CommandRevision == _decisionOrderRevision" },
+                  StringSplitOptions.None).Length == 3,
+            "manual decision fallback runs once and never votes on a replacement order");
+
         // AOS can legitimately be silent due to a broken scene or missing
         // component. Retest must try the real vote once then recover with a
         // truthful missing-verdict result, rather than hanging forever or

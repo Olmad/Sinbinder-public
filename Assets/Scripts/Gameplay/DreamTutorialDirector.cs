@@ -325,7 +325,14 @@ namespace Sinbinder.Gameplay
         }
         private bool _courtRunning, _retestOrdered, _contrastRunning, _retestManualDecideTried, _fiveMarked;
         private float _whisperSince;
-        private AOS.DecisionContext _mindBefore;
+        private uint _decisionOrderRevision;
+        private bool _decisionManualDecideTried;
+
+        // A newer context alone is not proof that it belongs to this lesson's order.
+        private bool HasLessonDecision(AOS.AOSWarriorWrapper mind)
+            => mind != null && DreamTutorialChecks.MatchesOrderedDecision(
+                mind.LastContext != null && mind.LastContext.HasCommand,
+                _decisionOrderRevision, mind.LastDecisionCommandRevision);
         private float _nextPrompt;
         private string _line;
         private DreamHandCursor _hand;
@@ -751,8 +758,8 @@ namespace Sinbinder.Gameplay
                     {
                         _courtOrder = _zombie.Command.Kind;
                         Mark("приказ при убийцах: " + _courtOrder);
-                        var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
-                        _mindBefore = mind != null ? mind.LastContext : null;
+                        _decisionOrderRevision = _zombie.CommandRevision;
+                        _decisionManualDecideTried = false;
                         _decideSince = Time.unscaledTime;
                         Hold(_zombie, false);   // теперь решает он
                         _stage = Stage.Deciding;
@@ -765,10 +772,14 @@ namespace Sinbinder.Gameplay
                     if (_courtRunning) break;
                     // Голоса не заговорили сами за секунду с лишним — спросить душу напрямую:
                     // тот же Decide, что зовёт её мозг, просто сейчас.
-                    if ((mind.LastContext == null || mind.LastContext == _mindBefore)
+                    if (!HasLessonDecision(mind) && !_decisionManualDecideTried
+                        && _zombie.HasCommand && _zombie.CommandRevision == _decisionOrderRevision
                         && Time.unscaledTime - _decideSince > 1.2f)
+                    {
+                        _decisionManualDecideTried = true;
                         mind.Decide();
-                    if (mind.LastContext != null && mind.LastContext != _mindBefore)
+                    }
+                    if (HasLessonDecision(mind))
                     {
                         _courtRunning = true;
                         StartCoroutine(Judge(mind.LastDecisionDetail, mind.LastContext, Ballot(mind)));
@@ -830,10 +841,10 @@ namespace Sinbinder.Gameplay
                     if (!_retestOrdered && (Ordered(_retestSince) || OrderedSinceMark()))
                     {
                         _retestOrdered = true;
-                        _mindBefore = mind != null ? mind.LastContext : null;
+                        _decisionOrderRevision = _zombie.CommandRevision;
                         _decideSince = Time.unscaledTime;
                     }
-                    bool fresh = mind != null && mind.LastContext != null && mind.LastContext != _mindBefore;
+                    bool fresh = HasLessonDecision(mind);
                     if (_retestOrdered && !_contrastRunning && fresh)
                     {
                         _contrastRunning = true;
@@ -844,7 +855,9 @@ namespace Sinbinder.Gameplay
                         // Голоса молчат: раз спросить душу напрямую (как в Deciding), а не дождалась
                         // и после — честно «решение не поступило», без выдуманного послушания.
                         // До 20.11 повтор без решения висел вечно (тест ботов, Tools/tutorial).
-                        if (mind != null && !_retestManualDecideTried && Time.unscaledTime - _decideSince > 1.2f)
+                        if (mind != null && !_retestManualDecideTried && _zombie.HasCommand
+                            && _zombie.CommandRevision == _decisionOrderRevision
+                            && Time.unscaledTime - _decideSince > 1.2f)
                         {
                             _retestManualDecideTried = true;
                             mind.Decide();
@@ -1217,8 +1230,8 @@ namespace Sinbinder.Gameplay
             {
                 _courtOrder = _zombie.Command.Kind;
                 Mark("приказ догнать: " + _courtOrder);
-                var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
-                _mindBefore = mind != null ? mind.LastContext : null;
+                _decisionOrderRevision = _zombie.CommandRevision;
+                _decisionManualDecideTried = false;
                 _decideSince = Time.unscaledTime;
                 _chaseCourt = true;
                 Hold(_zombie, false);      // теперь решает он
