@@ -6936,14 +6936,6 @@ msgid "ПКМ"
 msgstr "RMB"
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Правой кнопкой — по земле: он пойдёт туда."
-msgstr "Right-click the ground: he will go there."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Правой кнопкой — по земле: она пойдёт туда."
-msgstr "Right-click the ground: she will go there."
-
-#: Gameplay/DreamTutorialDirector.cs
 msgid "Приказ отдаёте вы. Исполнит ли — решает душа."
 msgstr "You give the order. Whether it is carried out — the soul decides."
 
@@ -14746,3 +14738,60 @@ msgstr "If I had a heel of bread, it wouldn't last until evening."
 #: Dialogue/stage1-fact-review
 msgid "Была бы горбушка — поделился бы. Наверное."
 msgstr "If I had some bread, I'd share it. Probably."
+
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "ПКМ по земле — отдайте приказ двигаться."
+msgstr "RMB on the ground — give a move order."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "ЛКМ — выберите соратника. ПКМ — отдайте приказ."
+msgstr "LMB — select a companion. RMB — give an order."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "V — переключитесь с Командира на Воина."
+msgstr "V — switch from Commander to Warrior."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "ЛКМ — удар, ПКМ — блок. Попробуйте оба."
+msgstr "LMB — strike, RMB — block. Try both."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "B — обнажите оружие."
+msgstr "B — draw your weapon."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Tab — посмотрите глазами Греховода."
+msgstr "Tab — switch to the Sinbinder's first-person view."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "V — Командир; ЛКМ — выбор, ПКМ — приказ."
+msgstr "V — Commander; LMB — select, RMB — order."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "V: переключись в режим Воина. ЛКМ удар, ПКМ блок."
+msgstr "V: switch to Warrior mode. LMB to strike, RMB to block."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "B — достань оружие. Только обнажённым оружием можно атаковать."
+msgstr "B — draw your weapon. You can only attack with a drawn weapon."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Посох всегда в руке. Впереди у дороги — чучело: подойдите к нему."
+msgstr "Your staff is always in your hand. There is a practice dummy by the road ahead: approach it."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Впереди у дороги — чучело: подойдите к нему."
+msgstr "There is a practice dummy by the road ahead: approach it."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Ударьте чучело ЛКМ и подержите блок ПКМ."
+msgstr "Strike the dummy with LMB and hold RMB to block."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Tab: перейди от тактического вида к первому лицу."
+msgstr "Tab: switch from tactical view to first person."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Убийцы пали. Tab: перейди от тактического вида к первому лицу."
+msgstr "The killers have fallen. Tab: switch from tactical view to first person."

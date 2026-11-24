@@ -273,8 +273,7 @@ namespace Sinbinder.Gameplay
                         () => !Picked()
                             ? (Loc.T("ЛКМ"), Loc.F("Щёлкните по {0} — выделить.", Whom())
                                              + "\n" + Loc.T("Это ваш первый воин."))
-                            : (Loc.T("ПКМ"), Grammar.Pick(g, Loc.T("Правой кнопкой — по земле: он пойдёт туда."),
-                                                             Loc.T("Правой кнопкой — по земле: она пойдёт туда."))
+                            : (Loc.T("ПКМ"), Loc.T("ПКМ по земле — отдайте приказ двигаться.")
                                              + "\n" + Loc.T("Приказ отдаёте вы. Исполнит ли — решает душа.")),
                         () => _stage != Stage.Command || _squadOrdered || OrderedSinceMark());
                     break;
@@ -1700,8 +1699,31 @@ namespace Sinbinder.Gameplay
         /// Do not reveal the solution to the last puzzle until the player
         /// actually gets stuck.
         /// </summary>
+        // Recover the actual input mode before displaying an action that needs it.
+        // Returning to tactical view never makes V a valid shortcut.
+        private string RoleRecoveryGoal()
+        {
+            bool needsWarrior = _stage == Stage.WarriorMode || _stage == Stage.DrawWeapon
+                             || _stage == Stage.Practice;
+            bool needsCommander = _stage == Stage.CommanderPractice;
+            if (!needsWarrior && !needsCommander) return null;
+
+            var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+            if (view == null) return null;
+            if (!view.FirstPersonNow) return Loc.N("Tab — посмотрите глазами Греховода.");
+            if (needsWarrior && !view.WarriorModeNow)
+                return Loc.N("V — переключитесь с Командира на Воина.");
+            if (needsCommander && !view.CommanderModeNow)
+                return Loc.N("V — вернитесь к Командиру. В этом режиме мышь отдаёт приказы.");
+            if (needsCommander)
+                return Loc.N("ЛКМ — выберите соратника. ПКМ — отдайте приказ.");
+            return null;
+        }
+
         private string CurrentGoal()
         {
+            string recovery = RoleRecoveryGoal();
+            if (recovery != null) return recovery;
             switch (_stage)
             {
                 case Stage.Approach: return "ПКМ по земле: подойдите к незнакомцу.";
@@ -1765,7 +1787,7 @@ namespace Sinbinder.Gameplay
 
             float width = Mathf.Min(Screen.width - 32f, 720f);
             string content = _moreExplanation
-                ? Loc.T("СОН · ПОДРОБНЕЕ") + "\n" + _line + "\n" + Loc.T("F1 — свернуть")
+                ? Loc.T("СОН · ПОДРОБНЕЕ") + "\n" + Loc.T(RoleRecoveryGoal() ?? _line) + "\n" + Loc.T("F1 — свернуть")
                 : Loc.T("СОН · ЦЕЛЬ") + "\n" + Loc.T(CurrentGoal()) + "\n" + Loc.T("F1 — объяснить");
             // A fixed 76/122px panel clips wrapped or localized dream goals.
             // Measure the actual caption, retaining the original minimum height.
