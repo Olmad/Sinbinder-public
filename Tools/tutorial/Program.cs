@@ -18,7 +18,7 @@ internal static class Program
         // Source-linked checks: the visible movement hint follows Tab both ways;
         // a move order is not a promise of AOS obedience.
         string movementHint = System.IO.File.ReadAllText("Assets/Scripts/UI/MovementHintUI.cs");
-        Check(movementHint.Contains("if (_showing)\\n            {\\n                // Tab") &&
+        Check(!movementHint.Contains("if (_showing) return;") &&
               movementHint.Contains("string line = Line();") &&
               movementHint.Contains("if (_text.text != line) _text.text = line;") &&
               movementHint.Contains("!view.FirstPersonNow") &&
