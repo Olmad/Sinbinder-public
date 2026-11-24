@@ -34,5 +34,6 @@
     <Compile Include="../../Assets/Scripts/AOS Engine/Modules/LustModule.cs" Link="RealAos/Modules/LustModule.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/Modules/GluttonyModule.cs" Link="RealAos/Modules/GluttonyModule.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/Modules/PatienceModule.cs" Link="RealAos/Modules/PatienceModule.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/OrderIntegrity.cs" Link="OrderIntegrity.cs" />
   </ItemGroup>
 </Project>

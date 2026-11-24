@@ -204,24 +204,29 @@ namespace Sinbinder.AOS
     public sealed class DecisionContext
     {
         public Warrior Actor;
+        public string RescueTargetId;
     }
 #endif
     public static class AutoBattleContext
     {
         public static DecisionContext Create(Warrior warrior,List<Warrior> allies,
             List<Warrior> enemies)
+        {
+            var wounded=allies.Where(w=>w!=null && w!=warrior && !w.IsDead && w.HP<w.MaxHP*0.5f)
+                .OrderBy(w=>w.HP).FirstOrDefault();
 #if REAL_AOS
-            => new DecisionContext {
+            return new DecisionContext {
                 CurrentHP=warrior.HP,MaxHP=warrior.MaxHP,
                 NearbyEnemies=enemies.Count(w=>w!=null && !w.IsDead),
                 EnemiesInSight=enemies.Count(w=>w!=null && !w.IsDead),
                 NearbyAllies=allies.Count(w=>w!=null && !w.IsDead)-1,
                 NearbyLoot=0,DangerLevel=0.6f,
-                AllyInDanger=allies.Any(w=>w!=null && !w.IsDead && w.HP<w.MaxHP*0.5f),
+                AllyInDanger=wounded!=null,TargetWarrior=wounded,RescueTargetId=wounded?.Id,
                 RecentMemories=new List<MemoryRecord>()};
 #else
-            => new DecisionContext { Actor=warrior };
+            return new DecisionContext { Actor=warrior,RescueTargetId=wounded?.Id };
 #endif
+        }
     }
 #if !REAL_AOS
     public sealed partial class BehaviourResolver

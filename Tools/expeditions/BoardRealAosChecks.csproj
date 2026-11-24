@@ -62,5 +62,6 @@
     <Compile Include="../../Assets/Scripts/AOS Engine/Modules/PatienceModule.cs" />
     <Compile Include="BoardRealAosExtras.cs" />
     <Compile Include="BoardRealShimTests.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/OrderIntegrity.cs" Link="OrderIntegrity.cs" />
   </ItemGroup>
 </Project>

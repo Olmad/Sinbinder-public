@@ -282,6 +282,28 @@ static class RealAosShimProgram
             MissionAction.LetThemPass)==0f,
             "expedition memory cannot contaminate another location");
 
+        // Real MemoryModule, not a reimplementation: the same character and
+        // same memory must respond differently to different rescue targets.
+        var rescue=new DecisionContext
+        {
+            AllyInDanger=true,RescueTargetId="brother",
+            RecentMemories=new List<MemoryRecord> {
+                new MemoryRecord{TargetID="brother",EventType="AllySavedMe",Importance=1f,Strength=1f},
+                new MemoryRecord{TargetID="traitor",EventType="AllyBetrayedMe",Importance=1f,Strength=-1f}
+            }
+        };
+        Check(memoryModule.Evaluate(memorySoul,rescue,ActionType.SaveAlly)>0f,
+            "gratitude supports rescue of the actual savior");
+        rescue.RescueTargetId="traitor";
+        Check(memoryModule.Evaluate(memorySoul,rescue,ActionType.SaveAlly)<0f,
+            "betrayal opposes rescue of the actual traitor");
+        rescue.RescueTargetId="stranger";
+        Check(memoryModule.Evaluate(memorySoul,rescue,ActionType.SaveAlly)==0f,
+            "neither person's memories contaminate an unrelated rescue");
+        rescue.RescueTargetId=null;
+        Check(memoryModule.Evaluate(memorySoul,rescue,ActionType.SaveAlly)==0f,
+            "unknown rescue identity provides no personal memory vote");
+
         var contextNoThreat=new DecisionContext
         {
             NearbyEnemies=0,EnemiesInSight=0,NearbyLoot=0,

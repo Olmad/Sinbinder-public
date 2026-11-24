@@ -27,5 +27,6 @@
     <Compile Include="../../Assets/Scripts/Crypt/JunctionCatalog.cs" Link="JunctionCatalog.cs" />
     <Compile Include="../../Assets/Scripts/Crypt/MissionBoard.cs" Link="MissionBoard.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMapPlan.cs" Link="ExpeditionMapPlan.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/OrderIntegrity.cs" Link="OrderIntegrity.cs" />
   </ItemGroup>
 </Project>
