@@ -578,10 +578,9 @@ namespace Sinbinder.UI
         /// </summary>
         private string QuestText()
         {
-            // Заголовок «Цель вылазки» — на карте (Map); первая строка — что на ней.
-            return Loc.T("Огни на карте — два отряда уже в пути: у часовни и у каменоломни. "
-                 + "Брошенная застава свободна — туда и пойдёт отряд.") + Break
-                 + Scouts() + Break + Advice() + Break + Leaving();
+            // До 24.11 первой шла строка «Огни на карте — два отряда уже в пути…» под плоской
+            // картой; теперь это говорит Карган у шара (ShowMap), а над текстом — кадр заставы.
+            return Scouts() + Break + Advice() + Break + Leaving();
         }
 
         private static string Scouts() => Loc.T("Разведка донесла: за холмами стоит брошенная застава. "
@@ -793,24 +792,15 @@ namespace Sinbinder.UI
         /// <summary>Свободное место — уголь: сюда и пойдёт отряд.</summary>
         private static readonly Color FreePlace = new(0.96f, 0.58f, 0.22f);
 
-        private static Sprite _dot;
         private bool _mapBuilt;
 
         /// <summary>
-        /// Карта в правом столбце (замысел автора, `09-PROLOGUE.md` §4, сцена 2:
-        /// «в шаре — два отряда уже в пути и одна точка, куда никто не идёт»;
-        /// 16 октября: «открывается карта, несколько мест интереса с уже
-        /// отправленными отрядами и одно свободное — куда и отправляется»).
-        /// До этого совет был списком, и «два отряда в пути» жили только огнями
-        /// в шаре: игрок не знал, что это отряды, пока они не гасли на тревоге.
+        /// Верх правого столбца. С 16 октября по 24 ноября здесь была плоская карта (лагерь, три
+        /// дороги, огни): до неё «два отряда в пути» жили только огнями в шаре, и игрок не знал,
+        /// что это отряды, пока они не гасли на тревоге. Теперь карта — сам шар, первым шагом
+        /// совета (<see cref="ShowMap"/>), а здесь — кадр заставы, куда идёт отряд.
         ///
-        /// Лагерь внизу, дороги к трём местам. Два заняты — огни того же света,
-        /// что в шаре: их же игрок увидит гаснущими. Третье — брошенная застава,
-        /// свободна. Места — те же, что потом будут на карте склепа: отряды
-        /// там погибнут, и места освободятся.
-        ///
-        /// Собирается кодом один раз: сборщик сцены карты не знает, и сцену
-        /// пересобирать ради неё не нужно.
+        /// Собирается кодом один раз: сборщик сцены о нём не знает, и сцену пересобирать не нужно.
         /// </summary>
         private void Map()
         {
@@ -819,85 +809,36 @@ namespace Sinbinder.UI
             if (column == null) return;
             _mapBuilt = true;
 
-            var go = new GameObject("Карта в шаре", typeof(RectTransform));   // ключ: имя объекта
-            go.transform.SetParent(column, false);
-            var map = (RectTransform)go.transform;
-            map.anchorMin = new Vector2(0f, 1f);
-            map.anchorMax = new Vector2(1f, 1f);
-            map.pivot = new Vector2(0.5f, 1f);
-            map.sizeDelta = new Vector2(-24f, MapHeight);
-            map.anchoredPosition = new Vector2(0f, -12f);
-            var ground = go.AddComponent<Image>();
-            ground.color = new Color(0.12f, 0.10f, 0.09f, 0.95f);
-            ground.raycastTarget = false;
+            // С 24 ноября карта — в шаре, первым шагом совета (ShowMap). Здесь — кадр заставы:
+            // куда идёт отряд, и нажатие на него — назад к шару.
+            Target(column);
+        }
 
-            // Раскладка ещё не посчитана — размеры столбца из сборщика (1280×760, треть).
-            float colW = column.rect.width > 100f ? column.rect.width : 382f;
+        /// <summary>Кадр заставы сверху правого столбца; нажатие — снова шар.</summary>
+        private void Target(RectTransform column)
+        {
             float colH = column.rect.height > 100f ? column.rect.height : 652f;
-            float w = Mathf.Max(200f, colW - 24f), h = MapHeight;
-            Vector2 At(float u, float v) => new Vector2(u * w, v * h);
-
-            var camp = At(0.50f, 0.14f);
-            var places = new[]
+            ReliefMap.Header(column, -12f, MapHeight, Outpost, Loc.T("Брошенная застава"), _font);
+            var shot = column.Find("Кадр места") as RectTransform;
+            if (shot != null)
             {
-                (At(0.20f, 0.56f), Loc.T("Часовня"), true),
-                (At(0.80f, 0.56f), Loc.T("Каменоломня"), true),
-                (At(0.50f, 0.78f), Loc.T("Застава"), false),
-            };
-
-            foreach (var (where, _, busy) in places)
-                Road(map, camp, where, busy ? new Color(0.45f, 0.40f, 0.33f, 0.8f) : FreePlace);
-
-            Mark(map, camp, 12f, new Color(0.75f, 0.70f, 0.62f));
-            Caption(map, Loc.T("Лагерь"), camp + new Vector2(12f, 9f), 15, false, w, centred: false);
-
-            // Подпись — одним словом над точкой: на дорогу и на соседей не ложится.
-            // Что значат огни, сказано под картой (QuestText).
-            foreach (var (where, label, busy) in places)
-            {
-                Mark(map, where, busy ? 14f : 20f, busy ? SquadLight : FreePlace);
-                Caption(map, label, where + new Vector2(0f, busy ? 28f : 32f), busy ? 15 : 17, !busy, w, centred: true);
+                shot.offsetMin = new Vector2(12f, shot.offsetMin.y);
+                shot.offsetMax = new Vector2(-12f, shot.offsetMax.y);
+                var graphic = shot.GetComponent<Graphic>();
+                graphic.raycastTarget = true;
+                var button = shot.gameObject.AddComponent<Button>();
+                button.targetGraphic = graphic;
+                button.onClick.AddListener(ShowMap);
+                Caption(shot, Loc.T("← К карте"), new Vector2(12f, MapHeight - 8f), 17, true, 200f, centred: false);
+                // Столбец узкий: крупное имя из шапки карточки упиралось в край.
+                var title = shot.Find("Имя места")?.GetComponent<Text>();
+                if (title != null) title.fontSize = 28;
             }
 
-            Caption(map, Loc.T("Цель вылазки"), new Vector2(10f, h - 8f), 18, true, w, centred: false);
-
-            // Описание — под картой. Столбец не растёт, поэтому описание
-            // ужимается в оставшееся место и пишется мельче.
             var rt = _quest.rectTransform;
             rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, -12f - MapHeight - 12f);
             rt.sizeDelta = new Vector2(rt.sizeDelta.x, Mathf.Max(120f, colH - MapHeight - 36f));
             _quest.fontSize = Mathf.Min(_quest.fontSize, 18);
-        }
-
-        private static void Road(RectTransform map, Vector2 from, Vector2 to, Color color)
-        {
-            var go = new GameObject("Дорога", typeof(RectTransform));   // ключ: имя объекта
-            go.transform.SetParent(map, false);
-            var rt = (RectTransform)go.transform;
-            rt.anchorMin = rt.anchorMax = Vector2.zero;
-            rt.pivot = new Vector2(0f, 0.5f);
-            var d = to - from;
-            rt.sizeDelta = new Vector2(d.magnitude, 2f);
-            rt.anchoredPosition = from;
-            rt.localEulerAngles = new Vector3(0f, 0f, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
-            var image = go.AddComponent<Image>();
-            image.color = color;
-            image.raycastTarget = false;
-        }
-
-        private static void Mark(RectTransform map, Vector2 at, float size, Color color)
-        {
-            var go = new GameObject("Место", typeof(RectTransform));   // ключ: имя объекта
-            go.transform.SetParent(map, false);
-            var rt = (RectTransform)go.transform;
-            rt.anchorMin = rt.anchorMax = Vector2.zero;
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(size, size);
-            rt.anchoredPosition = at;
-            var image = go.AddComponent<Image>();
-            image.sprite = Dot();
-            image.color = color;
-            image.raycastTarget = false;
         }
 
         /// <summary>
@@ -928,36 +869,6 @@ namespace Sinbinder.UI
             label.raycastTarget = false;
             label.text = text;
             go.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.85f);
-        }
-
-        /// <summary>Мягкая точка — огонь на карте. Рисуется кодом один раз.</summary>
-        private static Sprite Dot()
-        {
-            if (_dot != null) return _dot;
-            const int size = 32;
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
-            {
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear,
-                name = "Огонь на карте",   // ключ: имя текстуры, игрок его не видит
-            };
-            var pixels = new Color32[size * size];
-            float half = size * 0.5f;
-            for (int y = 0; y < size; y++)
-            for (int x = 0; x < size; x++)
-            {
-                float dx = (x + 0.5f - half) / half, dy = (y + 0.5f - half) / half;
-                float r = Mathf.Sqrt(dx * dx + dy * dy);
-                // Край мягкий: от 0,55 радиуса к краю — плавно в ноль
-                // (Mathf.SmoothStep у Unity — не порог, а смешение двух чисел).
-                float k = Mathf.InverseLerp(0.55f, 1f, r);
-                byte a = (byte)(Mathf.Clamp01(1f - k * k * (3f - 2f * k)) * 255f);
-                pixels[y * size + x] = new Color32(255, 255, 255, a);
-            }
-            tex.SetPixels32(pixels);
-            tex.Apply();
-            _dot = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
-            return _dot;
         }
 
         /// <summary>Назначить отмеченного. Отдельно от отметки: решение одно.</summary>
