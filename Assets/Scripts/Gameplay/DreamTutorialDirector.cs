@@ -209,7 +209,7 @@ namespace Sinbinder.Gameplay
         private int _jarIndex = -1;
         private bool _soulHeld;
         private float _commandWait, _orderedAt = -1f;
-        private float _standoffSince, _decideSince, _retestSince;
+        private float _standoffSince, _decideSince;
         // Суд срабатывал «раз из десяти» (автор, 06.11): цепочка до него рвалась —
         // душа угасала несобранной, игрок не отдавал приказ или сам рубил убийц,
         // решение не приходило за 6 с. Каждое звено теперь доходит само.
@@ -230,22 +230,30 @@ namespace Sinbinder.Gameplay
         private Stage _guidedFor = Stage.Finished;
         private float _nextGuide;
 
-        // Приказ замечаем по самому приказу, а не по игровому времени: под кругом
-        // мир стоит, и время приказа равно времени начала шага.
-        private PendingCommand _cmdMark;
+        // Under a lesson ring, identical orders may share the same game time.
+        private uint _cmdMarkRevision;
         private CommandKind? _courtOrder;
 
         private void MarkCommand()
         {
-            if (_zombie != null) _cmdMark = _zombie.Command;
+            if (_zombie != null) _cmdMarkRevision = _zombie.CommandRevision;
         }
 
         private bool OrderedSinceMark()
         {
             if (_zombie == null || _zombie.IsDead || !_zombie.HasCommand) return false;
-            var c = _zombie.Command;
-            return c.Kind != _cmdMark.Kind || c.Point != _cmdMark.Point || c.Target != _cmdMark.Target
-                || !Mathf.Approximately(c.IssuedAt, _cmdMark.IssuedAt);
+            return _zombie.CommandRevision != _cmdMarkRevision;
+        }
+
+        private bool LeverOrderedSinceMark()
+            => OrderedSinceMark() && _zombie.Command.Kind == CommandKind.Move
+                && DreamRoad.AtLever(_zombie.Command.Point, 3f);
+
+        private bool ChaseOrderedSinceMark()
+        {
+            if (!OrderedSinceMark() || _zombie.Command.Kind != CommandKind.Attack) return false;
+            var target = _zombie.Command.Target;
+            return target != null && _killers.Exists(k => k != null && !k.IsDead && k.gameObject == target);
         }
 
         private bool Picked()
@@ -298,7 +306,7 @@ namespace Sinbinder.Gameplay
                                              + "\n" + Loc.F("Щёлкните по {0} — выделить.", Whom()))
                             : (Loc.T("ПКМ"), Loc.T("Правой кнопкой — по рычагу: приказ опустить мост.")
                                   + "\n" + Loc.T("Послушается ли — решит душа. Смотрите.")),
-                        () => _stage != Stage.Bridge || OrderedSinceMark());
+                        () => _stage != Stage.Bridge || LeverOrderedSinceMark());
                     break;
                 case Stage.Retest:
                     if (_zombie == null) return;
@@ -307,7 +315,7 @@ namespace Sinbinder.Gameplay
                             ? (Loc.T("ЛКМ"), Loc.T("Убийц больше нет.") + "\n" + Loc.F("Щёлкните по {0} — выделить.", Whom()))
                             : (Loc.T("ПКМ"), Loc.T("Тот же приказ: правой кнопкой — по рычагу.")
                                   + "\n" + Loc.T("Убийц рядом больше нет. Что решит душа теперь?")),
-                        () => _stage != Stage.Retest || OrderedSinceMark());
+                        () => _stage != Stage.Retest || LeverOrderedSinceMark());
                     break;
                 case Stage.Fallen:
                     if (_lateBody == null) return;
@@ -747,14 +755,14 @@ namespace Sinbinder.Gameplay
                 case Stage.Bridge:
                     if (_zombie == null || _zombie.IsDead) { StartBattle(Loc.N("Первый воин пал.")); break; }
                     // Игрок медлит — приказ отдаёт сам Греховод: суд важнее урока клавиш.
-                    if (!_autoOrdered && !OrderedSinceMark()
+                    if (!_autoOrdered && !LeverOrderedSinceMark()
                         && Time.unscaledTime - _standoffReal > (Lesson.Holding ? 45f : 14f) && !SoulCourt.Sitting)
                     {
                         _autoOrdered = true;
                         Log(Loc.N("Греховод сам велит опустить мост."));
                         _zombie.IssueCommand(CommandKind.Move, DreamRoad.LeverStand);
                     }
-                    if (OrderedSinceMark())
+                    if (LeverOrderedSinceMark())
                     {
                         _courtOrder = _zombie.Command.Kind;
                         Mark("приказ при убийцах: " + _courtOrder);
@@ -803,7 +811,6 @@ namespace Sinbinder.Gameplay
                         if (_zombie != null && !_zombie.IsDead && refused)
                         {
                             if (_lordCame) Remember(false);
-                            _retestSince = Time.time;
                             _retestPrompted = Time.unscaledTime;
                             MarkCommand();
                             _retestOrdered = false;
@@ -838,7 +845,7 @@ namespace Sinbinder.Gameplay
                 {
                     if (_zombie == null || _zombie.IsDead) { Set(Stage.Jars, JarsLine); break; }
                     var mind = _zombie.GetComponent<AOS.AOSWarriorWrapper>();
-                    if (!_retestOrdered && (Ordered(_retestSince) || OrderedSinceMark()))
+                    if (!_retestOrdered && LeverOrderedSinceMark())
                     {
                         _retestOrdered = true;
                         _decisionOrderRevision = _zombie.CommandRevision;
@@ -981,10 +988,6 @@ namespace Sinbinder.Gameplay
                     break;
             }
         }
-
-        /// <summary>Отдан ли поднятому приказ после этого мига (игровое время).</summary>
-        private bool Ordered(float since)
-            => _zombie != null && !_zombie.IsDead && _zombie.HasCommand && _zombie.Command.IssuedAt > since;
 
         private void BeginPractice(string line)
         {
@@ -1174,6 +1177,7 @@ namespace Sinbinder.Gameplay
             {
                 _standoffReal = Time.unscaledTime;
                 _autoOrdered = false;
+                RefusalResult = null; // Do not reuse the chase verdict as a bridge verdict.
                 MarkCommand();
                 // В кадре — оба берега: Греховод у настила, воин у рычага (кадр 19.11: вид остался у стоянки,
                 // и поднятого, которого урок просит выделить, на экране не было).
@@ -1219,14 +1223,14 @@ namespace Sinbinder.Gameplay
                     Loc.N("Она не гонится сама. Прикажите ей догнать убийц: выделите её и ПКМ по убийце.")));
                 return true;
             }
-            if (!_autoChase && !OrderedSinceMark() && !SoulCourt.Sitting && puller != null && !puller.IsDead
+            if (!_autoChase && !ChaseOrderedSinceMark() && !SoulCourt.Sitting && puller != null && !puller.IsDead
                 && Time.unscaledTime - _chaseAskedAt > (Lesson.Holding ? 45f : 14f))
             {
                 _autoChase = true;
                 Log(Loc.N("Греховод сам велит догнать убийц."));
                 _zombie.IssueCommand(CommandKind.Attack, puller.transform.position, puller.gameObject);
             }
-            if (OrderedSinceMark())
+            if (ChaseOrderedSinceMark())
             {
                 _courtOrder = _zombie.Command.Kind;
                 Mark("приказ догнать: " + _courtOrder);

@@ -652,10 +652,8 @@ namespace Sinbinder.Gameplay
         private UnityEngine.AI.NavMeshObstacle _gap;
         private float _bridgeLift, _bridgeGoal, _leverSwing, _nearAt;
         private Warrior[] _near = new Warrior[0];
-        private readonly System.Collections.Generic.Dictionary<Warrior, float> _leverServed =
-            new System.Collections.Generic.Dictionary<Warrior, float>();
-        private readonly System.Collections.Generic.Dictionary<Warrior, (float issued, AOS.DecisionContext ctx)> _leverSeen =
-            new System.Collections.Generic.Dictionary<Warrior, (float issued, AOS.DecisionContext ctx)>();
+        private readonly System.Collections.Generic.Dictionary<Warrior, uint> _leverServed =
+            new System.Collections.Generic.Dictionary<Warrior, uint>();
 
         public static bool BridgeRaised => Instance != null && Instance._bridgeGoal > 0.5f;
         public static bool BridgeFullyUp => Instance != null && Instance._bridgeLift > 0.98f;
@@ -735,29 +733,21 @@ namespace Sinbinder.Gameplay
             {
                 if (w == null || w.IsDead || !w.HasCommand) continue;
                 var c = w.Command;
-                if (!AtLever(c.Point, 3f)) continue;   // приказ не к рычагу
-                if (_leverServed.TryGetValue(w, out float served) && Mathf.Approximately(served, c.IssuedAt)) continue;
-                // Тянет только тот, чья душа после приказа решила его исполнить (прогон 19.11: стоявший
-                // у рычага опускал мост раньше, чем решил, — до суда). Решение — свежее, не прежнее.
-                // Поддался шёпоту — исполняет приказ, что бы ни решил сам (Whisper.Persuaded, общее для всех грехов):
-                // в журнале души при этом остаётся её отказ, и без этой строки уговорённый рычага не тянул.
+                if (c.Kind != CommandKind.Move || !AtLever(c.Point, 3f)) continue;
+                uint revision = w.CommandRevision;
+                bool alreadyServed = _leverServed.TryGetValue(w, out uint served) && served == revision;
+                // The effective decision (including an accepted whisper) must belong to this order.
+                // A whisper flag alone or a stale vote cannot operate the physical lever.
                 var mind = w.GetComponent<AOS.AOSWarriorWrapper>();
-                if (mind != null && !Whisper.Persuaded(w))
-                {
-                    if (!_leverSeen.TryGetValue(w, out var seen) || !Mathf.Approximately(seen.issued, c.IssuedAt))
-                    {
-                        _leverSeen[w] = (c.IssuedAt, mind.LastContext);
-                        continue;
-                    }
-                    var d = mind.LastDecisionDetail;
-                    if (mind.LastContext == null || mind.LastContext == seen.ctx || d.RefusedCommand || d.Hesitated
-                        || d.Action != AOS.ActionType.ObeyCommand) continue;
-                }
+                if (mind == null) continue;
+                var d = mind.LastDecisionDetail;
+                if (!DreamTutorialChecks.MayOperateLever(alreadyServed, mind.HasCurrentCommandDecision,
+                    d.RefusedCommand, d.Hesitated, d.Action == AOS.ActionType.ObeyCommand)) continue;
                 if (!AtLever(w.transform.position)) continue;   // ещё не дошёл
                 // Ноги ведут не к рычагу — душа решила другое (гонится, отступает): мимо рычага не тянут.
                 var legs = w.GetComponent<UnityEngine.AI.NavMeshAgent>();
                 if (legs != null && legs.enabled && legs.hasPath && !AtLever(legs.destination, 3f)) continue;
-                _leverServed[w] = c.IssuedAt;
+                _leverServed[w] = revision;
                 PullLever(w.DisplayName);
             }
         }

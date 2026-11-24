@@ -94,6 +94,32 @@ internal static class Program
                   StringSplitOptions.None).Length == 3,
             "manual decision fallback runs once and never votes on a replacement order");
 
+        Check(DreamTutorialChecks.MayOperateLever(false, true, false, false, true),
+            "lever accepts a current effective obey decision");
+        Check(!DreamTutorialChecks.MayOperateLever(true, true, false, false, true) &&
+              !DreamTutorialChecks.MayOperateLever(false, false, false, false, true) &&
+              !DreamTutorialChecks.MayOperateLever(false, true, true, false, true) &&
+              !DreamTutorialChecks.MayOperateLever(false, true, false, true, true) &&
+              !DreamTutorialChecks.MayOperateLever(false, true, false, false, false),
+            "lever rejects duplicate, stale, refused, hesitant and non-obey decisions");
+        Check(dreamTrace.Contains("_cmdMarkRevision = _zombie.CommandRevision;") &&
+              dreamTrace.Contains("return _zombie.CommandRevision != _cmdMarkRevision;") &&
+              dreamTrace.Contains("_stage != Stage.Bridge || LeverOrderedSinceMark()") &&
+              dreamTrace.Contains("_stage != Stage.Retest || LeverOrderedSinceMark()") &&
+              dreamTrace.Contains("if (!_retestOrdered && LeverOrderedSinceMark())") &&
+              dreamTrace.Contains("_zombie.Command.Kind == CommandKind.Move") &&
+              dreamTrace.Contains("DreamRoad.AtLever(_zombie.Command.Point, 3f)") &&
+              dreamTrace.Contains("if (ChaseOrderedSinceMark())") &&
+              dreamTrace.Contains("k.gameObject == target") &&
+              !dreamTrace.Contains("_retestSince"),
+            "lesson ring detects identical reissued commands and waits for the specified action");
+        string roadMap = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/DreamRoadMap.cs");
+        Check(roadMap.Contains("c.Kind != CommandKind.Move") &&
+              roadMap.Contains("DreamTutorialChecks.MayOperateLever(alreadyServed, mind.HasCurrentCommandDecision,") &&
+              roadMap.Contains("_leverServed[w] = revision;") &&
+              !roadMap.Contains("_leverSeen") && !roadMap.Contains("Whisper.Persuaded(w)"),
+            "physical lever uses command revision and actual effective AOS result");
+
         // AOS can legitimately be silent due to a broken scene or missing
         // component. Retest must try the real vote once then recover with a
         // truthful missing-verdict result, rather than hanging forever or

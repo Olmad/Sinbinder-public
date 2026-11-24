@@ -42,6 +42,11 @@ namespace Sinbinder.Gameplay
             return heldSeconds >= SealHoldSeconds;
         }
 
+        /// <summary>Physical interaction requires an effective, current order decision.</summary>
+        public static bool MayOperateLever(bool alreadyServed, bool currentOrderDecision,
+            bool refused, bool hesitated, bool obeyed)
+            => !alreadyServed && currentOrderDecision && !refused && !hesitated && obeyed;
+
         /// <summary>Only a recorded decision for the exact lesson order is evidence.
         /// The order may already have completed/cleared when the dream observes it.</summary>
         public static bool MatchesOrderedDecision(bool contextHasCommand,
