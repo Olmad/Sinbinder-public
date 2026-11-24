@@ -892,11 +892,12 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Голос каждого модуля: минус — за приказ, плюс — против (как Net судьи).</summary>
-        private static Dictionary<string, float> Sums(Warrior w, Decision d, DecisionContext c)
+        private static Dictionary<string, float> Sums(Warrior w, Decision d, DecisionContext c,
+            IReadOnlyList<Vote> originalVotes = null)
         {
             var rival = Rival(d);
             var sum = new Dictionary<string, float>();
-            foreach (var v in new BehaviourResolver().Ballot(w, c))
+            foreach (var v in originalVotes ?? (IReadOnlyList<Vote>)new BehaviourResolver().Ballot(w, c))
             {
                 if (v.Action != ActionType.ObeyCommand && v.Action != rival) continue;
                 sum.TryGetValue(v.Module, out float net);
@@ -909,14 +910,17 @@ namespace Sinbinder.Gameplay
         /// Малые весы над головой (<see cref="UI.ScalesOverhead"/>): куда встанет стрелка —
         /// тем же счётом, что в зале, — и кто громче всех на стороне решения.
         /// </summary>
-        public static bool Lean(Warrior w, Decision d, DecisionContext c, out float lean, out string voice, out Color colour)
+        public static bool Lean(Warrior w, Decision d, DecisionContext c, out float lean, out string voice, out Color colour,
+            IReadOnlyList<Vote> originalVotes = null)
         {
             lean = 0f; voice = null; colour = Color.white;
             if (w == null || c == null || !c.HasCommand) return false;
             bool against = d.RefusedCommand || d.Hesitated;
             float total = 0f, reach = 1f, loud = 0f;
             string top = null;
-            foreach (var kv in Sums(w, d, c))
+            // A historical decision must use its captured ballot, never a
+            // resimulation of changed emotions, HP, gear or squad strategy.
+            foreach (var kv in Sums(w, d, c, originalVotes))
             {
                 total += kv.Value;
                 reach += Mathf.Abs(kv.Value);
@@ -1272,14 +1276,21 @@ namespace Sinbinder.Gameplay
         private static string Sentence(Warrior w, Decision d, List<Judge> judges)
         {
             if (d.Hesitated)
-                return Loc.T("Голоса вровень — душа не выбрала ничего.");
+                return Loc.T("Два сильнейших решения слишком близки по весу — душа замешкалась.");
 
             float proSum = 0f, conSum = 0f;
-            foreach (var j in judges) if (j.ForOrder) proSum += Mathf.Abs(j.Net); else conSum += Mathf.Abs(j.Net);
+            // Only seated voting voices can appear in the final verdict.
+            // A net below Audible is an abstention, not a vote for either side.
+            foreach (var j in judges)
+            {
+                if (j.Abstains) continue;
+                if (j.ForOrder) proSum += Mathf.Abs(j.Net);
+                else conSum += Mathf.Abs(j.Net);
+            }
             // Перевес меньше пятой части — сказать: иначе почти ровная стрелка спорит со словом «склонились».
             bool hair = proSum > 0f && conSum > 0f && Mathf.Abs(proSum - conSum) < 0.2f * Mathf.Max(proSum, conSum);
-            string against = Roll(judges.FindAll(j => !j.ForOrder));
-            string pro = Roll(judges.FindAll(j => j.ForOrder));
+            string against = Roll(judges.FindAll(j => !j.Abstains && !j.ForOrder));
+            string pro = Roll(judges.FindAll(j => !j.Abstains && j.ForOrder));
 
             if (d.RefusedCommand)
             {

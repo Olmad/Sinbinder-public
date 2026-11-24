@@ -37,27 +37,33 @@ namespace Sinbinder.Gameplay
         /// показать и представить недействующих судей»). Звучит в полном суде, во сне: потом
         /// короткие суды метят воздержавшихся молча, и игрок уже знает, кто они и почему молчат.
         /// </summary>
+        /// <summary>
+        /// A judge abstains when its rival/order net is below SoulCourt.Audible.
+        /// A net under the audible threshold may still be nonzero:
+        /// the voice has not acquired enough NET weight to be seated.
+        /// It does NOT prove an equal tie or the absence of danger, loot,
+        /// debts or memories.
+        /// Keep the thirteen distinct voices without inventing world facts.
+        /// </summary>
         public static string Idle(string module, Warrior w)
         {
             if (w == null) return Loc.T("Воздерживаюсь.");
             switch (module)
             {
-                case "Loyalty":  return P(w, Loc.T("Воздерживаюсь: владыке он ни предан, ни чужд."),
-                                             Loc.T("Воздерживаюсь: владыке она ни предана, ни чужда."));
-                case "Fear":     return Grammar.For(w.Gender, Loc.T("Воздерживаюсь: его жизни этот приказ не грозит."));
-                case "Memory":   return Loc.T("Воздерживаюсь: обид и долгов тут нет.");
-                case "Morality": return Loc.T("Воздерживаюсь: ни добра, ни зла тут нет.");
-                case "Virtue":   return Loc.T("Воздерживаюсь: добрые и грешные черты тут не спорят.");
-                case "Patience": return Loc.T("Воздерживаюсь: ждать тут нечего.");
-                case "Greed":    return Loc.T("Воздерживаюсь: делить тут нечего.");
-                case "Pride":    return Grammar.For(w.Gender, Loc.T("Воздерживаюсь: честь его тут не задета."));
-                case "Wrath":    return Sin(w, SinType.Wrath) < 0f ? Loc.T("Воздерживаюсь: гасить тут нечего.")
-                                                                   : Loc.T("Воздерживаюсь: мстить тут некому.");
-                case "Envy":     return Loc.T("Воздерживаюсь: сравнивать тут не с кем.");
-                case "Lust":     return Loc.T("Воздерживаюсь: соблазна тут нет.");
-                case "Gluttony": return Loc.T("Воздерживаюсь: о брюхе тут речи нет.");
-                case "Sloth":    return Loc.T("Воздерживаюсь: труд тут невелик.");
-                default:         return Loc.T("Воздерживаюсь.");
+                case "Loyalty": return Loc.T("Воздерживаюсь: верности недостало веса для вердикта.");
+                case "Fear": return Loc.T("Воздерживаюсь: страх слишком тих, чтобы склонить чашу.");
+                case "Memory": return Loc.T("Воздерживаюсь: память не дала решающего перевеса.");
+                case "Morality": return Loc.T("Воздерживаюсь: совесть не достигла порога суда.");
+                case "Virtue": return Loc.T("Воздерживаюсь: добродетель не придала чаше решающего веса.");
+                case "Patience": return Loc.T("Воздерживаюсь: терпение не дотянуло до перевеса.");
+                case "Greed": return Loc.T("Воздерживаюсь: жадность не выторговала перевеса.");
+                case "Pride": return Loc.T("Воздерживаюсь: гордыня не добилась перевеса.");
+                case "Wrath": return Loc.T("Воздерживаюсь: гнев не продавил вердикт.");
+                case "Envy": return Loc.T("Воздерживаюсь: зависть не перетянула весы.");
+                case "Lust": return Loc.T("Воздерживаюсь: страсть не склонила чашу до порога.");
+                case "Gluttony": return Loc.T("Воздерживаюсь: чревоугодию недостало веса.");
+                case "Sloth": return Loc.T("Воздерживаюсь: уныние не потянуло чашу достаточно сильно.");
+                default: return Loc.T("Воздерживаюсь.");
             }
         }
 

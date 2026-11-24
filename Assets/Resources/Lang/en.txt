@@ -10117,8 +10117,8 @@ msgid "Не уходи."
 msgstr "Don't leave."
 
 #: Gameplay/SoulCourt.cs
-msgid "Голоса вровень — душа не выбрала ничего."
-msgstr "The voices are even — the soul chose nothing."
+msgid "Два сильнейших решения слишком близки по весу — душа замешкалась."
+msgstr "The two strongest choices were too close in weight, so the soul hesitated."
 
 #: Gameplay/SoulCourt.cs
 msgid "Приказ отвергнут."
@@ -14746,3 +14746,55 @@ msgstr "If I had a heel of bread, it wouldn't last until evening."
 #: Dialogue/stage1-fact-review
 msgid "Была бы горбушка — поделился бы. Наверное."
 msgstr "If I had some bread, I'd share it. Probably."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: верности недостало веса для вердикта."
+msgstr "I abstain: loyalty lacked the weight to decide."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: страх слишком тих, чтобы склонить чашу."
+msgstr "I abstain: fear was too faint to tip the scales."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: память не дала решающего перевеса."
+msgstr "I abstain: memory did not provide a decisive advantage."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: совесть не достигла порога суда."
+msgstr "I abstain: conscience fell below the court's threshold."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: добродетель не придала чаше решающего веса."
+msgstr "I abstain: virtue did not give the scales decisive weight."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: терпение не дотянуло до перевеса."
+msgstr "I abstain: patience fell short of tipping the scales."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: жадность не выторговала перевеса."
+msgstr "I abstain: greed could not bargain for a deciding advantage."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: гордыня не добилась перевеса."
+msgstr "I abstain: pride could not claim the deciding weight."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: гнев не продавил вердикт."
+msgstr "I abstain: wrath could not force the verdict."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: зависть не перетянула весы."
+msgstr "I abstain: envy could not pull the scales its way."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: страсть не склонила чашу до порога."
+msgstr "I abstain: desire could not tip the scales far enough."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: чревоугодию недостало веса."
+msgstr "I abstain: gluttony lacked the weight to decide."
+
+#: Gameplay/SoulCourtReasons.cs
+msgid "Воздерживаюсь: уныние не потянуло чашу достаточно сильно."
+msgstr "I abstain: sloth could not pull the scales far enough."

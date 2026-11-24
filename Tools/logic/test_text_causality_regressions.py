@@ -117,6 +117,90 @@ class CorrectedTextRegressions(unittest.TestCase):
                 self.assertIn('msgid "' + ru + '"\nmsgstr "' + en + '"',
                               self.locale)
 
+    def test_court_hesitation_is_small_margin_not_exact_tie(self):
+        # The AOS decision hesitates for a *relative* margin below a
+        # threshold; the two highest choices need not have equal scores.
+        resolver = read("Assets/Scripts/AOS Engine/BehaviorResolver.cs")
+        scene = read("Assets/Scripts/Gameplay/SoulCourt.cs")
+        self.assertIn("float confidence = alone ? 1f : gap / loudness;", resolver)
+        self.assertIn("Hesitated = confidence < HesitationShare", resolver)
+        sentence = scene.split("private static string Sentence(", 1)[1].split(
+            "private static string Weight(", 1)[0]
+        phrase = "Два сильнейших решения слишком близки по весу — душа замешкалась."
+        self.assertIn('if (d.Hesitated)\n                return Loc.T("' + phrase + '");',
+                      sentence)
+        self.assertNotIn("Голоса вровень — душа не выбрала ничего.", sentence)
+        self.assertEqual(1, self.locale.count('msgid "' + phrase + '"'))
+        found = re.search(r'^msgid "' + re.escape(phrase) +
+                          r'"\nmsgstr "([^"]+)"', self.locale, re.MULTILINE)
+        self.assertIsNotNone(found)
+        self.assertEqual("The two strongest choices were too close in weight, so the soul hesitated.", found.group(1))
+
+    def test_court_final_verdict_excludes_abstaining_judges(self):
+        # Net in (-Audible, +Audible) is not a counted vote. In particular,
+        # weak negative/positive weights cannot make a bench appear split.
+        scene = read("Assets/Scripts/Gameplay/SoulCourt.cs")
+        sentence = scene.split("private static string Sentence(", 1)[1].split(
+            "private static string Weight(", 1)[0]
+        self.assertIn("if (j.Abstains) continue;", sentence)
+        self.assertIn("if (j.ForOrder) proSum += Mathf.Abs(j.Net);", sentence)
+        self.assertIn("else conSum += Mathf.Abs(j.Net);", sentence)
+        self.assertIn("Roll(judges.FindAll(j => !j.Abstains && !j.ForOrder))",
+                      sentence)
+        self.assertIn("Roll(judges.FindAll(j => !j.Abstains && j.ForOrder))",
+                      sentence)
+        # Guard the direction and ensure the old unfiltered formula is gone.
+        self.assertNotIn("Roll(judges.FindAll(j => !j.ForOrder))", sentence)
+        self.assertNotIn("Roll(judges.FindAll(j => j.ForOrder))", sentence)
+        self.assertIn("Mathf.Abs(Net) < Audible", scene)
+        self.assertIn("var voting = judges.FindAll(j => !j.Abstains);", scene)
+
+    def test_court_abstention_avoids_unsupported_world_facts(self):
+        # A small order/rival net is not evidence that the world contains
+        # no threats, debts, loot or memories. Inspect the production path,
+        # not a second hand-written model of the AOS rules.
+        court_scene = read("Assets/Scripts/Gameplay/SoulCourt.cs")
+        self.assertIn("Mathf.Abs(Net) < Audible", court_scene)
+        self.assertIn("order.FindAll(x => x.Abstains && !shortly)", court_scene)
+        self.assertIn("SoulCourtReasons.Idle(j.Module, w)", court_scene)
+        idle = self.court.split("public static string Idle(string module, Warrior w)", 1)[1].split(
+            "// ── что в душе ──", 1)[0]
+        safe = {
+            "Loyalty": "Воздерживаюсь: верности недостало веса для вердикта.",
+            "Fear": "Воздерживаюсь: страх слишком тих, чтобы склонить чашу.",
+            "Memory": "Воздерживаюсь: память не дала решающего перевеса.",
+            "Morality": "Воздерживаюсь: совесть не достигла порога суда.",
+            "Virtue": "Воздерживаюсь: добродетель не придала чаше решающего веса.",
+            "Patience": "Воздерживаюсь: терпение не дотянуло до перевеса.",
+            "Greed": "Воздерживаюсь: жадность не выторговала перевеса.",
+            "Pride": "Воздерживаюсь: гордыня не добилась перевеса.",
+            "Wrath": "Воздерживаюсь: гнев не продавил вердикт.",
+            "Envy": "Воздерживаюсь: зависть не перетянула весы.",
+            "Lust": "Воздерживаюсь: страсть не склонила чашу до порога.",
+            "Gluttony": "Воздерживаюсь: чревоугодию недостало веса.",
+            "Sloth": "Воздерживаюсь: уныние не потянуло чашу достаточно сильно.",
+        }
+        self.assertEqual(set(safe), set(re.findall(r'case "([^"]+)":', idle)))
+        for module, phrase in safe.items():
+            with self.subTest(module=module):
+                self.assertRegex(idle, r'case "' + re.escape(module) +
+                                 r'":\s*return Loc\.T\("' + re.escape(phrase) + r'"\);')
+                self.assertEqual(1, self.locale.count('msgid "' + phrase + '"'))
+                match = re.search(r'^msgid "' + re.escape(phrase) +
+                                  r'"\s*\nmsgstr "([^"]+)"', self.locale, re.MULTILINE)
+                self.assertIsNotNone(match)
+                self.assertFalse(re.search(r"[А-Яа-яЁё]", match.group(1)))
+        # A weak nonzero net is an abstention, not proof of exact balance.
+        self.assertNotIn("не выбрала сторону", idle)
+        self.assertNotIn("не выбрал сторону", idle)
+        self.assertNotIn("не выбрало сторону", idle)
+        for unproved in (
+            "обид и долгов тут нет", "его жизни этот приказ не грозит",
+            "делить тут нечего", "мстить тут некому",
+            "честь его тут не задета", "сравнивать тут не с кем",
+        ):
+            self.assertNotIn(unproved, idle)
+
     def test_all_revised_ru_lines_have_single_english_translation(self):
         phrases = (
             "За твой ответ я заплачу три монеты.",
