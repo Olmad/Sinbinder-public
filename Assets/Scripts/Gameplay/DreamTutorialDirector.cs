@@ -1827,14 +1827,16 @@ namespace Sinbinder.Gameplay
         // ── Две печати у ворот (план 66, сцена 10) ──
         // Ворота ждут двоих: Греховод — на печать с венцом, воин — на печать с мечом. Половины нет
         // (автор, 17.11: «загадка, которую можно решить наполовину и пройти дальше? серьёзно?») —
-        // до того через 30 с ворота пускали и одного. Не встал поднятый — его воля, уговаривать не
-        // нужно: у печатей лежат павшие стражи, поднимите другого (автор: «поднимать других воинов —
+        // до того через 30 с ворота пускали и одного. Если воин не пришёл, причина может быть разной;
+        // у печатей лежат павшие стражи, поднимите другого (автор: «поднимать других воинов —
         // какой-нибудь не откажется»). Души у стражей свои: один какой выпадет, у второго приказ
         // «встань на печать» ничего в душе не задевает — кто-нибудь да встанет.
         private bool _sealsOpen, _sealsAsked, _escortedToSeals, _raiseOffered, _fallenSpawned;
         private bool _crownLit, _swordLit;
-        private float _sealsAskedAt = -1f, _sealOrderAt = -1f, _sealOrderIssued = -1f;
-        private const float SealPatience = 45f, SealRefusal = 10f;
+        private float _sealsAskedAt = -1f, _sealOrderAt = -1f;
+        private Warrior _sealOrderedWarrior;
+        private uint _sealOrderRevision;
+        private const float SealPatience = 45f, SealWait = 10f;
         private readonly List<Warrior> _fallen = new();
         private readonly List<Warrior> _raised = new();
 
@@ -1847,9 +1849,13 @@ namespace Sinbinder.Gameplay
 
         private static bool OnSeal(Vector3 at, Vector3 seal) => GroundDistance(at, seal) < 1.25f;
 
+        private static bool EligibleSealWarrior(Warrior w)
+            => w != null && !w.IsDead && w.gameObject.activeInHierarchy && w.Team == Team.Player;
+
         private bool AnyRaisedAlive()
         {
-            foreach (var r in _raised) if (r != null && !r.IsDead) return true;
+            if (EligibleSealWarrior(_zombie)) return true;
+            foreach (var r in _raised) if (EligibleSealWarrior(r)) return true;
             return false;
         }
 
@@ -1858,7 +1864,7 @@ namespace Sinbinder.Gameplay
             if (_sealsOpen) return;
             if (!_fallenSpawned) { _fallenSpawned = true; SpawnFallen(); }
             var me = _hero.transform.position;
-            bool alone = _zombie == null || _zombie.IsDead;
+            bool alone = !EligibleSealWarrior(_zombie);
 
             // От банок поднятый идёт за Греховодом; на площади — отпускаем: дальше его решение.
             if (!alone && !_escortedToSeals && !DreamRoad.OnSquare(me)) { _escortedToSeals = true; StartEscort(); }
@@ -1888,7 +1894,7 @@ namespace Sinbinder.Gameplay
             Warrior onSeal = null;
             if (!alone && OnSeal(_zombie.transform.position, DreamRoad.WarriorSealAt)) onSeal = _zombie;
             foreach (var r in _raised)
-                if (onSeal == null && r != null && !r.IsDead && OnSeal(r.transform.position, DreamRoad.WarriorSealAt)) onSeal = r;
+                if (onSeal == null && EligibleSealWarrior(r) && OnSeal(r.transform.position, DreamRoad.WarriorSealAt)) onSeal = r;
             _crownLit = OnSeal(me, DreamRoad.LordSealAt);
             _swordLit = onSeal != null;
             DreamRoad.Instance?.LightSeal(false, _crownLit);
@@ -1897,39 +1903,45 @@ namespace Sinbinder.Gameplay
             if (_crownLit && _swordLit) { OpenSeals(onSeal); return; }
             if (_swordLit) return;
 
-            // Приказ «на печать» отдан, а воин за десять секунд на неё не встал — отказ: его воля.
+            // Waiting is not evidence of refusal: the warrior may still be walking,
+            // blocked, hesitating, or awaiting a decision. Offer a neutral alternative.
             Warrior ordered = null;
-            if (!alone && OrderedToSeal(_zombie)) ordered = _zombie;
-            foreach (var r in _raised) if (OrderedToSeal(r)) ordered = r;
-            if (ordered != null && ordered.Command.IssuedAt > _sealOrderIssued)
+            if (OrderedToSeal(_zombie)) ordered = _zombie;
+            foreach (var r in _raised)
+                if (ordered == null && OrderedToSeal(r)) ordered = r;
+
+            if (ordered == null)
             {
-                _sealOrderIssued = ordered.Command.IssuedAt;
+                _sealOrderedWarrior = null;
+                _sealOrderAt = -1f;
+            }
+            else if (_sealOrderedWarrior != ordered || _sealOrderRevision != ordered.CommandRevision)
+            {
+                _sealOrderedWarrior = ordered;
+                _sealOrderRevision = ordered.CommandRevision;
                 _sealOrderAt = Time.unscaledTime;
             }
-            bool refused = _sealOrderAt > 0f && Time.unscaledTime - _sealOrderAt > SealRefusal;
-            if (refused) { _sealOrderAt = -1f; OfferRaise(ordered); }
-            else if (!_raiseOffered && Time.unscaledTime - _sealsAskedAt > SealPatience) OfferRaise();
+
+            if (!_raiseOffered && ((_sealOrderAt >= 0f && Time.unscaledTime - _sealOrderAt > SealWait)
+                || Time.unscaledTime - _sealsAskedAt > SealPatience)) OfferRaise();
         }
 
         private static bool OrderedToSeal(Warrior w)
-            => w != null && !w.IsDead && w.HasCommand && GroundDistance(w.Command.Point, DreamRoad.WarriorSealAt) < 2.5f;
+            => EligibleSealWarrior(w) && w.HasCommand && w.Command.Kind == CommandKind.Move
+                && GroundDistance(w.Command.Point, DreamRoad.WarriorSealAt) < 2.5f;
 
-        /// <summary>Подсказка поднять другого: поднятый отказал, пал или игрок долго ищет.</summary>
-        private void OfferRaise(Warrior refused = null)
+        /// <summary>Подсказка о доступной альтернативе, без догадки о причине задержки.</summary>
+        private void OfferRaise()
         {
             _raiseOffered = true;
-            if (_fallen.Count == 0) return;   // поднимать больше некого — значит, стоит кто-то другой
-            bool dead = _zombie == null || _zombie.IsDead;
-            if (refused != null)
-                _line = Grammar.Pick(refused.Gender,
-                    Loc.N("Он не встаёт на печать — это его воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."),
-                    Loc.N("Она не встаёт на печать — это её воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."));
-            else if (dead)
+            if (_fallen.Count == 0) return;
+            bool dead = !AnyRaisedAlive();
+            if (dead)
                 _line = Loc.N("Ворота ждут двоих: печать с мечом — для воина. Вашего воина нет, но у печатей лежат павшие стражи. Подойдите к одному и нажмите E — поднимите его.");
             else
                 _line = Loc.N("Воина на печати с мечом всё нет. Его можно поставить приказом — или поднять павшего стража: подойдите и нажмите E.");
             Log(_line);
-            Mark(refused != null ? "печати: " + refused.DisplayName + " не встал — поднять другого" : "печати: подсказка поднять стража");
+            Mark("печати: подсказка поднять стража");
         }
 
         /// <summary>

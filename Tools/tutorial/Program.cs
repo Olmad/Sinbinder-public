@@ -120,6 +120,26 @@ internal static class Program
               !roadMap.Contains("_leverSeen") && !roadMap.Contains("Whisper.Persuaded(w)"),
             "physical lever uses command revision and actual effective AOS result");
 
+        // Existing two-seal lesson must be safe before adding the five-seal
+        // variant and defections. These are source-linked integration guards.
+        Check(dreamTrace.Contains("w.gameObject.activeInHierarchy && w.Team == Team.Player") &&
+              dreamTrace.Contains("bool alone = !EligibleSealWarrior(_zombie);") &&
+              dreamTrace.Contains("onSeal == null && EligibleSealWarrior(r)") &&
+              dreamTrace.Contains("if (EligibleSealWarrior(_zombie)) return true;"),
+            "only living active allies count as seal occupants or available raised warriors");
+        Check(dreamTrace.Contains("EligibleSealWarrior(w) && w.HasCommand && w.Command.Kind == CommandKind.Move") &&
+              dreamTrace.Contains("_sealOrderedWarrior != ordered || _sealOrderRevision != ordered.CommandRevision") &&
+              dreamTrace.Contains("_sealOrderedWarrior = null;") &&
+              dreamTrace.Contains("_sealOrderAt = -1f;") &&
+              !dreamTrace.Contains("_sealOrderIssued") && !dreamTrace.Contains("SealRefusal"),
+            "seal wait tracks the actual warrior and move-order revision, not a stale timestamp");
+        Check(dreamTrace.Contains("Time.unscaledTime - _sealOrderAt > SealWait") &&
+              dreamTrace.Contains("|| Time.unscaledTime - _sealsAskedAt > SealPatience)) OfferRaise();") &&
+              !dreamTrace.Contains("OfferRaise(ordered)") &&
+              !dreamTrace.Contains("не встаёт на печать — это его воля") &&
+              !dreamTrace.Contains("не встаёт на печать — это её воля"),
+            "seal delay offers an alternative without inventing an AOS refusal");
+
         // Canonical UI uses Lesson.Hint rather than the old scene Text panel.
         string movementUI = System.IO.File.ReadAllText("Assets/Scripts/UI/MovementHintUI.cs");
         string lessonUI = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/Lesson.cs");
