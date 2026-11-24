@@ -56,10 +56,31 @@ namespace Sinbinder.UI
 
         void Update()
         {
-            if (_since >= 0f) { Fade(); return; }
-            if (Shown) { Destroy(gameObject); return; }
+            // This is the camp's one-time invitation, not a generic camera hint.
+            // The dream also switches views; it must not consume Shown.
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Prologue_Camp")
+            {
+                _wasEyes = false;
+                _pending = false;
+                if (_since >= 0f) Destroy(gameObject);
+                return;
+            }
 
             var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+            if (_since >= 0f)
+            {
+                // The text describes the tactical view. Do not leave it on screen
+                // after the player returns to first person.
+                if (cam == null || cam.FirstPersonNow)
+                {
+                    if (_group != null) _group.alpha = 0f;
+                    Destroy(gameObject);
+                    return;
+                }
+                Fade();
+                return;
+            }
+            if (Shown) { Destroy(gameObject); return; }
             if (cam == null) return;
 
             bool eyes = cam.FirstPersonNow;
@@ -80,7 +101,7 @@ namespace Sinbinder.UI
             Shown = true;
             _since = Time.unscaledTime;
             Build();
-            Debug.Log("[ПОДСКАЗКА] вид сверху: тихая строка о V и секретах лагеря.");
+            Debug.Log("[ПОДСКАЗКА] вид сверху: тихая строка о Tab и секретах лагеря.");
         }
 
         private void Build()
