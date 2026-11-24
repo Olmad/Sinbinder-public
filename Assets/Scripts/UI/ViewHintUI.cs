@@ -55,13 +55,30 @@ namespace Sinbinder.UI
 
         void Update()
         {
-            if (_since >= 0f) { Fade(); return; }
-            if (Shown) { Destroy(gameObject); return; }
+            // This is a camp invitation, not a generic camera-mode hint.
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Prologue_Camp"
+                || DreamTutorialDirector.Instance != null)
+            {
+                _wasEyes = false;
+                _pending = false;
+                if (_since >= 0f) { Lesson.Unhint(this); Destroy(gameObject); }
+                return;
+            }
 
             var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
-            if (cam == null) return;
-            // Во сне лагеря нет: «Осмотрите лагерь» звучала у врат склепа (w0811c). Строка ждёт лагеря.
-            if (DreamTutorialDirector.Instance != null) { _wasEyes = false; _pending = false; return; }
+            if (_since >= 0f)
+            {
+                if (cam == null || cam.FirstPersonNow)
+                {
+                    Lesson.Unhint(this);
+                    Destroy(gameObject);
+                    return;
+                }
+                Fade();
+                return;
+            }
+            if (Shown) { Destroy(gameObject); return; }
+            if (cam == null) { _wasEyes = false; _pending = false; return; }
 
             bool eyes = cam.FirstPersonNow;
             bool busy = OpeningReveal.Busy || Lesson.Holding

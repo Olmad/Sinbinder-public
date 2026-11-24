@@ -120,6 +120,38 @@ internal static class Program
               !roadMap.Contains("_leverSeen") && !roadMap.Contains("Whisper.Persuaded(w)"),
             "physical lever uses command revision and actual effective AOS result");
 
+        // Canonical UI uses Lesson.Hint rather than the old scene Text panel.
+        string movementUI = System.IO.File.ReadAllText("Assets/Scripts/UI/MovementHintUI.cs");
+        string lessonUI = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/Lesson.cs");
+        Check(movementUI.Contains("var (key, words) = Line();") &&
+              movementUI.Contains("Gameplay.Lesson.RefreshHint(this, key, words);") &&
+              movementUI.Contains("!view.FirstPersonNow") &&
+              !movementUI.Contains("if (_showing) return;"),
+            "movement plate refreshes both key and words from the real camera mode");
+        int refreshBegin = lessonUI.IndexOf("public static void RefreshHint(", StringComparison.Ordinal);
+        int refreshEnd = lessonUI.IndexOf("public static void Unhint(", StringComparison.Ordinal);
+        string refreshHint = refreshBegin >= 0 && refreshEnd > refreshBegin
+            ? lessonUI.Substring(refreshBegin, refreshEnd - refreshBegin) : "";
+        Check(refreshHint.Contains("!ReferenceEquals(_instance._hintOwner, owner)") &&
+              refreshHint.Contains("_instance._hintKey = key") &&
+              refreshHint.Contains("_instance._hintWords = words") &&
+              !refreshHint.Contains("_instance._hintOwner = owner"),
+            "refresh cannot steal another owner's active hint");
+        string viewHintUI = System.IO.File.ReadAllText("Assets/Scripts/UI/ViewHintUI.cs");
+        int campScope = viewHintUI.IndexOf("SceneManager.GetActiveScene().name != \"Prologue_Camp\"", StringComparison.Ordinal);
+        int camTransition = viewHintUI.IndexOf("if (_wasEyes && !eyes) _pending = true;", StringComparison.Ordinal);
+        Check(campScope >= 0 && camTransition > campScope &&
+              viewHintUI.Contains("if (cam == null || cam.FirstPersonNow)") &&
+              viewHintUI.Contains("Lesson.Unhint(this);") &&
+              viewHintUI.Contains("if (_pending && !eyes && !busy) Show();"),
+            "camp invitation is scoped before view transitions and removed on return to first person");
+        string commandHintUI = System.IO.File.ReadAllText("Assets/Scripts/UI/CommandHintUI.cs");
+        string hintLang = System.IO.File.ReadAllText("Assets/Resources/Lang/en.txt");
+        Check(commandHintUI.Contains("ЛКМ по воину — выделить. ПКМ по земле — приказ двигаться.") &&
+              !commandHintUI.Contains("он пойдёт туда.") &&
+              hintLang.Contains("LMB on a warrior — select. RMB on the ground — order them to move."),
+            "command hint describes issuing an order without promising AOS obedience, RU and EN");
+
         // AOS can legitimately be silent due to a broken scene or missing
         // component. Retest must try the real vote once then recover with a
         // truthful missing-verdict result, rather than hanging forever or

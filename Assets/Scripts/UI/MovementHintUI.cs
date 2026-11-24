@@ -116,7 +116,14 @@ namespace Sinbinder.UI
                 return;
             }
 
-            if (_showing) return;
+            if (_showing)
+            {
+                // Refresh the real Lesson plate, not the retired scene Text.
+                // Another hint may own the plate; do not take it back every frame.
+                var (key, words) = Line();
+                Gameplay.Lesson.RefreshHint(this, key, words);
+                return;
+            }
 
             // Реальное время: заставка доли 0 держит игру на паузе,
             // и отсчитывать неподвижность под ней было бы нечестно —

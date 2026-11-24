@@ -469,6 +469,15 @@ namespace Sinbinder.Gameplay
             _instance._hintWords = words;
         }
 
+        /// <summary>Refresh an existing hint without replacing another owner's hint.</summary>
+        public static void RefreshHint(object owner, string key, string words)
+        {
+            if (_instance == null || owner == null ||
+                !ReferenceEquals(_instance._hintOwner, owner) || string.IsNullOrEmpty(words)) return;
+            _instance._hintKey = key ?? "";
+            _instance._hintWords = words;
+        }
+
         /// <summary>Снять подсказку — если она ещё того, кто её ставил.</summary>
         public static void Unhint(object owner)
         {
