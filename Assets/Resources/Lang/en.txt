@@ -11477,8 +11477,8 @@ msgid "Свой набор — соберите галочками ниже"
 msgstr "Custom set — tick what you want below"
 
 #: UI/CommandHintUI.cs
-msgid "Щёлкните по воину, затем правой кнопкой по земле — он пойдёт туда."
-msgstr "Click a warrior, then right-click the ground — he'll go there."
+msgid "ЛКМ по воину — выделить. ПКМ по земле — приказ двигаться."
+msgstr "LMB on a warrior — select. RMB on the ground — order them to move."
 
 #: UI/CommandPanel.cs
 msgid "Приказы — сначала выберите воинов"

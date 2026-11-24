@@ -116,7 +116,16 @@ namespace Sinbinder.UI
                 return;
             }
 
-            if (_showing) return;
+            if (_showing)
+            {
+                // Tab can change the camera while the player is still reading.
+                if (_text != null)
+                {
+                    string line = Line();
+                    if (_text.text != line) _text.text = line;
+                }
+                return;
+            }
 
             // Реальное время: заставка доли 0 держит игру на паузе,
             // и отсчитывать неподвижность под ней было бы нечестно —
