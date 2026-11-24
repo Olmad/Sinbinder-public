@@ -73,8 +73,7 @@ namespace Sinbinder.Gameplay
             // Never resimulate historical voices from this changed warrior.
             // A real player AOS decision has already captured its ballot.
             var mind = w.GetComponent<AOSWarriorWrapper>();
-            if (mind == null || !mind.HasCurrentCommandDecision ||
-                !mind.LastDecisionDetail.Equals(d) ||
+            if (mind == null || !mind.IsSourceOfLastCommandDecision(d, c) ||
                 mind.LastDecisionBallot == null || mind.LastDecisionBallot.Count == 0)
             {
                 Debug.LogWarning("[СУД] Исторические голоса отказа недоступны; "
@@ -88,7 +87,10 @@ namespace Sinbinder.Gameplay
             _nextAt = now + Cooldown;
             Last = $"{w.DisplayName}: важность {weight:F2} ({why})";
             Debug.Log("[СУД ПО ДЕЛУ] " + Last);
-            StartCoroutine(SoulCourt.Convene(w, d, c.Copy(), originalVotes: originalVotes));
+            // The court may wait for a camera/dialogue before speaking.
+            // The current warrior command can change during that wait.
+            StartCoroutine(SoulCourt.Convene(w, d, c.Copy(),
+                given: mind.LastDecisionOrderKind, originalVotes: originalVotes));
         }
 
         /// <summary>Экран занят другим: сцена, окно, урок, шар, заставка — суд подождёт следующего повода.</summary>

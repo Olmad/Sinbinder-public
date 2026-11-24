@@ -15118,10 +15118,6 @@ msgid "В казну прибыло."
 msgstr "The treasury has grown."
 
 #. нет в коде
-msgid "В нём гнев. Гнев хочет крови, а враг рядом."
-msgstr "He is wrathful. Wrath wants blood, and the enemy is near."
-
-#. нет в коде
 msgid "В остальном приказы исполнялись."
 msgstr "Otherwise, orders were carried out."
 
@@ -16200,10 +16196,6 @@ msgstr "This time he obeyed the order. The killers are no longer nearby."
 #. нет в коде
 msgid "Теперь она послушалась приказа. Убийц рядом больше нет."
 msgstr "This time she obeyed the order. The killers are no longer nearby."
-
-#. нет в коде
-msgid "Терпения в нём нет. Ждать он не умеет — бьёт первым."
-msgstr "He has no patience. He cannot wait — he strikes first."
 
 #. нет в коде
 msgid "Тип"

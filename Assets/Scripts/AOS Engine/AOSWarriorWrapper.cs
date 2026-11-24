@@ -40,6 +40,20 @@ namespace Sinbinder.AOS
         /// <summary>Контекст последнего решения. Нужен генератору фраз.</summary>
         public DecisionContext LastContext { get; private set; }
 
+        // Identity of the exact context used by the last AOS evaluation.
+        // The UI-facing LastContext above is a copy, never an event identity.
+        private DecisionContext _lastDecisionSourceContext;
+
+        /// <summary>
+        /// Confirm this refusal event belongs to the current AOS evaluation.
+        /// Equal decisions and command revisions can occur on successive ticks.
+        /// </summary>
+        public bool IsSourceOfLastCommandDecision(Decision decision, DecisionContext sourceContext) =>
+            sourceContext != null &&
+            object.ReferenceEquals(_lastDecisionSourceContext, sourceContext) &&
+            HasCurrentCommandDecision &&
+            LastDecisionDetail.Equals(decision);
+
         /// <summary>Identity of the command for which LastDecisionDetail was calculated.</summary>
         public uint LastDecisionCommandRevision { get; private set; }
 
@@ -100,6 +114,7 @@ namespace Sinbinder.AOS
             // а мигающая надпись.
             bool changed = decision.Action != LastDecision;
 
+            _lastDecisionSourceContext = context;
             LastContext = context.Copy();
             if (context.RecentMemories != null)
                 LastContext.RecentMemories = new List<MemoryRecord>(context.RecentMemories);
