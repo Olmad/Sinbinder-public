@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json;
+using Sinbinder.AOS;
 using Sinbinder.Crypt;
 using Sinbinder.Gameplay;
 using Sinbinder.Inventory;
@@ -153,6 +154,73 @@ static class BoardShimTests
                 Check(Records.MissionRequests.Count==0 && PlayerInventory.Instance.Gold==0,
                     "defeat with a survivor never attempts to acquire a mission record or payout");
         }
+    }
+
+    static string RestoreConvoyReport(MissionAction action, bool fought, bool won,
+        SquadRoster.Member survivor, SquadRoster.Member fallenCommander=null)
+    {
+        Reset();
+        var mission=Find("Соляной обоз");
+        var board=new MissionBoard();
+        if(fallenCommander!=null)
+        {
+            fallenCommander.IsAway=true;
+            SquadRoster.Members.Add(fallenCommander);
+        }
+        survivor.IsAway=true;
+        SquadRoster.Members.Add(survivor);
+        MissionBoard.RestoreJourneys(JsonRoundtrip(new List<SavedAutoExpedition>
+        {
+            new SavedAutoExpedition
+            {
+                MissionName=mission.Name,
+                Commander=(fallenCommander ?? survivor).Name,
+                Party=SquadRoster.Members.Select(member=>member.Name).ToList(),
+                Phase=2,
+                EncounterResolved=true,
+                EncounterFought=fought,
+                BattleWon=won,
+                HasChosenAction=true,
+                ChosenAction=(int)action,
+                Survivors=new List<string>{survivor.Name},
+                EncounterTrace=new ExpeditionReplayData(),
+                FoesFallen=0
+            }
+        }));
+
+        board.AdvanceJourneys(0.1f,true);
+        Check(MissionBoard.Journeys.Count==0 && !survivor.IsAway &&
+              SquadRoster.Members.Count==1 && ExpeditionReplayArchive.History.Count==1,
+            "the saved convoy outcome settles and keeps its sole survivor");
+        return board.LastReport;
+    }
+
+    static void ConvoyReportsDescribeTheOutcome()
+    {
+        var scout=Make("Разведчица");
+        scout.Gender=Gender.Female;
+        string victory=RestoreConvoyReport(MissionAction.TakeEverything,true,true,
+            scout,Make("Старший"));
+        string peaceful=RestoreConvoyReport(MissionAction.LetThemPass,false,false,
+            Make("Возвратившийся"));
+        string defeat=RestoreConvoyReport(MissionAction.TakeEverything,true,false,
+            Make("Отступивший"));
+
+        Check(victory.Contains("Товар захвачен.",StringComparison.Ordinal) &&
+              !victory.Contains("Охрана разгромлена",StringComparison.OrdinalIgnoreCase) &&
+              !victory.Contains("душ",StringComparison.OrdinalIgnoreCase),
+            "a convoy victory without fallen guards reports cargo captured without claiming lost souls");
+        Check(victory.Contains("Ей вы должны плату за эту вылазку.",StringComparison.Ordinal) &&
+              !victory.Contains("Ему вы должны плату",StringComparison.Ordinal),
+            "the wage line follows the sole surviving woman even when the commander was a man");
+        Check(peaceful.Contains("Обоз пропустили без боя.",StringComparison.Ordinal) &&
+              !peaceful.Contains("молчал",StringComparison.OrdinalIgnoreCase),
+            "peaceful passage reports the outcome without saying how the crew behaved on the way home");
+        Check(peaceful.Contains("Ему вы должны плату за эту вылазку.",StringComparison.Ordinal),
+            "the wage line still addresses a sole male survivor");
+        Check(defeat.Contains("цель не достигнута",StringComparison.Ordinal) &&
+              !defeat.Contains("товар захвачен",StringComparison.OrdinalIgnoreCase),
+            "a repelled convoy attack reports defeat without claiming captured cargo");
     }
 
     static void BlockedEncountersStayBlocked()
@@ -490,6 +558,7 @@ static class BoardShimTests
         AmbiguousPartyIsRejected(mission);
         DepartureHidesSelectedIdentities(mission);
         MissionRecordsRequireSecuredObjective(mission);
+        ConvoyReportsDescribeTheOutcome();
 
         Console.WriteLine("PASS: "+assertions+
             " real MissionBoard Unity API shim scenarios, JSON roundtrips and single payout");

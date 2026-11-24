@@ -1354,9 +1354,14 @@ namespace Sinbinder.Crypt
                     { sb.Append(' ').Append(Homecoming.Story(m.Sin, m.Gender)); break; }
 
             // 47-TEXTS §2, п. 13: что должны. Добычу журнал называет сам.
-            sb.Append(survivors.Count == 1
-                ? Loc.T(" Ему вы должны плату за эту вылазку.")
-                : Loc.T(" Каждому из них вы должны плату за эту вылазку."));
+            if (survivors.Count == 1)
+            {
+                var survivor = away.Find(member => member.Name == survivors[0]);
+                sb.Append(survivor.Gender == Gender.Female
+                    ? Loc.T(" Ей вы должны плату за эту вылазку.")
+                    : Loc.T(" Ему вы должны плату за эту вылазку."));
+            }
+            else sb.Append(Loc.T(" Каждому из них вы должны плату за эту вылазку."));
             return sb.ToString();
         }
 

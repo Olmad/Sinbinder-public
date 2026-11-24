@@ -3108,6 +3108,14 @@ msgid "Отряд забрал товар без боя, возчиков отп
 msgstr "The squad took the goods without a fight and let the drivers go."
 
 #: Crypt/JunctionCatalog.cs
+msgid "Товар захвачен."
+msgstr "The goods were seized."
+
+#: Crypt/JunctionCatalog.cs
+msgid "Обоз пропустили без боя."
+msgstr "The caravan passed without a fight."
+
+#: Crypt/JunctionCatalog.cs
 msgid "Охрана разгромлена, товар захвачен. Души остались на месте: собирателя не было."
 msgstr "The guards were routed and the goods seized. The souls were left behind: there was no gatherer."
 
@@ -3314,6 +3322,10 @@ msgstr "Returned: "
 #: Crypt/MissionBoard.cs
 msgid " Ему вы должны плату за эту вылазку."
 msgstr " You owe him pay for this raid."
+
+#: Crypt/MissionBoard.cs
+msgid " Ей вы должны плату за эту вылазку."
+msgstr " You owe her pay for this raid."
 
 #: Crypt/MissionBoard.cs
 msgid " Каждому из них вы должны плату за эту вылазку."

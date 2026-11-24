@@ -27,9 +27,14 @@ assert "CaravanAssaulted=state.CaravanAssaulted" in p
 assert "private void OpenCaravanChoice()" in p
 assert "private void ChooseCaravan(bool attack)" in p
 # The caravan is a PLAYABLE choice, not a fake two-button dialogue
-# while hostile guards are already attacking the player.
-assert "Team disposition=_plan.Kind==ExpeditionMapKind.SaltRoad" in p
-assert "? Team.Neutral : Team.Enemy;" in p
+# while hostile guards are already attacking the player. A returning hunter
+# has a separate reason to be hostile, even on a peaceful caravan route.
+assert "bool hunter=was!=null && was.Reason==Survivors.Hunt;" in p
+assert (
+    "Team disposition=!hunter && _plan.Kind==ExpeditionMapKind.SaltRoad && "
+    "!_state.CaravanAssaulted && !_state.CaravanPassed ? Team.Neutral : Team.Enemy;"
+) in " ".join(p.split())
+assert "w.Initialize(soul,shell,relations,false,disposition," in p
 assert "private void ProvokeCaravan()" in p
 assert "visit._state.EnemiesRemaining<mission.Guards" in p
 assert "Вы напали на обоз: охрана теперь враждебна" in p
@@ -58,7 +63,13 @@ assert "PersonalExpedition.OfferInteractions(Offer);" in gear
 assert "public static void OfferInteractions(" in p
 assert "FallenBag.Near()" not in p
 assert "Input.GetKeyDown(KeyCode.F)" not in p
-assert "ready > 0 || personalPossible" in ui
+availability = ui.split("private bool CanGo(Mission m)", 1)[1].split("private void ShowCard", 1)[0]
+assert (
+    "bool personalPossible = ExpeditionMapPlan.ForName(m.Name) != null && "
+    "SinbinderPlayer.Exists && !SinbinderPlayer.Instance.IsDead; "
+    "return _board.Ready() > 0 || personalPossible;"
+) in " ".join(availability.split())
+assert 'bool can = CanGo(m);' in ui and '(Loc.T("Продолжить"), can, () => PickCommander(m))' in ui
 assert "SquadRoster.CanGo(member)" in p
 assert "seen.Count + 1 > Mathf.Max(1, mission.Squad)" in p
 assert "Экспедиция" in p and "Exit()" in p
