@@ -38,6 +38,9 @@ namespace Sinbinder.AOS
         public int UnpaidMissions;
         public Warrior TargetWarrior;
 
+        // Stable identity of the rescue candidate evaluated by the voices.
+        public string RescueTargetId;
+
         // One of the visible hostile warriors has an ID recorded as my killer.
         // Separate from TargetWarrior, which is a wounded ally.
         public bool KnownMurdererInSight;

@@ -54,6 +54,7 @@ namespace Sinbinder.AOS
                 NearbyAllies = liveAllies,
                 AllyInDanger = allyInDanger,
                 TargetWarrior = wounded,
+                RescueTargetId = wounded != null ? wounded.Id : null,
                 UnpaidMissions = warrior.UnpaidMissions,
                 DangerLevel = Mathf.Clamp01((1f - hpRatio) * 0.5f + Mathf.Clamp01(liveEnemies / 4f) * 0.5f),
                 RecentMemories = MemoryProcessor.Instance != null

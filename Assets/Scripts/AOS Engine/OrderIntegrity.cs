@@ -48,6 +48,11 @@ namespace Sinbinder.AOS
 
     public static class OrderIntegrity
     {
+        /// <summary>Unknown identity is never evidence of a personal relationship.</summary>
+        public static bool SameKnownTarget(string expectedId, string actualId)
+            => !string.IsNullOrEmpty(expectedId) && !string.IsNullOrEmpty(actualId)
+                && string.Equals(expectedId, actualId, System.StringComparison.Ordinal);
+
         /// <summary>
         /// An Idle vote while a player's command is still pending is a
         /// hesitation/choice to stand, not permission for camp-life AI to

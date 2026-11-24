@@ -650,20 +650,30 @@ namespace Sinbinder.AOS
             if (CombatManager.Instance == null || _warrior == null || _warrior.IsDead) return;
             Damageable best = null;
             float bestDist = float.MaxValue;
+            var mover = GetComponent<UnitMover>();
+            // Execute the candidate the voices actually evaluated.
+            // If it is no longer eligible, do not substitute another ally.
+            if (LastContext == null || LastDecision != ActionType.SaveAlly)
+            {
+                mover?.Stop();
+                return;
+            }
             foreach (var dmg in CombatManager.Instance.GetAllies(gameObject))
             {
                 if (dmg == null || dmg.IsDead || dmg.Warrior == null || dmg.Warrior == _warrior) continue;
+                if (!OrderIntegrity.SameKnownTarget(LastContext.RescueTargetId, dmg.Warrior.Id)) continue;
                 if (dmg.HP >= dmg.MaxHP * 0.3f) continue;
                 float dist = Vector3.Distance(transform.position, dmg.transform.position);
-                // Голосование видит союзников максимум в 10 метрах. Исполнение
-                // не должно отправлять защитника за полкарты к другому раненому.
-                if (dist > 10f || dist >= bestDist) continue;
+                if (dist >= 10f) continue;
                 bestDist = dist;
                 best = dmg;
+                break;
             }
-            if (best == null) return;
-
-            var mover = GetComponent<UnitMover>();
+            if (best == null)
+            {
+                mover?.Stop();
+                return;
+            }
             if (bestDist > 2.5f)
             {
                 mover?.CommandMove(best.transform.position);

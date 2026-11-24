@@ -36,14 +36,17 @@ namespace Sinbinder.AOS
             var allies = GetNearbyAllies(warrior);
             var loot = GetNearbyLoot(warrior);
 
-            Warrior targetAlly = null;
+            Warrior targetAlly = null, rescueTarget = null;
+            float nearestRescue = float.MaxValue;
             foreach (var ally in allies)
             {
-                if (ally.HP < ally.MaxHP * 0.5f)
-                {
+                if (targetAlly == null && ally.HP < ally.MaxHP * 0.5f)
                     targetAlly = ally;
-                    break;
-                }
+                if (ally.HP >= ally.MaxHP * 0.3f) continue;
+                float distance = Vector3.Distance(warrior.transform.position, ally.transform.position);
+                if (distance >= nearestRescue) continue;
+                nearestRescue = distance;
+                rescueTarget = ally;
             }
 
             float relationshipWithCommander = 50f;
@@ -61,13 +64,14 @@ namespace Sinbinder.AOS
                 NearbyEnemies = enemies.Count,
                 EnemiesInSight = GetNearbyEnemies(warrior, SightRadius).Count,
                 NearbyAllies = allies.Count,
-                AllyInDanger = allies.Exists(a => a.HP < a.MaxHP * 0.3f),
+                AllyInDanger = rescueTarget != null,
                 NearbyLoot = loot.Count,
                 DangerLevel = CalculateDanger(warrior, enemies),
                 HasCommand = !string.IsNullOrEmpty(commandType),
                 CommandType = commandType,
                 UnpaidMissions = warrior.UnpaidMissions,
-                TargetWarrior = targetAlly,
+                TargetWarrior = rescueTarget ?? targetAlly,
+                RescueTargetId = rescueTarget != null ? rescueTarget.Id : null,
                 RelationshipWithCommander = relationshipWithCommander,
                 RecentMemories = MemoryProcessor.Instance?.GetMemories(warrior) ?? new List<MemoryRecord>(),
                 Commander = commander // ← новое поле

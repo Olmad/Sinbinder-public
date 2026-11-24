@@ -52,6 +52,32 @@ internal static class Program
             "unknown decisive factor gets neutral advice");
         Sinbinder.Core.Loc.Use("ru", null);
 
+        Check(OrderIntegrity.SameKnownTarget("brother-a", "brother-a"), "known rescue target matches");
+        Check(!OrderIntegrity.SameKnownTarget("brother-a", "stranger") &&
+              !OrderIntegrity.SameKnownTarget("brother-a", "BROTHER-A") &&
+              !OrderIntegrity.SameKnownTarget(null, null) &&
+              !OrderIntegrity.SameKnownTarget("", "") &&
+              !OrderIntegrity.SameKnownTarget("brother-a", null),
+            "different or unidentified souls never share a personal rescue memory");
+        string aosDir = Path.Combine(adviceRoot, "Assets/Scripts/AOS Engine");
+        string rescueContext = File.ReadAllText(Path.Combine(aosDir, "CombatDecisionContext.cs"));
+        string rescueExecutor = File.ReadAllText(Path.Combine(aosDir, "AOSWarriorWrapper.cs"));
+        string rescueMemory = File.ReadAllText(Path.Combine(aosDir, "MemoryModule.cs"));
+        string autoContext = File.ReadAllText(Path.Combine(aosDir, "AutoBattleContext.cs"));
+        string autoExecutor = File.ReadAllText(Path.Combine(aosDir, "AutoBattleResolver.cs"));
+        Check(rescueContext.Contains("AllyInDanger = rescueTarget != null") &&
+              rescueContext.Contains("RescueTargetId = rescueTarget != null ? rescueTarget.Id : null") &&
+              rescueExecutor.Contains("OrderIntegrity.SameKnownTarget(LastContext.RescueTargetId, dmg.Warrior.Id)") &&
+              rescueExecutor.Contains("LastDecision != ActionType.SaveAlly"),
+            "3D rescue evaluates and executes one concrete eligible ally");
+        Check(rescueMemory.Split(new[] { "OrderIntegrity.SameKnownTarget(context.RescueTargetId, memory.TargetID)" },
+              StringSplitOptions.None).Length == 3,
+            "gratitude and betrayal memories apply only to the actual rescue target");
+        Check(autoContext.Contains("RescueTargetId = wounded != null ? wounded.Id : null") &&
+              autoExecutor.Contains("record, round, context.RescueTargetId)") &&
+              autoExecutor.Contains("OrderIntegrity.SameKnownTarget(rescueTargetId, a.Id)"),
+            "automatic rescue uses the evaluated target too, without silent substitution");
+
         // This compiles the EXACT production gate. A voice's repeated vote
         // is not a fresh event and must not rewrite the same memory forever.
         var gate = new RefusalEventGate();

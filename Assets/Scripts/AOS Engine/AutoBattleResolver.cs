@@ -157,11 +157,11 @@ namespace Sinbinder.AOS
             // в неподвижности — двадцать ходов, ноль урона, «победа».
             var context = AutoBattleContext.Create(warrior, allies, foes);
             var action = resolver.Decide(warrior, context);
-            Execute(warrior, action, foes, allies, record, round);
+            Execute(warrior, action, foes, allies, record, round, context.RescueTargetId);
         }
 
         private static void Execute(Warrior warrior, ActionType action,
-            List<Warrior> foes, List<Warrior> allies, BattleRecord record, int round)
+            List<Warrior> foes, List<Warrior> allies, BattleRecord record, int round, string rescueTargetId)
         {
             var evt = new BattleEvent
             {
@@ -200,9 +200,9 @@ namespace Sinbinder.AOS
 
                 case ActionType.SaveAlly:
                 {
-                    var ally = allies.Where(a => a != null && !a.IsDead && a != warrior
-                                                 && a.HP < a.MaxHP * 0.5f)
-                                     .OrderBy(a => a.HP).FirstOrDefault();
+                    var ally = allies.FirstOrDefault(a => a != null && !a.IsDead && a != warrior
+                                                 && a.HP < a.MaxHP * 0.5f
+                                                 && OrderIntegrity.SameKnownTarget(rescueTargetId, a.Id));
                     if (ally != null)
                     {
 

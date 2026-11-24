@@ -63,19 +63,22 @@ namespace Sinbinder.AOS.Modules
             float score = 0f;
             foreach (var memory in context.RecentMemories)
             {
+                if (memory == null) continue;
                 // Strength is signed for relationships. Behaviour multipliers decide direction.
                 float strength = Mathf.Abs(memory.Strength);
                 switch (memory.EventType)
                 {
                     // Меня спасли. Привязчивый помнит долг, гордый — что был должен.
-                    case "AllySavedMe" when action == ActionType.SaveAlly:
+                    case "AllySavedMe" when action == ActionType.SaveAlly
+                        && OrderIntegrity.SameKnownTarget(context.RescueTargetId, memory.TargetID):
                         score += strength * _config.MemorySaveAllyStrengthMultiplier
                                * Recall(soul.Get(SinType.Lust) * _config.RecallBondShare
                                       - soul.Get(SinType.Pride) * _config.RecallPrideShare);
                         break;
 
                     // Меня предали. Обиду держат завистью и гневом.
-                    case "AllyBetrayedMe" when action == ActionType.SaveAlly:
+                    case "AllyBetrayedMe" when action == ActionType.SaveAlly
+                        && OrderIntegrity.SameKnownTarget(context.RescueTargetId, memory.TargetID):
                         score += strength * _config.MemoryBetrayalStrengthMultiplier
                                * Recall(soul.Get(SinType.Envy) * _config.RecallGrudgeEnvyShare
                                       + soul.Get(SinType.Wrath) * _config.RecallGrudgeWrathShare);
