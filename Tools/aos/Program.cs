@@ -21,6 +21,37 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        // Exercise actual advice formatting and the production localization parser.
+        string adviceRoot = args.Length > 0 ? args[0] : ".";
+        string adviceSource = File.ReadAllText(Path.Combine(adviceRoot, "Assets/Scripts/UI/AOSDecisionAdvice.cs"));
+        Check(adviceSource.Contains("decision.Weighed && decision.Decisive != Counterfactual.Factor.None") &&
+              adviceSource.Contains("decision.DecisiveAlso != Counterfactual.Factor.None") &&
+              adviceSource.Contains("decision.DecisiveAlso.ToString(), Loc.T") &&
+              adviceSource.Contains("if (HasPair(decision)) return Loc.T(OrderAdvice.PairShort)"),
+            "both advice displays preserve verified paired factors");
+        Check(adviceSource.Contains("decision.Weighed ? decision.DecisiveVoice : decision.TopModule"),
+            "weighed verdict without decisive voice does not promote the loudest voice to a proven cause");
+        var adviceCatalog = File.ReadAllText(Path.Combine(adviceRoot, "Assets/Resources/Lang/en.txt"));
+        Sinbinder.Core.Loc.Use("ru", null);
+        Check(Sinbinder.Gameplay.OrderAdvice.NextPair("Debt", "Fatigue", Sinbinder.Core.Loc.T) ==
+              "Две причины — попробуйте изменить обе: Выплатите долг; Дайте передышку.",
+            "RU pair gives both interventions");
+        Sinbinder.Core.Loc.Use("en", adviceCatalog);
+        Check(Sinbinder.Gameplay.OrderAdvice.NextPair("Debt", "Fatigue", Sinbinder.Core.Loc.T) ==
+              "Two reasons — try addressing both: Pay the outstanding wages; Let them rest.",
+            "EN pair gives both interventions");
+        Check(Sinbinder.Core.Loc.T(Sinbinder.Gameplay.OrderAdvice.PairShort) == "Consider both reasons for refusal",
+            "compact panel does not suggest one factor is sufficient");
+        string adviceCode = File.ReadAllText(Path.Combine(adviceRoot, "Assets/Scripts/Gameplay/OrderAdvice.cs"));
+        foreach (System.Text.RegularExpressions.Match match in System.Text.RegularExpressions.Regex.Matches(adviceCode, "return \"([^\"]+)\""))
+            Check(Sinbinder.Core.Loc.Has(match.Groups[1].Value), "advice key has EN translation: " + match.Groups[1].Value);
+        Check(Sinbinder.Core.Loc.Has(Sinbinder.Gameplay.OrderAdvice.PairFormat),
+            "pair format is translated");
+        Check(Sinbinder.Core.Loc.T(Sinbinder.Gameplay.OrderAdvice.Next(null, null)) ==
+              "Try changing the circumstances or choosing another warrior.",
+            "unknown decisive factor gets neutral advice");
+        Sinbinder.Core.Loc.Use("ru", null);
+
         // This compiles the EXACT production gate. A voice's repeated vote
         // is not a fresh event and must not rewrite the same memory forever.
         var gate = new RefusalEventGate();

@@ -16577,3 +16577,167 @@ msgstr "Actual healing: {0}."
 #: UI/ExpeditionReplayViewer.cs
 msgid "Гибель цели подтверждена."
 msgstr "Target death confirmed."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Подойдите ближе"
+msgstr "Move closer"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Выплатите долг"
+msgstr "Pay the outstanding wages"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Обсудите его долю"
+msgstr "Discuss their share"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Проверьте снаряжение"
+msgstr "Check their equipment"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Уведите от добычи"
+msgstr "Lead them away from the loot"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Смените приказ или воина"
+msgstr "Change the order or the warrior"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Помогите раненому"
+msgstr "Help the wounded ally"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Выберите здорового воина"
+msgstr "Choose a healthy warrior"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Выведите из окружения"
+msgstr "Get them out of the encirclement"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Дайте передышку"
+msgstr "Let them rest"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Уберите угрозу убийц"
+msgstr "Remove the threat from their killers"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Проверьте долги и добычу"
+msgstr "Check wages and loot"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Смените задачу или воина"
+msgstr "Change the task or the warrior"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Измените обстановку боя"
+msgstr "Change the battle situation"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Снизьте опасность"
+msgstr "Reduce the danger"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Уберите напоминание о прошлом"
+msgstr "Remove the reminder of the past"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Укрепите доверие"
+msgstr "Build trust"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Измените спорный приказ"
+msgstr "Change the questionable order"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Измените условия или воина"
+msgstr "Change the circumstances or the warrior"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Подойдите ближе и повторите приказ."
+msgstr "Move closer and repeat the order."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Поговорите с воином и выплатите долг."
+msgstr "Speak to the warrior and pay the outstanding wages."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Проверьте его добычу и договоритесь о доле."
+msgstr "Check their loot and agree on a share."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Проверьте предмет-искуситель и попробуйте другое снаряжение."
+msgstr "Check the tempting item and try different equipment."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Измените маршрут, чтобы увести его от добычи."
+msgstr "Change the route to lead them away from the loot."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Попробуйте более короткий приказ или другого воина."
+msgstr "Try a shorter order or another warrior."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Сначала обезопасьте раненого товарища."
+msgstr "First make the wounded ally safe."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Дайте раненому передышку или выберите здорового воина."
+msgstr "Let the wounded warrior rest or choose a healthy one."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Помогите ему выйти из окружения."
+msgstr "Help them escape the encirclement."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Дайте ему передышку или выберите свежего воина."
+msgstr "Let them rest or choose a fresh warrior."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Уберите угрозу его убийц или выберите другого воина."
+msgstr "Remove the threat from their killers or choose another warrior."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Проверьте долги, добычу и снаряжение."
+msgstr "Check wages, loot and equipment."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Попробуйте другую задачу или другого воина."
+msgstr "Try a different task or another warrior."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Измените обстановку боя или выберите спокойного воина."
+msgstr "Change the battle situation or choose a calmer warrior."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Дайте передышку или поручите дело более деятельному."
+msgstr "Let them rest or assign the task to a more active warrior."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Снизьте опасность или выберите смелого воина."
+msgstr "Reduce the danger or choose a braver warrior."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Уберите напоминание о прошлом или выберите другую душу."
+msgstr "Remove the reminder of the past or choose another soul."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Попробуйте укрепить доверие к командиру."
+msgstr "Try to build trust in the commander."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Попробуйте приказ, который не идёт против его убеждений."
+msgstr "Try an order that does not conflict with their convictions."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Попробуйте изменить обстоятельства или выбрать другого воина."
+msgstr "Try changing the circumstances or choosing another warrior."
+
+#: Gameplay/OrderAdvice.cs
+msgid "Учитывайте обе причины отказа"
+msgstr "Consider both reasons for refusal"
+
+#: Gameplay/OrderAdvice.cs
+msgid "Две причины — попробуйте изменить обе: {0}; {1}."
+msgstr "Two reasons — try addressing both: {0}; {1}."

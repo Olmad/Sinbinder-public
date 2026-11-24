@@ -9,6 +9,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/OrderAdvice.cs" Link="OrderAdvice.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Loc.cs" Link="Loc.cs" />
     <!-- The production AOS source, not a reconstructed copy. -->
     <Compile Include="../../Assets/Scripts/AOS Engine/OrderIntegrity.cs" Link="OrderIntegrity.cs" />
   </ItemGroup>

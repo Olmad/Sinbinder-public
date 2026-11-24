@@ -45,6 +45,14 @@ namespace Sinbinder.Gameplay
             return "Измените условия или воина";
         }
 
+        public const string PairShort = "Учитывайте обе причины отказа";
+        public const string PairFormat = "Две причины — попробуйте изменить обе: {0}; {1}.";
+
+        // Translate the full format and each existing action separately.
+        // Neither the pair nor an intervention promises future obedience.
+        public static string NextPair(string first, string second, System.Func<string, string> translate)
+            => string.Format(translate(PairFormat), translate(Short(first)), translate(Short(second)));
+
         public static string Next(string factor, string voice = null)
         {
             switch (factor)
