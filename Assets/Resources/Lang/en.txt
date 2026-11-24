@@ -13300,6 +13300,14 @@ msgid "←/→: событие · PgUp/PgDn: бой · Home/End: начало/к
 msgstr "←/→: event · PgUp/PgDn: combat · Home/End: start/end · Space: play/pause"
 
 #: UI/ExpeditionReplayViewer.cs
+msgid "3D-показ всех записанных AOS-событий. Расстановка условная: автобой не хранит координаты."
+msgstr "3D view of every recorded AOS event. Positions are approximate: the auto-battle does not store coordinates."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Схематическая хронология: точные координаты в старой записи отсутствуют."
+msgstr "Schematic timeline: this older record has no exact coordinates."
+
+#: UI/ExpeditionReplayViewer.cs
 msgid "Выступление"
 msgstr "Departure"
 
@@ -16488,3 +16496,80 @@ msgstr "…Well, if she's watching."
 #. нет в коде
 msgid "…Половина. Запомню."
 msgstr "…Half. I'll remember."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "ПОЛНЫЙ ПРОТОКОЛ"
+msgstr "FULL RECORD"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Закрыть (Esc)"
+msgstr "Close (Esc)"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Играть"
+msgstr "Play"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Вперёд"
+msgstr "Forward"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Приостановить"
+msgstr "Pause"
+
+msgid "СХЕМА МАРШРУТА"
+msgstr "ROUTE SCHEMATIC"
+
+msgid "Цель"
+msgstr "Objective"
+
+msgid "Выход / возврат"
+msgstr "Departure / return"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Событие {0} из {1}"
+msgstr "Event {0} of {1}"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Ход AOS: {0}"
+msgstr "AOS turn: {0}"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Схематическая реконструкция: боевые решения из движка, точные координаты в старой записи отсутствуют."
+msgstr "Schematic reconstruction: combat decisions come from the engine; exact coordinates are absent from the legacy record."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Ход {0}"
+msgstr "Turn {0}"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "исполнено"
+msgstr "completed"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "без результата"
+msgstr "no confirmed outcome"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Итог: действие действительно исполнено."
+msgstr "Outcome: action was confirmed as executed."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Итог: действие не дало подтверждённого эффекта."
+msgstr "Outcome: no confirmed effect from the action."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Цель: {0}."
+msgstr "Target: {0}."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Реальная потеря HP: {0}."
+msgstr "Actual HP lost: {0}."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Реальное лечение: {0}."
+msgstr "Actual healing: {0}."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Гибель цели подтверждена."
+msgstr "Target death confirmed."

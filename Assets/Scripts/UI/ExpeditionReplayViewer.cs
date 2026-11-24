@@ -165,8 +165,8 @@ namespace Sinbinder.UI
                 _item = new GUIStyle(GUI.skin.label){fontSize=14,wordWrap=true};
             }
             GUI.Label(new Rect(left+15f, top+9f,w-170f,34f),
-                "ПОЛНЫЙ ПРОТОКОЛ · "+_data.MissionName,_caption);
-            if(GUI.Button(new Rect(left+w-142f,top+8f,130f,32f),"Закрыть (Esc)"))Close();
+                Loc.T("ПОЛНЫЙ ПРОТОКОЛ")+" · "+_data.MissionName,_caption);
+            if(GUI.Button(new Rect(left+w-142f,top+8f,130f,32f),Loc.T("Закрыть (Esc)")))Close();
             if (_data == null) return;
 
             var frame = _data.Frames[_index];
@@ -181,17 +181,17 @@ namespace Sinbinder.UI
             float sideX=mapRect.xMax+12f,sideW=Mathf.Max(150f,w-mapWidth-44f);
             GUI.Box(new Rect(sideX,top+50f,sideW,mapHeight),"");
             GUI.Label(new Rect(sideX+9f,top+58f,sideW-18f,85f),
-                "Событие "+(_index+1)+" из "+_data.Frames.Count+"\n"+
+                Loc.F("Событие {0} из {1}",_index+1,_data.Frames.Count)+"\n"+
                 StageName(frame.Kind) +
-                (frame.Round>0 ? "\nХод AOS: "+frame.Round : ""),_caption);
+                (frame.Round>0 ? "\n"+Loc.F("Ход AOS: {0}",frame.Round) : ""),_caption);
             GUI.Label(new Rect(sideX+9f,top+155f,sideW-18f,mapHeight-115f),
                 (string.IsNullOrEmpty(frame.Actor)?"":frame.Actor+": ") +
                 frame.Description + ObservedEffect(frame),
                 _item);
 
             string stageNote = _stage != null
-                ? "3D-показ всех записанных AOS-событий. Расстановка условная: автобой не хранит координаты."
-                : "Схематическая хронология: точные координаты в старой записи отсутствуют.";
+                ? Loc.T("3D-показ всех записанных AOS-событий. Расстановка условная: автобой не хранит координаты.")
+                : Loc.T("Схематическая хронология: точные координаты в старой записи отсутствуют.");
             var playbackNotes = new GUIContent(stageNote + "\n" +
                 Loc.T("←/→: событие · PgUp/PgDn: бой · Home/End: начало/конец · Space: воспроизведение"));
             float notesY = top + 58f + mapHeight;
@@ -201,11 +201,11 @@ namespace Sinbinder.UI
             float y = notesY + notesHeight + 8f;
             float buttonW=Mathf.Min(150f,(w-40f)/5f);
             if(GUI.Button(new Rect(left+15f,y,buttonW,34f),"|<")) Seek(0);
-            if(GUI.Button(new Rect(left+18f+buttonW,y,buttonW,34f),"< Назад"))
+            if(GUI.Button(new Rect(left+18f+buttonW,y,buttonW,34f),"< "+Loc.T("Назад")))
                 Seek(_index - 1);
-            if(GUI.Button(new Rect(left+21f+2*buttonW,y,buttonW,34f),_running?"Пауза":"Играть"))
+            if(GUI.Button(new Rect(left+21f+2*buttonW,y,buttonW,34f),_running?Loc.T("Приостановить"):Loc.T("Играть")))
                 TogglePlayback();
-            if(GUI.Button(new Rect(left+24f+3*buttonW,y,buttonW,34f),"Вперёд >"))
+            if(GUI.Button(new Rect(left+24f+3*buttonW,y,buttonW,34f),Loc.T("Вперёд")+ " >"))
                 Seek(_index + 1);
             if(GUI.Button(new Rect(left+27f+4*buttonW,y,buttonW,34f),"x"+_speed.ToString("0")))
                 _speed=_speed>=4f?1f:_speed*2f;
@@ -223,8 +223,8 @@ namespace Sinbinder.UI
                 if(i==_index)
                     GUI.Box(new Rect(0f,i*rowH,content.width,rowH),"");
                 string line=(i+1)+". "+StageName(step.Kind)+
-                    (step.Round>0?" · Ход "+step.Round:"")+
-                    (step.HasOutcome ? step.Resolved?" · исполнено":" · без результата" : "")+
+                    (step.Round>0?" · "+Loc.F("Ход {0}",step.Round):"")+
+                    (step.HasOutcome ? step.Resolved?" · "+Loc.T("исполнено"):" · "+Loc.T("без результата") : "")+
                     " · "+(string.IsNullOrEmpty(step.Actor)?"":step.Actor+": ")+step.Description;
                 if(GUI.Button(new Rect(0f,i*rowH,content.width,rowH),line,GUI.skin.label))
                     Seek(i);
@@ -234,7 +234,7 @@ namespace Sinbinder.UI
 
         private void DrawSchematicMap(Rect rect,ExpeditionReplayFrame frame)
         {
-            GUI.Box(rect,"СХЕМА МАРШРУТА");
+            GUI.Box(rect,Loc.T("СХЕМА МАРШРУТА"));
             Rect ground=new Rect(rect.x+12f,rect.y+27f,rect.width-24f,rect.height-40f);
             GUI.DrawTexture(ground,Texture2D.whiteTexture,ScaleMode.StretchToFill);
             var previous=GUI.color;
@@ -254,8 +254,8 @@ namespace Sinbinder.UI
             float sx=ground.x+ground.width*0.15f;
             float ex=ground.x+ground.width*0.85f;
             float y=ground.y+ground.height*(1f-progress);
-            GUI.Label(new Rect(sx-20f,ground.y+5f,140f,20f),"Цель");
-            GUI.Label(new Rect(sx-20f,ground.yMax-24f,160f,20f),"Выход / возврат");
+            GUI.Label(new Rect(sx-20f,ground.y+5f,140f,20f),Loc.T("Цель"));
+            GUI.Label(new Rect(sx-20f,ground.yMax-24f,160f,20f),Loc.T("Выход / возврат"));
             var a=new Rect(sx,y-8f,22f,22f);
             GUI.color=new Color(0.28f,0.82f,0.91f);
             GUI.DrawTexture(a,Texture2D.whiteTexture);
@@ -283,16 +283,16 @@ namespace Sinbinder.UI
             if(frame==null || frame.Kind!=ExpeditionReplayKind.CombatAction ||
                !frame.HasOutcome) return "";
             string result=frame.Resolved
-                ? "\nИтог: действие действительно исполнено."
-                : "\nИтог: действие не дало подтверждённого эффекта.";
+                ? "\n"+Loc.T("Итог: действие действительно исполнено.")
+                : "\n"+Loc.T("Итог: действие не дало подтверждённого эффекта.");
             if(!string.IsNullOrEmpty(frame.TargetName))
-                result+="\nЦель: "+frame.TargetName+".";
+                result+="\n"+Loc.F("Цель: {0}.",frame.TargetName);
             if(frame.Damage>0f)
-                result+="\nРеальная потеря HP: "+frame.Damage.ToString("0.#")+".";
+                result+="\n"+Loc.F("Реальная потеря HP: {0}.",frame.Damage.ToString("0.#"));
             if(frame.Healing>0f)
-                result+="\nРеальное лечение: "+frame.Healing.ToString("0.#")+".";
+                result+="\n"+Loc.F("Реальное лечение: {0}.",frame.Healing.ToString("0.#"));
             if(frame.TargetKilled)
-                result+="\nГибель цели подтверждена.";
+                result+="\n"+Loc.T("Гибель цели подтверждена.");
             return result;
         }
 

@@ -255,13 +255,18 @@ namespace Sinbinder.Gameplay
                 bool answered = false;
                 while (t < Seconds)
                 {
-                    if (!answered && t >= 1.0f && w != null)
+                    if (!answered && t >= 1.0f)
                     {
                         answered = true;
+                        // Resolve even if the warrior was destroyed during the offer.
+                        // ResolveBargain handles a missing warrior and produces a truthful outcome.
                         ResolveBargain();
-                        if (applied) StartCoroutine(Flare(w, SinPalette.Of(sin)));
-                        UI.SpeechBubbles.Say(w, answer, 2.4f);
-                        if (w.TryGetComponent<Audio.VoiceGenerator>(out var voice)) voice.Babble(answer, 0.9f);
+                        if (w != null)
+                        {
+                            if (applied) StartCoroutine(Flare(w, SinPalette.Of(sin)));
+                            UI.SpeechBubbles.Say(w, answer, 2.4f);
+                            if (w.TryGetComponent<Audio.VoiceGenerator>(out var voice)) voice.Babble(answer, 0.9f);
+                        }
                     }
                     t += Time.unscaledDeltaTime;
                     yield return null;
