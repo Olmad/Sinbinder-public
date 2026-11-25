@@ -153,6 +153,7 @@ namespace Sinbinder.Core
             foreach (var m in save.Squad) if (!string.IsNullOrEmpty(m.WarriorId)) owners.Add(m.WarriorId);
             foreach (var s in save.Survivors) if (!string.IsNullOrEmpty(s.Id)) owners.Add(s.Id);
             save.AosMemories = Sinbinder.AOS.MemoryProcessor.Snapshot(owners);
+            save.AosEmotions = Sinbinder.AOS.EmotionSystem.Snapshot(owners);
 
             var hero = Gameplay.SinbinderPlayer.Exists ? Gameplay.SinbinderPlayer.Instance : null;
             if (hero != null && !hero.IsDead)
@@ -216,7 +217,7 @@ namespace Sinbinder.Core
         /// от <see cref="ReturnTo"/> до <c>sceneLoaded</c>.
         /// </summary>
         private static string _unfold;
-        private static SaveGame _saveOnArrival;
+        private static (SaveGame Save, HashSet<string> EmotionOwners)? _saveOnArrival;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Listen()
@@ -238,15 +239,17 @@ namespace Sinbinder.Core
 
             // Уходящая сцена может доиграть кадр после LoadScene. Здесь
             // новая полка и устройство уже существуют, а старые ушли.
-            var restored = _saveOnArrival;
+            var arrival = _saveOnArrival;
             _saveOnArrival = null;
-            if (restored != null)
+            if (arrival.HasValue)
             {
+                var restored = arrival.Value.Save;
                 // Awake has reset the new map; restore before the arrival dialogue,
                 // salary prompt and prologue director start in the loaded scene.
                 if (scene.name == CryptMap.SceneName && restored.OpensCryptSandbox)
                     CryptMap.Open();
                 RestoreSouls(restored, scene);
+                RestoreEmotions(restored, arrival.Value.EmotionOwners);
             }
 
             // Начало доли — её отметка: сюда вернёт «С начала доли».
@@ -348,6 +351,7 @@ namespace Sinbinder.Core
                 return false;
             }
 
+            var previousEmotionOwners = changeScene ? EmotionOwners() : null;
             if (!Restore(save, keepScene: !changeScene)) return false;
 
             // Сравниваем доли, а не сцены. Посреди разгрома открыт лагерь,
@@ -359,7 +363,7 @@ namespace Sinbinder.Core
             // Доля «набег» своей сцены не имеет: её открывает лагерь,
             // а разгром разворачивается в нём по приходу (Arrived).
             Arriving = true;
-            _saveOnArrival = save;
+            _saveOnArrival = (save, previousEmotionOwners);
             _unfold = scene != save.Scene ? save.Scene : null;
             GamePauseController.Instance?.Resume();
             UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
@@ -435,6 +439,8 @@ namespace Sinbinder.Core
             }
 
             Gameplay.CardTable.BeforeSaveOrLoad();
+            var previousEmotionOwners = keepScene ? EmotionOwners() : null;
+            var emotionOwnerIds = keepScene ? new Dictionary<string, string>() : null;
 
             // В той же доле тела остаются на месте, включая ещё не
             // вернувшихся с вылазки. Снаряжение сверяем по владельцам.
@@ -511,7 +517,16 @@ namespace Sinbinder.Core
             }
 
             SquadRoster.Set(members);
-            if (keepScene) RestoreWarriorsInScene(liveWarriors, mappedBodies, itemIds, restoreCryptCondition);
+            if (keepScene)
+            {
+                RestoreWarriorsInScene(liveWarriors, mappedBodies, itemIds, restoreCryptCondition);
+                for (int i = 0; i < save.Squad.Count; i++)
+                {
+                    string savedId = save.Squad[i].WarriorId;
+                    if (!string.IsNullOrEmpty(savedId))
+                        emotionOwnerIds.TryAdd(savedId, SquadRoster.Members[i].WarriorId);
+                }
+            }
             Gameplay.FallenBag.Restore(save.FallenBags, RaidEvent.HostOf(save.Scene));
             Gameplay.PersonalExpedition.RestoreProgress(save.PersonalExpeditions);
             Gameplay.Survivors.Restore(save.Survivors);
@@ -519,6 +534,7 @@ namespace Sinbinder.Core
             Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays);
             Gameplay.ExpeditionMemoryLedger.Restore(save.ExpeditionMemories);
             Sinbinder.AOS.MemoryProcessor.Restore(save.AosMemories);
+            if (keepScene) RestoreEmotions(save, previousEmotionOwners, emotionOwnerIds);
             // Смена сцены: прежний Греховод ещё здесь — здоровье ждёт нового (SinbinderPlayer.Update).
             HeroHealthOnArrival = save.HeroHealth;
             if (keepScene) ApplyHeroHealth();
@@ -534,6 +550,53 @@ namespace Sinbinder.Core
 
             if (keepScene) RestoreSouls(save, scene);
             return true;
+        }
+
+        private static HashSet<string> EmotionOwners()
+        {
+            var owners = new HashSet<string>();
+            foreach (var m in SquadRoster.Members)
+                if (!string.IsNullOrEmpty(m.WarriorId)) owners.Add(m.WarriorId);
+            foreach (var survivor in Survivors.All)
+                if (survivor != null && !string.IsNullOrEmpty(survivor.Id)) owners.Add(survivor.Id);
+            return owners;
+        }
+
+        private static void RestoreEmotions(SaveGame save, HashSet<string> previousOwners = null,
+            IReadOnlyDictionary<string, string> ownerIds = null)
+        {
+            var owners = EmotionOwners();
+            var replace = previousOwners ?? new HashSet<string>();
+            replace.UnionWith(owners);
+
+            var emotions = new List<Sinbinder.AOS.SavedEmotion>();
+            foreach (var saved in StoredEmotions(save))
+            {
+                var emotion = saved;
+                if (string.IsNullOrEmpty(emotion.Owner)) continue;
+                if (ownerIds != null && ownerIds.TryGetValue(emotion.Owner, out var liveId))
+                    emotion.Owner = liveId;
+                if (owners.Contains(emotion.Owner)) emotions.Add(emotion);
+            }
+            Sinbinder.AOS.EmotionSystem.Restore(emotions, replace);
+        }
+
+        private static IEnumerable<Sinbinder.AOS.SavedEmotion> StoredEmotions(SaveGame save)
+        {
+            if (save.AosEmotions?.Count > 0)
+            {
+                foreach (var emotion in save.AosEmotions) yield return emotion;
+                yield break;
+            }
+
+            foreach (var member in save.Squad)
+                if (member.Emotions != null)
+                    foreach (var saved in member.Emotions)
+                    {
+                        var emotion = saved;
+                        emotion.Owner = member.WarriorId;
+                        yield return emotion;
+                    }
         }
 
         /// <summary>

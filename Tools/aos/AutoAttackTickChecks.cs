@@ -82,8 +82,19 @@ namespace UnityEngine
     internal sealed class SerializeField : Attribute { }
     internal sealed class HeaderAttribute : Attribute { public HeaderAttribute(string text) { } }
     internal sealed class TooltipAttribute : Attribute { public TooltipAttribute(string text) { } }
+    internal enum RuntimeInitializeLoadType { SubsystemRegistration }
+    internal sealed class RuntimeInitializeOnLoadMethodAttribute : Attribute
+    {
+        public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType type) { }
+    }
     internal sealed class WaitForSeconds { public WaitForSeconds(float seconds) { } }
     internal static class Time { public static float time, deltaTime; }
+    internal static class Mathf
+    {
+        public static float Min(float a, float b) => Math.Min(a, b);
+        public static float Clamp01(float value) => Math.Clamp(value, 0f, 1f);
+    }
+    internal static class Debug { public static void Log(string message) { } }
     public sealed class GameObject { public string name = ""; }
 
     public class MonoBehaviour
@@ -91,9 +102,13 @@ namespace UnityEngine
         private readonly Dictionary<Type, object> _components = new();
         private IEnumerator _coroutine;
         public readonly GameObject gameObject = new();
+        public int RepeatCount { get; private set; }
 
         public void Attach<T>(T component) => _components[typeof(T)] = component;
         protected T GetComponent<T>() => _components.TryGetValue(typeof(T), out var value) ? (T)value : default;
+        protected void DontDestroyOnLoad(GameObject value) { }
+        protected void Destroy(GameObject value) { }
+        protected void InvokeRepeating(string method, float delay, float interval) => RepeatCount++;
 
         protected void StartCoroutine(IEnumerator coroutine)
         {
@@ -112,6 +127,9 @@ namespace UnityEngine
 
 namespace Sinbinder.Core
 {
+    internal enum Clarity { Trace }
+    internal static class Transparency { public static bool Shows(Clarity level) => false; }
+
     internal readonly struct Cost : IDisposable
     {
         public static Cost Of(string name) => default;
@@ -122,7 +140,12 @@ namespace Sinbinder.Core
 namespace Sinbinder.Gameplay
 {
     internal sealed class Damageable { public bool IsDead => false; }
-    internal sealed class Warrior { public uint CommandRevision { get; set; } = 1u; }
+    public sealed class Warrior
+    {
+        public uint CommandRevision { get; set; } = 1u;
+        public string Id { get; set; }
+        public string DisplayName => Id;
+    }
 }
 
 namespace Sinbinder.AOS

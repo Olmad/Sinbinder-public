@@ -146,6 +146,7 @@ namespace Sinbinder.Gameplay
             // Память AOS живёт в DontDestroyOnLoad, а номера воинов отряда постоянны:
             // без этого новая игра наследовала обиды и долги прошлой (проверка сохранений 23.11).
             AOS.MemoryProcessor.ForgetAll();
+            AOS.EmotionSystem.ForgetAll();
             Core.SaveSystem.HeroHealthOnArrival = 0f; // раны из прошлой записи новому Греховоду не достаются
             Crypt.CryptHands.Forget();
             Crypt.MissionBoard.Forget();

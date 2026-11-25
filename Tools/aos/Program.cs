@@ -126,6 +126,7 @@ internal static class Program
         Check(OrderIntegrity.MayExecuteDelayed(0u, 0u),
             "initial order identity remains usable");
         AutoAttackTickChecks.Run(Check);
+        EmotionSaveChecks.Run(Check, adviceRoot);
 
         Check(OrderIntegrity.ShouldPresentRefusal(false, 0u, 0u),
             "first refusal gets a visible pause");

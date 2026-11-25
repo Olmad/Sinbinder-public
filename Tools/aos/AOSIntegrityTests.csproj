@@ -10,11 +10,13 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="AutoAttackTickChecks.cs" />
+    <Compile Include="EmotionSaveChecks.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/OrderAdvice.cs" Link="OrderAdvice.cs" />
     <Compile Include="../../Assets/Scripts/Core/Loc.cs" Link="Loc.cs" />
     <!-- The production AOS source, not a reconstructed copy. -->
     <Compile Include="../../Assets/Scripts/AOS Engine/ActionType.cs" Link="ActionType.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/AutoAttackAOS.cs" Link="AutoAttackAOS.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/EmotionSystem.cs" Link="EmotionSystem.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/OrderIntegrity.cs" Link="OrderIntegrity.cs" />
   </ItemGroup>
 </Project>

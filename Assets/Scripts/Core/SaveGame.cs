@@ -47,6 +47,8 @@ namespace Sinbinder.Core
         public string Name;
         public string WarriorId;
         public bool JoinedAfterRaid;
+        // Читается из записей прежней ветки. Новые записи хранят эмоции в AosEmotions.
+        public List<Sinbinder.AOS.SavedEmotion> Emotions;
         public int Sin;
         public int Moral;
         public int Gender;
@@ -194,6 +196,7 @@ namespace Sinbinder.Core
         // Память AOS отряда и выживших стражей (MemoryProcessor): из неё считаются отношения.
         // До 23.11 не писалась. В старых сохранениях нет — никто ничего не помнит, как и было.
         public List<Sinbinder.AOS.SavedMemory> AosMemories = new List<Sinbinder.AOS.SavedMemory>();
+        public List<Sinbinder.AOS.SavedEmotion> AosEmotions = new List<Sinbinder.AOS.SavedEmotion>();
 
         // Здоровье Греховода. 0 — старая запись: цел (ExpeditionHealthRules.RestoreFraction).
         public float HeroHealth;
