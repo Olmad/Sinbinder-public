@@ -7,7 +7,8 @@
 
 | Дата | Что изменилось | Кадров | Где записано | Автор |
 |---|---|---|---|---|
-| 24 ноября | [Военный совет в лагере начинается с шара: карта, место, потом — кто поведёт](2026-11-24%201%20%D1%81%D0%BE%D0%B2%D0%B5%D1%82%20%D1%81%20%D1%88%D0%B0%D1%80%D0%BE%D0%BC/README.md) | 3 | UI/CommanderCouncilUI.cs · UI/ReliefMap.cs · 09-PROLOGUE.md | ждём |
+| 25 ноября | [Пять вертикальных Shorts 1080×1920 — видео со звуком и заставкой](2026-11-25%201%20Shorts/README.md) | 5 | Editor/TrailerShorts.cs · Tools/trailer/shorts.py · Gameplay/FogOfWar.cs | ждём |
+| 24 ноября | [Военный совет в лагере начинается с шара: карта, место, потом — кто поведёт](2026-11-24%201%20%D1%81%D0%BE%D0%B2%D0%B5%D1%82%20%D1%81%20%D1%88%D0%B0%D1%80%D0%BE%D0%BC/README.md) | 3 | UI/CommanderCouncilUI.cs · UI/ReliefMap.cs · 09-PROLOGUE.md · [`aabf8b3d`](https://github.com/Olmad/Sinbinder-public/commit/aabf8b3d) | ждём |
 | 23 ноября | [Обложка для страницы Steam — сцена SteamCover](2026-11-23%209%20%D0%BE%D0%B1%D0%BB%D0%BE%D0%B6%D0%BA%D0%B0%20Steam/README.md) | 3 | Editor/SteamCover.cs · Tools/steam/compose.py · 06-SELLING.md · [`9bdcf1c0`](https://github.com/Olmad/Sinbinder-public/commit/9bdcf1c0) | ждём |
 | 23 ноября | [Карта в шаре и кадр места в карточке экспедиции](2026-11-23%208%20%D0%BA%D0%B0%D1%80%D1%82%D0%B0%20%D0%B2%20%D1%88%D0%B0%D1%80%D0%B5/README.md) | 3 | 69-PLAN.md §7 · UI/ReliefMap.cs · Editor/LocationShots.cs · [`4edc30d5`](https://github.com/Olmad/Sinbinder-public/commit/4edc30d5) | ждём |
 | 23 ноября | [Шар: карта с точками и карточка места](2026-11-23%207%20%D0%BC%D0%B5%D0%BD%D1%8E%20%D1%8D%D0%BA%D1%81%D0%BF%D0%B5%D0%B4%D0%B8%D1%86%D0%B8%D0%B9/README.md) | 4 | 69-PLAN.md §7 · [`4297be03`](https://github.com/Olmad/Sinbinder-public/commit/4297be03) | ждём |

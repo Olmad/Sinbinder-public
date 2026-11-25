@@ -502,6 +502,10 @@ namespace Sinbinder.Gameplay
         /// ни вспышки над ним; и не выделить, и не навести подсказку:
         /// коллайдер спрятан вместе с ним. Выделенный — теряет выделение.
         /// </summary>
+        /// <summary>Только для съёмки роликов (Editor/TrailerShorts): врагов видно и в тумане.
+        /// Shorts 25.11: охотники в тумане были спрятаны — «схватка» снимала пустую землю.</summary>
+        public static bool Filming;
+
         private void HideEnemies(Warrior[] all)
         {
             foreach (var w in all)
@@ -514,7 +518,7 @@ namespace Sinbinder.Gameplay
                 // Павший остаётся таким, каким его видели в последний раз.
                 if (body.IsDead) continue;
 
-                bool show = SeenAt(w.transform.position);
+                bool show = Filming || SeenAt(w.transform.position);
 
                 // Новый враг и так показан: включать ему то, что кто-то мог
                 // выключить нарочно, незачем. Трогаем только смену.

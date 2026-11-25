@@ -76,6 +76,7 @@ namespace Sinbinder.Utilets
             if (!EditorApplication.isPlaying) { EndShorts("игра остановилась"); return; }
             if (_short != null)
             {
+                HideWorldLabels();
                 if (!_short.Finished) return;
                 _shortsDone += $"\n{_shortName}: {_short.Frames} кадров ({_short.Frames / (float)TrailerCam.Fps:F1} с)";
                 UnityEngine.Object.Destroy(_short.gameObject);
@@ -95,7 +96,10 @@ namespace Sinbinder.Utilets
             float settled = Time.realtimeSinceStartup - _shortsSince;
             if (!_shortsHour && settled >= 20f) { _shortsHour = true; var z = Zhdan(); if (z != null) BalalaikaHabit.SitNow(z); }
             if (settled < 25f) return;
-            if (TugMatch.Instance != null) FogOfWar.ShotClear(true);
+            // Туман — и в лагере (FogOfWar ставится на любую землю): неразведанная земля чёрная (полоса вверху
+            // кадра), охотники в нём спрятаны. В ролике видно всё.
+            FogOfWar.ShotClear(true);
+            FogOfWar.Filming = true;
 
             var next = _shorts.Dequeue();
             _shortName = next.Key;
@@ -107,6 +111,16 @@ namespace Sinbinder.Utilets
             Debug.Log($"[SHORTS] «{next.Key}»: планов {_short.Shots.Count}");
         }
 
+        /// <summary>Надписи в мире («Мешок» над павшим, FallenBag) — не для ролика; новые появляются в бою, гасим каждый тик.</summary>
+        private static void HideWorldLabels()
+        {
+            foreach (var t in UnityEngine.Object.FindObjectsByType<TextMesh>(FindObjectsSortMode.None))
+            {
+                var r = t.GetComponent<MeshRenderer>();
+                if (r != null && r.enabled) r.enabled = false;
+            }
+        }
+
         private static void EndShorts(string failure)
         {
             if (_short != null) UnityEngine.Object.Destroy(_short.gameObject);
@@ -114,6 +128,8 @@ namespace Sinbinder.Utilets
             _shorts = null;
             Time.captureFramerate = 0;
             EditorApplication.update -= FilmTick;
+            FogOfWar.Filming = false;
+            FogOfWar.ShotClear(false);
             ShortsReport = (failure != null ? "ОШИБКА: " + failure : "снято в " + ShortsFolder) + _shortsDone;
         }
 
@@ -255,10 +271,16 @@ namespace Sinbinder.Utilets
                 var r = bird != null ? bird : Raven();
                 if (r == null) return (TrailerCam.Orbit(fire, 300f, 8f, 4f), fire, Tall(40f));
                 if (!raided && t > 0.3f) { raided = true; Raid(); }
-                // Дубль 1: камера вровень с птицей — нижнюю половину высокого кадра закрыла палатка. Снизу: за птицей небо.
-                var cam = r.position + r.right * 1.9f - Vector3.up * 0.9f - r.forward * 0.4f;
+                // Дубль 1: вровень с птицей — полкадра закрыла палатка. Дубль 2: снизу — на взлёте камера ушла
+                // в полотно палатки (птица сидела на ней), дальше одно небо. Сверху-сзади: птица в верхней трети,
+                // под ней лагерь и огонь.
+                var flat = r.forward; flat.y = 0f;
+                if (flat.sqrMagnitude < 0.01f) flat = Vector3.forward;
+                flat.Normalize();
+                var side = Vector3.Cross(Vector3.up, flat);
+                var cam = r.position - flat * (3.2f - t * 0.6f) + side * 1.4f + Vector3.up * 1.3f;
                 Rim(r, cam);
-                return (cam, r.position + r.forward * 0.3f + Vector3.up * 0.35f, Tall(38f));
+                return (cam, r.position + flat * 2.5f - Vector3.up * 2.4f, Tall(44f));
             }, () =>
             {
                 var up = RavenFlight.LaunchAny();
@@ -292,10 +314,22 @@ namespace Sinbinder.Utilets
                 var c = Torch() + Vector3.up * 1.85f;
                 return (TrailerCam.Glide(c + new Vector3(2.6f, -0.4f, -2.2f), c + new Vector3(2.0f, -0.1f, -1.7f), t), c, Tall(30f));
             }, null);
+            // Дубль 4: «схватка» у Fight() — пустая земля, а свет боя стоял там же, вдали от Каргана (он бился
+            // в темноте). Схватка — это Карган и его ближний враг; свет — за ними.
+            Vector3 Brawl()
+            {
+                var k = Named("Карган");
+                if (k == null) return Fight();
+                var e = Nearest(Team.Enemy, k.transform.position);
+                var at = e != null && (e.transform.position - k.transform.position).sqrMagnitude < 64f
+                    ? (k.transform.position + e.transform.position) * 0.5f : k.transform.position;
+                if (_fightLight != null) _fightLight.transform.position = at + new Vector3(0.8f, 3.2f, -0.6f);
+                return at;
+            }
             add("схватка", 4f, t =>
             {
                 Engage();
-                var f = Fight();
+                var f = Brawl();
                 return (TrailerCam.Orbit(f, 30f + t * 45f, 3.4f, 1.3f) + TrailerCam.Breath(t * 4f, 0.05f), f + Vector3.up * 0.9f, Tall(36f));
             }, null);
             add("Карган в бою", 3.2f, t =>
@@ -314,11 +348,7 @@ namespace Sinbinder.Utilets
             }, null);
             // Дубль 1: середина схватки ушла в тёмное поле — удар пришёлся в пустую землю. Удар — в Каргана:
             // свои дерутся не дальше 12 м от огня (Engage), то есть на свету.
-            Vector3 Kargan()
-            {
-                var k = Named("Карган");
-                return k != null ? k.transform.position : Fight();
-            }
+            Vector3 Kargan() => Brawl();
             add("вверх перед ударом", 2.5f, t =>
             {
                 Engage();
@@ -404,6 +434,8 @@ namespace Sinbinder.Utilets
 
         // ---------------------------------------------------------------- 5. «Перетягивание» (22–47,2 с: охота и удар)
 
+        private static Light _izbaLamp;
+
         private static List<TrailerCam.Shot> TugShort()
         {
             var list = Shots(out var add);
@@ -415,7 +447,12 @@ namespace Sinbinder.Utilets
             Vector3 Crypt() => crypt != null ? crypt.position : vc;
             Warrior LordWarrior() => lord != null ? lord.GetComponent<Warrior>() : null;
 
-            add("над картой", 3f, t => (TrailerCam.Glide(vc + new Vector3(-14f, 44f, -34f), vc + new Vector3(-6f, 14f, -18f), t), vc, Tall(42f)), null);
+            // Дубль 3: начинался тёмным обзором карты — первая секунда Shorts решает, листать ли дальше.
+            // Теперь сразу соперник на троне, потом его отряд, деревня, изба, склеп. Обзор карты убран.
+            // Дубль 1: с 2,4 м соперник — во весь кадр без головы; склеп с 9 м — стена и ворота во весь кадр.
+            add("соперник", 3.6f, t => (Head(LordWarrior()) + (lord != null ? lord.forward : Vector3.forward) * (4.4f - t * 1.0f) - Vector3.up * 0.5f,
+                                        Head(LordWarrior()) + Vector3.up * 0.2f, Tall(32f)), null);
+            add("его отряд", 3.4f, t => (TrailerCam.Orbit(Lord(), 30f + t * 40f, 7f, 2.2f), Lord() + Vector3.up, Tall(40f)), null);
             add("деревня", 4f, t => (TrailerCam.Orbit(vc, 200f + t * 40f, 12f, 4f), vc + Vector3.up * 2f, Tall(40f)), null);
             add("изба изнутри", 3f, t =>
             {
@@ -424,15 +461,20 @@ namespace Sinbinder.Utilets
                 var roof = izba.transform.childCount > 1 ? izba.transform.GetChild(1) : null;
                 if (roof != null) foreach (var r in roof.GetComponentsInChildren<Renderer>()) r.enabled = false;
                 var c = izba.transform.position;
-                return (c + izba.transform.forward * (3.5f - t) + Vector3.up * (6.5f - t), c + Vector3.up * 0.5f, Tall(40f));
+                var from = c + izba.transform.forward * (3.5f - t) + Vector3.up * (6.5f - t);
+                // Дубль 3: изнутри — тёмно-синяя каша. Тёплый свет, будто лучина; ролик кончится — уйдёт со сценой.
+                if (_izbaLamp == null)
+                {
+                    _izbaLamp = new GameObject("свет избы").AddComponent<Light>();
+                    _izbaLamp.type = LightType.Point; _izbaLamp.color = new Color(1f, 0.72f, 0.45f);
+                    _izbaLamp.range = 7f; _izbaLamp.intensity = 2.4f; _izbaLamp.shadows = LightShadows.None;
+                }
+                _izbaLamp.transform.position = c + Vector3.up * 2.2f;
+                return (from, c + Vector3.up * 0.5f, Tall(40f));
             }, null);
-            // Дубль 1: с 2,4 м соперник — во весь кадр без головы; склеп с 9 м — стена и ворота во весь кадр.
-            add("соперник", 3f, t => (Head(LordWarrior()) + (lord != null ? lord.forward : Vector3.forward) * (4.2f - t * 0.8f) - Vector3.up * 0.5f,
-                                      Head(LordWarrior()) + Vector3.up * 0.2f, Tall(32f)), null);
-            add("его отряд", 3f, t => (TrailerCam.Orbit(Lord(), 30f + t * 40f, 7f, 2.2f), Lord() + Vector3.up, Tall(40f)), null);
             add("склеп", 3.2f, t => (TrailerCam.Orbit(Crypt(), 70f + t * 25f, 24f - t * 4f, 4f), Crypt() + Vector3.up * 3f, Tall(40f)), null);
-            add("вверх", 3f, t => (TrailerCam.Glide(TrailerCam.Orbit(Crypt(), 95f, 20f, 4f), Crypt() + new Vector3(0f, 22f, 14f), t), Crypt(), Tall(45f)), null);
-            add("склеп сверху", 3f, t => (Crypt() + new Vector3(0f, 30f - t * 5f, 5f), Crypt(), Tall(46f)), null);
+            add("вверх", 3.5f, t => (TrailerCam.Glide(TrailerCam.Orbit(Crypt(), 95f, 20f, 4f), Crypt() + new Vector3(0f, 22f, 14f), t), Crypt(), Tall(45f)), null);
+            add("склеп сверху", 3.5f, t => (Crypt() + new Vector3(0f, 30f - t * 5f, 5f), Crypt(), Tall(46f)), null);
             return list;
         }
     }
