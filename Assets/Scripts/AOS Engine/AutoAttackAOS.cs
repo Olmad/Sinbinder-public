@@ -44,6 +44,17 @@ namespace Sinbinder.AOS
             _lastDecisionTime = Time.time - (stamp % 1000) / 1000f * _decisionInterval;
         }
 
+        void OnDisable()
+        {
+            if (!_pausing) return;
+
+            // При отключении объекта корутина не завершит паузу сама.
+            // По возвращении воин должен заново оценить текущий приказ.
+            StopAllCoroutines();
+            _pausing = false;
+            _lastDecisionTime = Time.time - _decisionInterval;
+        }
+
         void Update()
         {
             // Павший не решает. Decide у мёртвого и так отвечает «ничего»,
@@ -52,7 +63,7 @@ namespace Sinbinder.AOS
             // реплика над трупом (автор: «мёртвые воины говорят»).
             if (_self != null && _self.IsDead) return;
 
-            if (_pausing) return;
+            if (_pausing || Time.deltaTime <= 0f) return;
             if (Time.time - _lastDecisionTime < _decisionInterval) return;
             _lastDecisionTime = Time.time;
 

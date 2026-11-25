@@ -125,6 +125,7 @@ internal static class Program
             "cancel or reset invalidates stale act");
         Check(OrderIntegrity.MayExecuteDelayed(0u, 0u),
             "initial order identity remains usable");
+        AutoAttackTickChecks.Run(Check);
 
         Check(OrderIntegrity.ShouldPresentRefusal(false, 0u, 0u),
             "first refusal gets a visible pause");
@@ -258,7 +259,8 @@ internal static class Program
         Contains(aosWrapper, "case ActionType.Idle:", "idle has an explicit execution path");
         Contains(aosWrapper, "GetComponent<UnitMover>()?.Stop();", "idle stops stale NavMesh path");
         Contains(aosWrapper, "ExecuteDefenseAtPost();", "Defend uses the no-pursuit executor");
-        Contains(aosWrapper, "distance <= aa.AttackRange", "defensive attack requires an actually reachable enemy");
+        Contains(aosWrapper, "distance <= aa.Reach && distance < closestDistance",
+            "defensive attack requires the nearest enemy within the warrior's weapon reach");
         // 382f8cf4 вынес условие в OrderIntegrity.MustCompelByWhisper(context.HasCommand, ...) — проверяем новую форму.
         Contains(aosWrapper, "LastWhisperCompelled = OrderIntegrity.MustCompelByWhisper(\n                context.HasCommand", "effective action is labelled as whisper-driven");
         Contains(aosWrapper, "decision.RefusedCommand = false;", "successful persuasion cannot generate fictitious refusal memory");

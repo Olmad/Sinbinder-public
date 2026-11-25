@@ -1093,7 +1093,7 @@ namespace Sinbinder.Crypt
 
             if(chosen.HasValue)
                 replay.Append(ExpeditionReplayKind.CommandDecision,Loc.Name(leader),
-                    JunctionCatalog.Told(chosen.Value));
+                    Loc.F("Решение командира: {0}",JunctionCatalog.Offer(chosen.Value)));
             if(outcome.EncounterTrace!=null && outcome.EncounterTrace.Frames!=null)
                 foreach(var frame in outcome.EncounterTrace.Frames)
                     if(frame!=null)
@@ -1103,21 +1103,26 @@ namespace Sinbinder.Crypt
                             frame.TargetKilled,frame.TargetHealthAfter,
                             frame.ActorId,frame.ActionCode);
 
-            if(!outcome.EncounterFought)
-                replay.Append(ExpeditionReplayKind.CommandDecision,Loc.Name(leader),
-                    chosen==AOS.MissionAction.TakeGoodsSparePeople
-                        ? Loc.T("Обоз разгрузили без боя и отпустили возчиков.")
-                        : Loc.T("Столкновения не было: командир разрешил проход."));
+            if (!outcome.EncounterFought && secured)
+            {
+                if (chosen == AOS.MissionAction.TakeGoodsSparePeople)
+                    replay.Append(ExpeditionReplayKind.CommandDecision, Loc.Name(leader),
+                        Loc.T("Обоз разгрузили без боя и отпустили возчиков."));
+                else if (chosen == AOS.MissionAction.LetThemPass)
+                    replay.Append(ExpeditionReplayKind.CommandDecision, Loc.Name(leader),
+                        Loc.T("Столкновения не было: командир разрешил проход."));
+            }
 
             if(survivors.Count>0 && secured)
             {
-                replay.Append(ExpeditionReplayKind.Loot,Loc.Name(leader),
-                    Loc.F("С павших противников взяли монет: {0}.",outcome.TakenCoins));
+                if (outcome.EncounterFought && outcome.TakenCoins > 0)
+                    replay.Append(ExpeditionReplayKind.Loot, Loc.Name(leader),
+                        Loc.F("С павших противников взяли монет: {0}.", outcome.TakenCoins));
                 foreach(var taken in shares)
                     replay.Append(ExpeditionReplayKind.Loot,Loc.Name(taken.Name),
                         Loc.F("Оставил себе {0} монет.",taken.Coins));
                 replay.Append(ExpeditionReplayKind.Loot,Loc.T("Отряд"),
-                    Loc.F("Общая добыча, вернувшаяся в казну: {0} монет.",coinsForLord));
+                    Loc.F("Доля добычи для кошеля Греховода: {0} монет.",coinsForLord));
             }
             else if(survivors.Count>0)
                 replay.Append(ExpeditionReplayKind.Loot,"",

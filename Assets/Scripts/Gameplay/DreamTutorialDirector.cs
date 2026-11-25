@@ -1740,6 +1740,12 @@ namespace Sinbinder.Gameplay
                 else Lesson.Unhint(this);
                 return;
             }
+            if (!quiet && RoleRecoveryHint() is { } recovery)
+            {
+                UI.TaskList.Step(recovery.words);
+                Lesson.Hint(this, recovery.key, recovery.words);
+                return;
+            }
             if (!quiet) UI.TaskList.Step(TaskTitle());
             if (!quiet && _stage == Stage.Command)
             {
@@ -1750,6 +1756,17 @@ namespace Sinbinder.Gameplay
             string key = quiet || string.IsNullOrEmpty(_line) ? null : KeyNow();
             if (key != null) Lesson.Hint(this, key, WithDeath(Loc.T(_line)));
             else Lesson.Unhint(this);
+        }
+
+        private (string key, string words)? RoleRecoveryHint()
+        {
+            if (_stage != Stage.WarriorMode && _stage != Stage.DrawWeapon && _stage != Stage.Practice) return null;
+
+            var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+            if (view == null) return null;
+            if (!view.FirstPersonNow) return ("Tab", Loc.T("Tab — посмотрите глазами Греховода."));
+            if (!view.WarriorModeNow) return ("V", Loc.T("V — переключитесь с Командира на Воина."));
+            return null;
         }
 
         private float _nudgeSent = -10f;

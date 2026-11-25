@@ -185,6 +185,14 @@ internal static class Program
               movementUI.Contains("!view.FirstPersonNow") &&
               !movementUI.Contains("if (_showing) return;"),
             "movement plate refreshes both key and words from the real camera mode");
+        string roleRecovery = dreamTrace.Split("private (string key, string words)? RoleRecoveryHint()", 2)[1]
+            .Split("private float _nudgeSent", 2)[0];
+        int tacticalRecovery = roleRecovery.IndexOf("if (!view.FirstPersonNow) return (\"Tab\"", StringComparison.Ordinal);
+        int roleSwitch = roleRecovery.IndexOf("if (!view.WarriorModeNow) return (\"V\"", StringComparison.Ordinal);
+        Check(tacticalRecovery >= 0 && roleSwitch > tacticalRecovery &&
+              dreamTrace.Contains("UI.TaskList.Step(recovery.words);") &&
+              dreamTrace.Contains("Lesson.Hint(this, recovery.key, recovery.words);"),
+            "both dream goals and lesson plates recover the actual camera role before weapon controls");
         int refreshBegin = lessonUI.IndexOf("public static void RefreshHint(", StringComparison.Ordinal);
         int refreshEnd = lessonUI.IndexOf("public static void Unhint(", StringComparison.Ordinal);
         string refreshHint = refreshBegin >= 0 && refreshEnd > refreshBegin

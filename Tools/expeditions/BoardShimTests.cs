@@ -221,6 +221,61 @@ static class BoardShimTests
             "a repelled convoy attack reports defeat without claiming captured cargo");
     }
 
+    static ExpeditionReplayData BuildConvoyReplay(MissionAction? chosen, bool fought, bool won,
+        bool hadSurvivor, int takenCoins, int coinsForLord)
+    {
+        var survivors = hadSurvivor ? new List<string> { "Старший" } : new List<string>();
+        var outcome = new SavedAutoExpedition
+        {
+            EncounterResolved = true, EncounterFought = fought, BattleWon = won,
+            Survivors = survivors, TakenCoins = takenCoins
+        };
+        var build = typeof(MissionBoard).GetMethod("BuildReplay",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
+            ?? throw new Exception("Missing production MissionBoard.BuildReplay");
+        return (ExpeditionReplayData)build.Invoke(null, new object[]
+        {
+            Find("Соляной обоз"), "Старший", new List<string> { "Старший" },
+            chosen, outcome, survivors, new List<ExpeditionLootShare>(), coinsForLord,
+            ExpeditionObjectiveRules.Secured(fought, won, survivors.Count)
+        });
+    }
+
+    static void ConvoyReplaySeparatesDecisionAndOutcome()
+    {
+        var won = BuildConvoyReplay(MissionAction.TakeEverything, true, true, true, 12, 9);
+        var repelled = BuildConvoyReplay(MissionAction.TakeEverything, true, false, true, 12, 0);
+        var lost = BuildConvoyReplay(MissionAction.TakeEverything, true, false, false, 0, 0);
+        foreach (var replay in new[] { won, repelled, lost })
+            Check(replay.Frames.Single(f => f.Kind == ExpeditionReplayKind.CommandDecision).Description ==
+                  "Решение командира: Возьмите всё.",
+                "the planned action remains the same when the squad wins, retreats or perishes");
+
+        Check(won.Frames.Any(f => f.Description == "С павших противников взяли монет: 12.") &&
+              won.Frames.Any(f => f.Description == "Доля добычи для кошеля Греховода: 9 монет."),
+            "victory shows observed battlefield coins and the share allocated to the purse");
+        Check(repelled.Frames.Any(f => f.Description.Contains("отступил без добычи")) &&
+              !repelled.Frames.Any(f => f.Description.Contains("кошеля Греховода")),
+            "a repelled squad does not report delivery, even if it took battlefield coins");
+        Check(lost.Frames.Any(f => f.Description.Contains("Отряд погиб")) &&
+              !lost.Frames.Any(f => f.Description.Contains("кошеля Греховода")),
+            "a lost squad cannot report an allocated reward");
+
+        var peaceful = BuildConvoyReplay(MissionAction.TakeGoodsSparePeople, false, false, true, 0, 15);
+        Check(peaceful.Frames.Any(f => f.Description.Contains("Обоз разгрузили без боя")) &&
+              peaceful.Frames.Any(f => f.Description == "Доля добычи для кошеля Греховода: 15 монет.") &&
+              !peaceful.Frames.Any(f => f.Description.Contains("павших противников")),
+            "peaceful seizure records real cargo and has no fictional fallen enemies");
+        var passed = BuildConvoyReplay(MissionAction.LetThemPass, false, false, true, 0, 0);
+        Check(passed.Frames.Any(f => f.Description.Contains("командир разрешил проход")) &&
+              passed.Frames.Any(f => f.Description == "Доля добычи для кошеля Греховода: 0 монет.") &&
+              !passed.Frames.Any(f => f.Description.Contains("павших противников")),
+            "peaceful passage shows zero coin allocation without fictional combat");
+        var unspecified = BuildConvoyReplay(null, false, false, true, 0, 0);
+        Check(!unspecified.Frames.Any(f => f.Kind == ExpeditionReplayKind.CommandDecision),
+            "no recorded choice cannot mean that the commander allowed passage");
+    }
+
     static void BlockedEncountersStayBlocked()
     {
         foreach (int phase in new[] { 0, 1 })
@@ -557,6 +612,7 @@ static class BoardShimTests
         DepartureHidesSelectedIdentities(mission);
         MissionRecordsRequireSecuredObjective(mission);
         ConvoyReportsDescribeTheOutcome();
+        ConvoyReplaySeparatesDecisionAndOutcome();
 
         Console.WriteLine("PASS: "+assertions+
             " real MissionBoard Unity API shim scenarios, JSON roundtrips and single payout");
