@@ -1835,7 +1835,7 @@ namespace Sinbinder.Gameplay
         private bool _crownLit, _swordLit;
         private float _sealsAskedAt = -1f, _sealOrderAt = -1f;
         private Warrior _sealOrderedWarrior;
-        private uint _sealOrderRevision;
+        private uint _sealOrderRevision, _sealRefusalSaid;
         private const float SealPatience = 45f, SealWait = 10f;
         private readonly List<Warrior> _fallen = new();
         private readonly List<Warrior> _raised = new();
@@ -1910,6 +1910,16 @@ namespace Sinbinder.Gameplay
             foreach (var r in _raised)
                 if (ordered == null && OrderedToSeal(r)) ordered = r;
 
+            // Душа отказала именно этому приказу — тогда это и правда её воля, и строка автора верна.
+            // До 25.11 строка звучала через 10 с без шага на печать — и про того, кто ещё шёл (бот прав).
+            if (_sealOrderedWarrior != null && _sealRefusalSaid != _sealOrderRevision
+                && RefusedSealOrder(_sealOrderedWarrior, _sealOrderRevision))
+            {
+                _sealRefusalSaid = _sealOrderRevision;
+                OfferRaise(_sealOrderedWarrior);
+                return;
+            }
+
             if (ordered == null)
             {
                 _sealOrderedWarrior = null;
@@ -1930,18 +1940,31 @@ namespace Sinbinder.Gameplay
             => EligibleSealWarrior(w) && w.HasCommand && w.Command.Kind == CommandKind.Move
                 && GroundDistance(w.Command.Point, DreamRoad.WarriorSealAt) < 2.5f;
 
-        /// <summary>Подсказка о доступной альтернативе, без догадки о причине задержки.</summary>
-        private void OfferRaise()
+        /// <summary>Решение души об этом самом приказе — отказ (шёпот не уговорил).</summary>
+        private static bool RefusedSealOrder(Warrior w, uint revision)
+        {
+            var mind = w != null ? w.GetComponent<AOS.AOSWarriorWrapper>() : null;
+            return mind != null && mind.LastContext != null && mind.LastContext.HasCommand
+                && mind.LastDecisionCommandRevision == revision
+                && mind.LastDecisionDetail.RefusedCommand && !Whisper.Persuaded(w);
+        }
+
+        /// <summary>Подсказка поднять другого. Причину называет, только если душа правда отказала.</summary>
+        private void OfferRaise(Warrior refused = null)
         {
             _raiseOffered = true;
             if (_fallen.Count == 0) return;
             bool dead = !AnyRaisedAlive();
-            if (dead)
+            if (refused != null)
+                _line = Grammar.Pick(refused.Gender,
+                    Loc.N("Он не встаёт на печать — это его воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."),
+                    Loc.N("Она не встаёт на печать — это её воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."));
+            else if (dead)
                 _line = Loc.N("Ворота ждут двоих: печать с мечом — для воина. Вашего воина нет, но у печатей лежат павшие стражи. Подойдите к одному и нажмите E — поднимите его.");
             else
                 _line = Loc.N("Воина на печати с мечом всё нет. Его можно поставить приказом — или поднять павшего стража: подойдите и нажмите E.");
             Log(_line);
-            Mark("печати: подсказка поднять стража");
+            Mark(refused != null ? "печати: " + refused.DisplayName + " отказал(а) — поднять другого" : "печати: подсказка поднять стража");
         }
 
         /// <summary>

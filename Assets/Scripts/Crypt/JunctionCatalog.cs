@@ -81,9 +81,9 @@ namespace Sinbinder.Crypt
                 case MissionAction.TakeGoodsSparePeople:
                     return Loc.T("Отряд забрал товар без боя, возчиков отпустили.");
                 case MissionAction.TakeEverything:
-                    return Loc.T("Товар захвачен.");
+                    return Loc.T("Охрана разгромлена, товар захвачен. Души остались на месте: собирателя не было.");
                 case MissionAction.LetThemPass:
-                    return Loc.T("Обоз пропустили без боя.");
+                    return Loc.T("Обоз пропустили. Отряд вернулся ни с чем и молчал всю дорогу.");
                 case MissionAction.TakePeople:
                     return Loc.T("Командир предпочёл пленников товару. Доставка и учёт пленных пока не реализованы.");
                 default:

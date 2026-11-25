@@ -136,9 +136,10 @@ internal static class Program
         Check(dreamTrace.Contains("Time.unscaledTime - _sealOrderAt > SealWait") &&
               dreamTrace.Contains("|| Time.unscaledTime - _sealsAskedAt > SealPatience)) OfferRaise();") &&
               !dreamTrace.Contains("OfferRaise(ordered)") &&
-              !dreamTrace.Contains("не встаёт на печать — это его воля") &&
-              !dreamTrace.Contains("не встаёт на печать — это её воля"),
-            "seal delay offers an alternative without inventing an AOS refusal");
+              dreamTrace.Contains("mind.LastDecisionCommandRevision == revision") &&
+              dreamTrace.Contains("mind.LastDecisionDetail.RefusedCommand && !Whisper.Persuaded(w)") &&
+              dreamTrace.Contains("RefusedSealOrder(_sealOrderedWarrior, _sealOrderRevision)"),
+            "seal delay offers an alternative; 'his will' only after the soul's real refusal of that order");
 
         // Canonical UI uses Lesson.Hint rather than the old scene Text panel.
         string movementUI = System.IO.File.ReadAllText("Assets/Scripts/UI/MovementHintUI.cs");
@@ -167,10 +168,10 @@ internal static class Program
             "camp invitation is scoped before view transitions and removed on return to first person");
         string commandHintUI = System.IO.File.ReadAllText("Assets/Scripts/UI/CommandHintUI.cs");
         string hintLang = System.IO.File.ReadAllText("Assets/Resources/Lang/en.txt");
-        Check(commandHintUI.Contains("ЛКМ по воину — выделить. ПКМ по земле — приказ двигаться.") &&
-              !commandHintUI.Contains("он пойдёт туда.") &&
-              hintLang.Contains("LMB on a warrior — select. RMB on the ground — order them to move."),
-            "command hint describes issuing an order without promising AOS obedience, RU and EN");
+        // 25.11: the authored hint stays until the author decides (bot rewrite «ЛКМ… приказ двигаться» listed for him).
+        Check(commandHintUI.Contains("Щёлкните по воину, затем правой кнопкой по земле — он пойдёт туда.") &&
+              hintLang.Contains("Click a warrior, then right-click the ground — he'll go there."),
+            "command hint exists in RU and EN");
 
         // AOS can legitimately be silent due to a broken scene or missing
         // component. Retest must try the real vote once then recover with a

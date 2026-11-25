@@ -3108,14 +3108,6 @@ msgid "Отряд забрал товар без боя, возчиков отп
 msgstr "The squad took the goods without a fight and let the drivers go."
 
 #: Crypt/JunctionCatalog.cs
-msgid "Товар захвачен."
-msgstr "The goods were seized."
-
-#: Crypt/JunctionCatalog.cs
-msgid "Обоз пропустили без боя."
-msgstr "The caravan passed without a fight."
-
-#: Crypt/JunctionCatalog.cs
 msgid "Охрана разгромлена, товар захвачен. Души остались на месте: собирателя не было."
 msgstr "The guards were routed and the goods seized. The souls were left behind: there was no gatherer."
 
@@ -13004,8 +12996,8 @@ msgid "Свой набор — соберите галочками ниже"
 msgstr "Custom set — tick what you want below"
 
 #: UI/CommandHintUI.cs
-msgid "ЛКМ по воину — выделить. ПКМ по земле — приказ двигаться."
-msgstr "LMB on a warrior — select. RMB on the ground — order them to move."
+msgid "Щёлкните по воину, затем правой кнопкой по земле — он пойдёт туда."
+msgstr "Click a warrior, then right-click the ground — he'll go there."
 
 #: UI/CommandPanel.cs
 msgid "Приказы — сначала выберите воинов"
