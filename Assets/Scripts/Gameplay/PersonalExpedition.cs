@@ -46,6 +46,7 @@ namespace Sinbinder.Gameplay
         /// <summary>Ушёл ли воин на эту вылазку (Греховод — тоже). Не ушёл — его на карте быть не может.</summary>
         public static bool Travels(Warrior w)
             => _active != null && w != null && _active._travellers.Exists(t => t.Warrior == w);
+        internal bool HasGuard(Warrior warrior) => warrior != null && _guards.Contains(warrior);
         public static string CurrentMapKey => _active != null && _active._plan != null
             ? _active._plan.Id : SceneManager.GetActiveScene().name;
 

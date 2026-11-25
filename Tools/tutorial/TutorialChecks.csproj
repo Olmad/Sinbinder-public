@@ -9,8 +9,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="CombatIntegrationChecks.cs" />
+    <Compile Include="CombatIntegrationShim.cs" />
     <!-- Compile the exact same production file that the Unity dream uses. -->
     <Compile Include="../../Assets/Scripts/Gameplay/DreamTutorialChecks.cs" Link="DreamTutorialChecks.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/CombatManager.cs" Link="CombatManager.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/CombatMath.cs" Link="CombatMath.cs" />
+    <Compile Include="../../Assets/Scripts/Gameplay/Damageable.cs" Link="Damageable.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/SoulCourtVerdict.cs" Link="SoulCourtVerdict.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/OrderIntegrity.cs" Link="OrderIntegrity.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/OrderAdvice.cs" Link="OrderAdvice.cs" />

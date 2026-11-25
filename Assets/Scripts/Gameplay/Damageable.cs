@@ -10,6 +10,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _hp = 30f;
 
         private Warrior _warrior;
+        private bool _deathReported;
 
         public float HP => _hp;
         public float MaxHP => _maxHP;
@@ -214,6 +215,13 @@ namespace Sinbinder.Gameplay
                 CombatManager.Instance.OnUnitKilled(this, killer);
         }
 
+        internal bool TryReportDeath()
+        {
+            if (!IsDead || _deathReported) return false;
+            _deathReported = true;
+            return true;
+        }
+
         /// <summary>Restore wounds without causing a new death/kill event.</summary>
         public void SetHealthFraction(float fraction)
         {
@@ -226,6 +234,7 @@ namespace Sinbinder.Gameplay
         {
             _maxHP = maxHP;
             _hp = maxHP;
+            _deathReported = false;
         }
     }
 }

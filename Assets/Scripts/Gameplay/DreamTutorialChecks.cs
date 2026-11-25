@@ -67,30 +67,92 @@ namespace Sinbinder.Gameplay
         }
     }
 
+    internal enum BattleOutcome { Victory, Defeat, Draw }
+
+    internal readonly struct BattleResult
+    {
+        public readonly BattleOutcome Outcome;
+        public readonly int EnemiesKilled;
+        public readonly int AlliesLost;
+        public readonly string[] FallenAllies;
+
+        public BattleResult(BattleOutcome outcome, int enemiesKilled, int alliesLost, string[] fallenAllies)
+        {
+            Outcome = outcome;
+            EnemiesKilled = enemiesKilled;
+            AlliesLost = alliesLost;
+            FallenAllies = fallenAllies;
+        }
+    }
+
+    /// <summary>Tracks losses independently of the live team lists.</summary>
+    internal sealed class BattleEndGate
+    {
+        private bool _active;
+        private bool _alliesEliminated;
+        private bool _enemiesEliminated;
+        private bool _heroFell;
+        private int _enemiesKilled;
+        private int _alliesLost;
+        private readonly HashSet<string> _fallenAllies = new();
+
+        public bool HasPendingEnd => _heroFell || _alliesEliminated || _enemiesEliminated;
+
+        public bool RosterChanged(bool alliesAlive, bool enemiesAlive)
+        {
+            if (alliesAlive) _alliesEliminated = false;
+            if (enemiesAlive) _enemiesEliminated = false;
+
+            // Roster changes can cancel an encounter. Only recorded deaths end it.
+            if (alliesAlive && enemiesAlive) _active = true;
+            else if ((!alliesAlive && !_alliesEliminated && !_heroFell) || (!enemiesAlive && !_enemiesEliminated)) Reset();
+            return _active;
+        }
+
+        public void RecordDeath(bool ally, bool sideAlive, string warriorId, bool heroFell)
+        {
+            if (!_active) return;
+            if (ally)
+            {
+                _alliesLost++;
+                _heroFell |= heroFell;
+                _alliesEliminated = !sideAlive;
+                if (!string.IsNullOrEmpty(warriorId)) _fallenAllies.Add(warriorId);
+            }
+            else
+            {
+                _enemiesKilled++;
+                _enemiesEliminated = !sideAlive;
+            }
+        }
+
+        public bool TryComplete(out BattleResult result)
+        {
+            result = default;
+            if (!_active || !HasPendingEnd) return false;
+
+            var outcome = _alliesEliminated && _enemiesEliminated ? BattleOutcome.Draw
+                : _alliesEliminated || _heroFell ? BattleOutcome.Defeat : BattleOutcome.Victory;
+            var fallen = new string[_fallenAllies.Count];
+            _fallenAllies.CopyTo(fallen);
+            result = new BattleResult(outcome, _enemiesKilled, _alliesLost, fallen);
+            Reset();
+            return true;
+        }
+
+        public void Reset()
+        {
+            _active = _alliesEliminated = _enemiesEliminated = _heroFell = false;
+            _enemiesKilled = _alliesLost = 0;
+            _fallenAllies.Clear();
+        }
+    }
+
     /// <summary>
     /// No reward for mere intent or approach. Called only after a concrete
     /// Bodyguard.Absorb interception; protects an incident from reward spam.
     /// Kept pure for deterministic CI execution without Unity.
     /// </summary>
-    /// <summary>
-    /// A battle can end only after at least one enemy was present, and only
-    /// once per enemy wave. Later allied deaths must not replay victory rewards.
-    /// Pure production rule, tested without Unity.
-    /// </summary>
-    public sealed class BattleEndGate
-    {
-        private bool _hadEnemies;
-
-        public void EnemyRegistered() => _hadEnemies = true;
-
-        public bool TryComplete(bool anyLivingEnemies)
-        {
-            if (!_hadEnemies || anyLivingEnemies) return false;
-            _hadEnemies = false;
-            return true;
-        }
-    }
-
     public sealed class RescueCreditGate
     {
         public const float CooldownSeconds = 15f;
