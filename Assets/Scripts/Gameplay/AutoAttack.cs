@@ -179,6 +179,7 @@ namespace Sinbinder.Gameplay
             Shots++;
 
             Sides(out var foes, out var ours);
+            foes = WithTarget(foes, target);
             Vector3 p = transform.position + Vector3.up * 1.4f;
             Vector3 vel = (Vector3.up * 3f + transform.forward).normalized * SkySpeed;   // почти отвесно вверх
             Vector3 side = transform.forward;
@@ -264,6 +265,7 @@ namespace Sinbinder.Gameplay
             // Свой на линии выстрела — навесом: дуга ~3 м проходит над головой и падает на врага
             // (автор, 25.11: «каков шанс попасть по союзнику, если он стоит перед лучником и бьётся?»).
             Sides(out var foes, out var ours);
+            foes = WithTarget(foes, target);
             if (LineHasMate(ours, from, aim)) T = Mathf.Max(T, LobTime);
             // Упреждение: туда, где цель будет, если не свернёт.
             if (target.TryGetComponent<UnityEngine.AI.NavMeshAgent>(out var legs) && legs.isOnNavMesh)
@@ -323,6 +325,10 @@ namespace Sinbinder.Gameplay
         /// врагом — стрела над его головой (≈2,4 м); вплотную к врагу (до ~0,7 м) — заденет: стрелять в свалку опасно.
         /// </summary>
         private const float LobTime = 1.0f;
+
+        /// <summary>Та, в кого стреляли, стрелу принять может всегда: у «ничьих» (стрелки форта, v303) список врагов бывает пуст. Список менеджера не трогаем — копия.</summary>
+        private static System.Collections.Generic.List<Damageable> WithTarget(System.Collections.Generic.List<Damageable> foes, Damageable target)
+            => target == null || foes.Contains(target) ? foes : new System.Collections.Generic.List<Damageable>(foes) { target };
 
         /// <summary>Стоит ли свой на прямой от лучника к цели (ближе 0,6 м к ней, между ними).</summary>
         private bool LineHasMate(System.Collections.Generic.List<Damageable> ours, Vector3 from, Vector3 aim)
