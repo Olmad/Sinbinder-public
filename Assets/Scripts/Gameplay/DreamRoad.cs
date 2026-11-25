@@ -600,6 +600,13 @@ namespace Sinbinder.Gameplay
                     Bar("Зубец венца", 0f, 0.12f, 0.14f, 0.85f);
                     Bar("Зубец венца", -0.42f, 0.0f, 0.13f, 0.62f, 14f);
                     Bar("Зубец венца", 0.42f, 0.0f, 0.13f, 0.62f, -14f);
+                    // Камни на концах зубцов — без них венец читался буквой «Ш» (кадр 25.11).
+                    Bar("Камень венца", 0f, 0.6f, 0.19f, 0.19f, 45f);
+                    foreach (float s in new[] { -1f, 1f })
+                    {
+                        float yaw = -14f * s * Mathf.Deg2Rad;
+                        Bar("Камень венца", s * 0.42f + Mathf.Sin(yaw) * 0.37f, Mathf.Cos(yaw) * 0.37f, 0.16f, 0.16f, 45f);
+                    }
                     break;
                 case SealKind.Wrath:
                     Bar("Клинок", 0f, 0.22f, 0.13f, 1.1f);

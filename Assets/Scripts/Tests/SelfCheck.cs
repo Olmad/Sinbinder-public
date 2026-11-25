@@ -2405,7 +2405,7 @@ namespace Sinbinder.Tests
             ("сцена", "AOS.AOSStats._actions AOS.AOSStats._voices AOS.RumourManager._rumours Core.LocationManager._offscreenTags " +
                       "Dev.InputHush.Holders Dev.InputHush.Was Gameplay.AltarVisualEnhancer.Decorated Gameplay.Bodyguard.Watched " +
                       "Gameplay.BuildSite.Live Gameplay.CampLife.Chosen Gameplay.CampLife._tents Gameplay.CampYard.Residents " +
-                      "Gameplay.CryptDoor.Live Gameplay.DreamTutorialDirector.FallenAt Gameplay.DreamTutorialDirector._timeline " +
+                      "Gameplay.CryptDoor.Live Gameplay.DreamRoad.SealAt Gameplay.DreamTutorialDirector.FallenAt Gameplay.DreamTutorialDirector._timeline " +
                       "Gameplay.EscapeZone._escapedNames Gameplay.Gift.Live Gameplay.Gramophone.Live Gameplay.HiddenRecord.Live " +
                       "Gameplay.Hostility.Foes Gameplay.Hostility.Friends Gameplay.Inspectable.Live Gameplay.IzbaThing.Live " +
                       "Gameplay.LogSeat.Live Gameplay.LordPurse.Live Gameplay.MapEvent.Live Gameplay.PrologueCampSpawner.Squad " +
