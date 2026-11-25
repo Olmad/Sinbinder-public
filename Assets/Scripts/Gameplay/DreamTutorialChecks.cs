@@ -42,6 +42,26 @@ namespace Sinbinder.Gameplay
             return heldSeconds >= SealHoldSeconds;
         }
 
+        // ── Пять печатей (№69 §17): что проверяет мир, а не что решит душа ──
+
+        /// <summary>«Выраженный Гнев» (§17): главный спектр — Гнев, на стороне порока, не слабее «тлеет»
+        /// (панель воина: ≥25 — «тлеет», ≥60 — «жжёт»). Кротость — Гнев со знаком минус — не подходит.</summary>
+        public const float WrathAtLeast = 25f;
+
+        public static bool FitsWrath(bool wrathDominant, float wrath)
+            => wrathDominant && wrath >= WrathAtLeast && !float.IsNaN(wrath);
+
+        /// <summary>Двое на печатях братьев: обе заняты, это разные души и у них общий знак родни.
+        /// Одинаковое прозвище, перк или ремесло — не родство.</summary>
+        public static bool KinPair(string kinA, string idA, string kinB, string idB)
+            => !string.IsNullOrEmpty(kinA) && kinA == kinB
+               && !string.IsNullOrEmpty(idA) && !string.IsNullOrEmpty(idB) && idA != idB;
+
+        /// <summary>Печать брата: горит — пара на месте; вполсилы — брат на своей, второго нет
+        /// или на второй не тот; тёмная — на ней никого или не брат. 0 — тёмная, 1 — ждёт, 2 — горит.</summary>
+        public static int KinSeal(bool occupied, bool hasKin, bool pairStands)
+            => pairStands ? 2 : occupied && hasKin ? 1 : 0;
+
         /// <summary>Physical interaction requires an effective, current order decision.</summary>
         public static bool MayOperateLever(bool alreadyServed, bool currentOrderDecision,
             bool refused, bool hesitated, bool obeyed)

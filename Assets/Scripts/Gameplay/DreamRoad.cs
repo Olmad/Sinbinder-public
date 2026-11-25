@@ -34,8 +34,22 @@ namespace Sinbinder.Gameplay
         public static readonly Vector3 AltarAt = new Vector3(-6.8f, 0f, 38f);
         public static readonly Vector3 ArchZ = new Vector3(0f, 0f, 46f);
         public static readonly Vector3 FallenColumnAt = new Vector3(6.8f, 0f, 42f);
-        public static readonly Vector3 WarriorSealAt = new Vector3(-1.9f, 0f, 53.4f);
-        public static readonly Vector3 LordSealAt = new Vector3(1.9f, 0f, 53.4f);
+        /// <summary>
+        /// Пять печатей у ворот (автор 24.11, №69 §17): венец — сам Греховод; меч — гневный;
+        /// две сцепленные — два брата; крест — служивший Ордену. Ворота — когда горят все пять.
+        /// Знаки — рабочие (PUZZLES-AND-BOSSES §5: «венец/власть; меч/ярость; два соединённых
+        /// символа братства; знак Ордена»), не утверждены.
+        /// </summary>
+        public enum SealKind { Lord, Wrath, BrotherLeft, BrotherRight, Order }
+        public static readonly Vector3 LordSealAt = new Vector3(0f, 0f, 53.4f);
+        public static readonly Vector3[] SealAt =
+        {
+            LordSealAt,
+            new Vector3(-4.8f, 0f, 52.2f),   // меч
+            new Vector3(-1.6f, 0f, 49.4f),   // брат
+            new Vector3(1.6f, 0f, 49.4f),    // брат
+            new Vector3(4.8f, 0f, 52.2f),    // крест
+        };
         /// <summary>Форт: передняя стена с воротами, задняя с проломом, полуширина двора.</summary>
         public const float FortFront = 14f, FortBack = 24f, FortHalf = 13f;
         // Карта обучения (19.11, DreamRoadMap): чучело — на стоянке убийц у дороги, грудью к ней (на юг);
@@ -486,8 +500,11 @@ namespace Sinbinder.Gameplay
 
             // Печати перед воротами: резьба в камне — диск, кольцо и знак, свет едва тлеет.
             // Это замок ворот (сцена 10): встал на печать — её знак разгорается (LightSeal).
-            _warriorRune = Seal(root, WarriorSealAt, true, dark, dressed);
-            _lordRune = Seal(root, LordSealAt, false, dark, dressed);
+            for (int i = 0; i < SealAt.Length; i++) _runes[i] = Seal(root, SealAt[i], (SealKind)i, dark, dressed);
+            // Две печати братьев сцеплены желобом: читаются парой, горят вместе.
+            _kinRune = Glowing(new Color(0.22f, 0.40f, 0.56f), 0.7f);
+            Piece(root, PrimitiveType.Cube, "Желоб братьев", (SealAt[2] + SealAt[3]) * 0.5f + Vector3.up * 0.085f,
+                  new Vector3(Mathf.Abs(SealAt[3].x - SealAt[2].x) - 2.0f, 0.012f, 0.16f), _kinRune, false);
 
             // Четыре холодных фонаря по углам площади.
             var iron = Lit(new Color(0.12f, 0.11f, 0.11f), 0.4f);
@@ -500,34 +517,62 @@ namespace Sinbinder.Gameplay
 
         private static readonly Color RuneDim = new Color(0.22f, 0.40f, 0.56f) * 0.7f;
         private static readonly Color RuneLit = new Color(0.62f, 0.90f, 1f) * 1.6f;
-        private Material _warriorRune, _lordRune;
+        // Брат на своей печати, второго нет: знак вполсилы — один ждёт другого (§5: «парные печати
+        // показывают именно совместное условие»). Чужой на печати её не зажигает — и только.
+        private static readonly Color RuneWaiting = Color.Lerp(new Color(0.22f, 0.40f, 0.56f) * 0.7f, new Color(0.62f, 0.90f, 1f) * 1.6f, 0.4f);
+        private readonly Material[] _runes = new Material[5];
+        private Material _kinRune;
 
-        /// <summary>Знак печати разгорается, пока на ней стоят (DreamTutorialDirector.Seals).</summary>
-        public void LightSeal(bool warrior, bool on)
+        public enum SealGlow { Dim, Waiting, Lit }
+
+        /// <summary>Знак печати: тлеет; вполсилы — брат ждёт брата; горит, пока на ней стоит тот, кого она ждёт.</summary>
+        public void LightSeal(SealKind kind, SealGlow glow)
         {
-            var rune = warrior ? _warriorRune : _lordRune;
-            if (rune != null) rune.color = on ? RuneLit : RuneDim;
+            var rune = _runes[(int)kind];
+            if (rune != null) rune.color = glow == SealGlow.Lit ? RuneLit : glow == SealGlow.Waiting ? RuneWaiting : RuneDim;
         }
 
-        /// <summary>Печать в полу: каменный диск, кольцо, знак воина (меч) или владыки (венец). Возвращает знак.</summary>
-        private static Material Seal(Transform parent, Vector3 at, bool warrior, Material dark, Material dressed)
+        /// <summary>Желоб между печатями братьев горит, когда на них стоит пара.</summary>
+        public void LightKin(bool on)
         {
-            var root = new GameObject(warrior ? "Печать воина" : "Печать владыки").transform;
+            if (_kinRune != null) _kinRune.color = on ? RuneLit : RuneDim;
+        }
+
+        /// <summary>Печать в полу: каменный диск, кольцо и знак — венец, меч, двое или крест. Возвращает знак.</summary>
+        private static Material Seal(Transform parent, Vector3 at, SealKind kind, Material dark, Material dressed)
+        {
+            var root = new GameObject("Печать — " + kind).transform;
             root.SetParent(parent, false);
             Piece(root, PrimitiveType.Cylinder, "Диск", at + Vector3.up * 0.03f, new Vector3(2.6f, 0.03f, 2.6f), dressed, false);
             Piece(root, PrimitiveType.Cylinder, "Кольцо", at + Vector3.up * 0.065f, new Vector3(2.2f, 0.012f, 2.2f), dark, false);
             Piece(root, PrimitiveType.Cylinder, "Поле", at + Vector3.up * 0.07f, new Vector3(1.9f, 0.012f, 1.9f), dressed, false);
             var rune = Glowing(new Color(0.22f, 0.40f, 0.56f), 0.7f);
-            if (warrior)
+            void Bar(string name, float x, float z, float w, float l, float yaw = 0f)
+                => Piece(root, PrimitiveType.Cube, name, at + new Vector3(x, 0.085f, z), new Vector3(w, 0.012f, l), rune, false)
+                    .transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            switch (kind)
             {
-                Piece(root, PrimitiveType.Cube, "Клинок", at + new Vector3(0f, 0.085f, 0.1f), new Vector3(0.14f, 0.012f, 1.3f), rune, false);
-                Piece(root, PrimitiveType.Cube, "Гарда", at + new Vector3(0f, 0.085f, -0.35f), new Vector3(0.7f, 0.012f, 0.12f), rune, false);
-            }
-            else
-            {
-                Piece(root, PrimitiveType.Cube, "Обод венца", at + new Vector3(0f, 0.085f, -0.3f), new Vector3(1.2f, 0.012f, 0.14f), rune, false);
-                foreach (float x in new[] { -0.45f, 0f, 0.45f })
-                    Piece(root, PrimitiveType.Cube, "Зубец венца", at + new Vector3(x, 0.085f, 0.1f), new Vector3(0.14f, 0.012f, 0.7f), rune, false);
+                case SealKind.Lord:
+                    Bar("Обод венца", 0f, -0.3f, 1.2f, 0.14f);
+                    foreach (float x in new[] { -0.45f, 0f, 0.45f }) Bar("Зубец венца", x, 0.1f, 0.14f, 0.7f);
+                    break;
+                case SealKind.Wrath:
+                    // Меч — прежний знак воина, теперь ярости.
+                    Bar("Клинок", 0f, 0.1f, 0.14f, 1.3f);
+                    Bar("Гарда", 0f, -0.35f, 0.7f, 0.12f);
+                    break;
+                case SealKind.BrotherLeft:
+                case SealKind.BrotherRight:
+                    // Двое за руки: два стана и сцепка между ними.
+                    Bar("Стан", -0.28f, 0f, 0.14f, 1.0f);
+                    Bar("Стан", 0.28f, 0f, 0.14f, 1.0f);
+                    Bar("Сцепка", 0f, 0.05f, 0.56f, 0.12f);
+                    break;
+                case SealKind.Order:
+                    // Крест Ордена — как на груди у охотников.
+                    Bar("Крест", 0f, 0f, 0.14f, 1.3f);
+                    Bar("Перекладина", 0f, 0.22f, 0.8f, 0.14f);
+                    break;
             }
             return rune;
         }

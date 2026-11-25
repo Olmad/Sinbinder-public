@@ -493,12 +493,16 @@ namespace Sinbinder.EditorTools
                         ShotFrom("сон — площадь, глазами с входа", new Vector3(0.4f, 1.65f, DreamRoad.SquareFrom - 1f), new Vector3(0f, 2.5f, DreamRoad.GateZ));
                         ShotFrom("сон — алтарь лука", DreamRoad.AltarAt + new Vector3(2.8f, 1.9f, -2.6f), DreamRoad.AltarAt + Vector3.up * 0.9f);
                         ShotFrom("сон — арка противовеса", new Vector3(-3.5f, 2.0f, DreamRoad.ArchZ.z - 9f), new Vector3(0f, 4.0f, DreamRoad.ArchZ.z));
-                        ShotFrom("сон — две печати у ворот", new Vector3(0f, 3.2f, DreamRoad.WarriorSealAt.z - 5f), new Vector3(0f, 0.3f, DreamRoad.WarriorSealAt.z));
-                        // Печати — замок ворот (17.11): Греховод — на свою, поднятому — приказ на свою.
+                        ShotFrom("сон — пять печатей у ворот", new Vector3(0f, 7.5f, DreamRoad.LordSealAt.z - 10f), new Vector3(0f, 0.3f, DreamRoad.LordSealAt.z - 2.5f));
+                        // Печати — замок ворот (17.11; с 25.11 их пять, №69 §17): Греховод — на венец,
+                        // поднятому у дороги — приказ на меч с выключенным умом (проверка отказа),
+                        // потом стражи: каждого — на ту печать, что ему подходит (Fits), один — сперва на чужую.
+                        _sealPlan.Clear(); _wrongTry = null; _reordered = false;
+                        _wrongCheckAt = _sealsWaitAt = -1f;
                         Warp(dream.Hero, DreamRoad.LordSealAt);
                         if (dream.Zombie != null && !dream.Zombie.IsDead)
                         {
-                            Warp(dream.Zombie, DreamRoad.WarriorSealAt + new Vector3(0f, 0f, -4f));
+                            Warp(dream.Zombie, Seal(DreamRoad.SealKind.Wrath) + new Vector3(0f, 0f, -4f));
                             _sealOrderAt = now + 1.5f;
                         }
                         else _raiseAt = now + 1.5f;
@@ -513,7 +517,7 @@ namespace Sinbinder.EditorTools
                             // здесь проверяется другое — отказ, подсказка и подъём стража.
                             var mind = dream.Zombie.GetComponent<Sinbinder.AOS.AutoAttackAOS>();
                             if (mind != null) mind.enabled = false;
-                            dream.Zombie.IssueCommand(CommandKind.Move, DreamRoad.WarriorSealAt);
+                            dream.Zombie.IssueCommand(CommandKind.Move, Seal(DreamRoad.SealKind.Wrath));
                             Write("  [ПЕЧАТИ] приказ поднятому: на печать с мечом (ум выключен — проверка отказа)");
                             _sealCheckAt = now + 12f;
                         }
@@ -537,7 +541,12 @@ namespace Sinbinder.EditorTools
                         if (dream.Fallen.Count == 0) Debug.LogError("[ПЕЧАТИ] у печатей нет павших стражей — поднимать некого");
                         else
                         {
-                            var body = dream.Fallen[dream.Fallen.Count - 1];
+                            // Первым — тихий охотник Ордена (не гневный): он пойдёт на чужую печать.
+                            var body = dream.Fallen[0];
+                            if (_sealPlan.Count == 0)
+                                foreach (var f in dream.Fallen)
+                                    if (DreamTutorialDirector.Fits(DreamRoad.SealKind.Order, f) && !DreamTutorialDirector.Fits(DreamRoad.SealKind.Wrath, f)
+                                        && f.Soul.Sin == Sinbinder.Core.SinType.Envy) { body = f; break; }
                             Warp(dream.Hero, body.transform.position + new Vector3(0f, 0f, -1.4f));
                             ShotFrom("сон — павший страж у печатей", body.transform.position + new Vector3(3.2f, 3.4f, -4.2f), body.transform.position);
                             _raisePressAt = now + 0.6f;
@@ -556,19 +565,67 @@ namespace Sinbinder.EditorTools
                         if (risen == null) Debug.LogError("[ПЕЧАТИ] E у павшего стража — никто не поднялся");
                         else
                         {
-                            Write($"  [ПЕЧАТИ] поднят страж {risen.DisplayName}; плашка: {Lesson.Hinted}");
+                            var soul = risen.Soul;
+                            Write($"  [ПЕЧАТИ] поднят страж {risen.DisplayName} ({soul.Sin} {soul.Get(soul.Sin):0}, {soul.Trade}{(soul.Kin.Length > 0 ? ", брат" : "")}); строка: {Lesson.Hinted}");
+                            DreamRoad.SealKind? to = null;
+                            foreach (var k in new[] { DreamRoad.SealKind.Wrath, DreamRoad.SealKind.BrotherLeft, DreamRoad.SealKind.BrotherRight, DreamRoad.SealKind.Order })
+                                if (!_sealPlan.ContainsKey(k) && DreamTutorialDirector.Fits(k, risen)) { to = k; break; }
+                            if (!to.HasValue) Write($"  [ПЕЧАТИ] {risen.DisplayName} — лишний: подходящие печати уже заняты");
+                            else
+                            {
+                                _sealPlan[to.Value] = risen;
+                                // Перебор (§5): первый — на меч, хотя не гневный. Печать не должна зажечься.
+                                if (_wrongTry == null && to.Value != DreamRoad.SealKind.Wrath && !DreamTutorialDirector.Fits(DreamRoad.SealKind.Wrath, risen))
+                                {
+                                    _wrongTry = risen;
+                                    risen.IssueCommand(CommandKind.Move, Seal(DreamRoad.SealKind.Wrath));
+                                    _wrongCheckAt = now + 9f;
+                                    Write($"  [ПЕЧАТИ] перебор: {risen.DisplayName} — на меч, хотя не гневный");
+                                }
+                                else risen.IssueCommand(CommandKind.Move, Seal(to.Value));
+                            }
                             Warp(dream.Hero, DreamRoad.LordSealAt);
-                            risen.IssueCommand(CommandKind.Move, DreamRoad.WarriorSealAt);
-                            _sealCheckAt = now + 15f;
+                            // Пока идёт перебор — следующих не поднимаем: двое на одной печати путают проверку.
+                            if (dream.Fallen.Count > 0) { if (_wrongCheckAt < 0f) _raiseAt = now + 1f; }
+                            else _sealsWaitAt = now + 25f;
                         }
+                    }
+                    if (_wrongCheckAt > 0f && now > _wrongCheckAt)
+                    {
+                        _wrongCheckAt = -1f;
+                        bool stands = GroundDist(_wrongTry.transform.position, Seal(DreamRoad.SealKind.Wrath)) < 1.25f;
+                        bool lit = dream.SealLit(DreamRoad.SealKind.Wrath);
+                        Write($"  [ПЕЧАТИ] перебор: {_wrongTry.DisplayName} {(stands ? "стоит на мече" : "не дошёл до меча")}, меч {(lit ? "ГОРИТ" : "не горит")}; строка: {Lesson.Hinted}");
+                        if (stands && lit) Debug.LogError("[ПЕЧАТИ] меч зажёгся под негневным");
+                        foreach (var p in _sealPlan) if (p.Value == _wrongTry) _wrongTry.IssueCommand(CommandKind.Move, Seal(p.Key));
+                        if (dream.Fallen.Count > 0) _raiseAt = now + 1f; else _sealsWaitAt = now + 25f;
+                    }
+                    if (_sealsWaitAt > 0f && now > _sealsWaitAt && !dream.SealsOpen)
+                    {
+                        _sealsWaitAt = -1f;
+                        var state = new System.Text.StringBuilder();
+                        foreach (var k in new[] { DreamRoad.SealKind.Lord, DreamRoad.SealKind.Wrath, DreamRoad.SealKind.BrotherLeft, DreamRoad.SealKind.BrotherRight, DreamRoad.SealKind.Order })
+                        {
+                            _sealPlan.TryGetValue(k, out var w);
+                            string who = k == DreamRoad.SealKind.Lord ? "Греховод" : w != null ? w.DisplayName : "никого";
+                            string dist = w != null ? $" {GroundDist(w.transform.position, Seal(k)):0.0} м" : "";
+                            state.Append($"{k}: {who}{dist}, {(dream.SealLit(k) ? "горит" : "тёмная")}; ");
+                        }
+                        Write($"  [ПЕЧАТИ] за 25 с не открылись: {state}");
+                        if (_reordered) { End(false, "печати: пять не зажглись — " + state); return; }
+                        // Один повтор приказа (новая ревизия) — как сделал бы игрок; второго нет.
+                        _reordered = true;
+                        foreach (var p in _sealPlan)
+                            if (GroundDist(p.Value.transform.position, Seal(p.Key)) >= 1.25f) p.Value.IssueCommand(CommandKind.Move, Seal(p.Key));
+                        _sealsWaitAt = now + 20f;
                     }
                     if (_sealShotAt < 0f && dream.SealsOpen) _sealShotAt = now + 0.6f;
                     if (!_sealShot && _sealShotAt > 0f && now > _sealShotAt)
                     {
                         _sealShot = true;
-                        Write($"  [ПЕЧАТИ] {DreamTutorialDirector.SealsResult}; задача: {UI.TaskList.Current}; плашка: {Lesson.Hinted}");
-                        ShotFrom("сон — печати горят", new Vector3(3.6f, 5.2f, DreamRoad.WarriorSealAt.z - 6.5f),
-                                 new Vector3(0f, 0.3f, DreamRoad.WarriorSealAt.z + 0.4f));
+                        Write($"  [ПЕЧАТИ] {DreamTutorialDirector.SealsResult}; задача: {UI.TaskList.Current}; строка: {Lesson.Hinted}");
+                        ShotFrom("сон — пять печатей горят", new Vector3(4.2f, 6.2f, DreamRoad.LordSealAt.z - 9.5f),
+                                 new Vector3(0f, 0.3f, DreamRoad.LordSealAt.z - 2f));
                     }
                     if (poke && _sealShot && DreamRoad.CryptFade < 0f) dream.TestPress(KeyCode.F);
                     if (!_gateShot && DreamRoad.CryptFade > 0.15f) { _gateShot = true; Snap("сон — створки расходятся"); }
@@ -581,6 +638,14 @@ namespace Sinbinder.EditorTools
 
         private static bool _gateShot, _deathShot, _blackShot, _headShot, _sealShot;
         private static float _sealOrderAt = -1f, _sealShotAt = -1f, _sealCheckAt = -1f, _raiseAt = -1f, _raisePressAt = -1f, _raiseOrderAt = -1f;
+        private static float _wrongCheckAt = -1f, _sealsWaitAt = -1f;
+        private static readonly Dictionary<DreamRoad.SealKind, Warrior> _sealPlan = new Dictionary<DreamRoad.SealKind, Warrior>();
+        private static Warrior _wrongTry;
+        private static bool _reordered;
+
+        private static Vector3 Seal(DreamRoad.SealKind kind) => DreamRoad.SealAt[(int)kind];
+
+        private static float GroundDist(Vector3 a, Vector3 b) { a.y = 0f; b.y = 0f; return Vector3.Distance(a, b); }
         private static int _fpStep;
         private static float _fpAt;
 

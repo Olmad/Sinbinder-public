@@ -7436,32 +7436,12 @@ msgid "Идите к воротам склепа"
 msgstr "Go to the crypt gate"
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Меч горит. Встаньте на печать с венцом."
-msgstr "The sword seal is lit. Stand on the crown seal."
-
-#: Gameplay/DreamTutorialDirector.cs
 msgid "Поднимите павшего стража (E)"
 msgstr "Raise a fallen guard (E)"
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Венец горит. Прикажите воину встать на печать с мечом."
-msgstr "The crown seal is lit. Order a warrior onto the sword seal."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Встаньте на печать с венцом, поднятого — на печать с мечом"
-msgstr "Stand on the crowned seal, the raised one — on the sword seal"
-
-#: Gameplay/DreamTutorialDirector.cs
 msgid "Рядом павший страж. Нажмите E, чтобы поднять его."
 msgstr "A fallen guard is nearby. Press E to raise them."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Ворота ждут двоих. Встаньте на печать с венцом, а его поставьте на печать с мечом: выделите и ПКМ по печати."
-msgstr "The gate waits for two. Stand on the crowned seal and put him on the sword seal: select him and RMB on the seal."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Ворота ждут двоих. Встаньте на печать с венцом, а её поставьте на печать с мечом: выделите и ПКМ по печати."
-msgstr "The gate waits for two. Stand on the crowned seal and put her on the sword seal: select her and RMB on the seal."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Он не встаёт на печать — это его воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."
@@ -7472,32 +7452,72 @@ msgid "Она не встаёт на печать — это её воля, уг
 msgstr "She won't step onto the seal — that is her will, no need to persuade her. Fallen guards lie by the seals: go to one and press E — raise another."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Ворота ждут двоих: печать с мечом — для воина. Вашего воина нет, но у печатей лежат павшие стражи. Подойдите к одному и нажмите E — поднимите его."
-msgstr "The gate waits for two: the sword seal is for a warrior. Yours is gone, but fallen guards lie by the seals. Go to one and press E — raise him."
+msgid "Зажгите пять печатей: венец — ваша, четыре — для воинов"
+msgstr "Light the five seals: the crown is yours, four are for warriors"
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Воина на печати с мечом всё нет. Его можно поставить приказом — или поднять павшего стража: подойдите и нажмите E."
-msgstr "Still no warrior on the sword seal. Put one there with an order — or raise a fallen guard: go to him and press E."
+msgid "Горят печати: {0} из 5"
+msgstr "Seals lit: {0} of 5"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Печать с венцом — ваша: встаньте на неё."
+msgstr "The crowned seal is yours: stand on it."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Печать с мечом ждёт гневного. Выделите воина и ПКМ по печати."
+msgstr "The sword seal waits for a wrathful one. Select a warrior and RMB on the seal."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Печать с крестом ждёт того, кто служил Ордену."
+msgstr "The cross seal waits for one who served the Order."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Сцепленные печати ждут двоих братьев — каждого на свою."
+msgstr "The linked seals wait for two brothers — each on his own."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Ворота ждут пятерых: венец — ваша печать, четыре — для воинов. Подойдите к печати — узнаете, кого она ждёт. Павших стражей можно поднять: E у тела."
+msgstr "The gate waits for five: the crown is your seal, four are for warriors. Step up to a seal to learn whom it waits for. Fallen guards can be raised: E by the body."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Четыре печати ждут воинов, а ваших нет. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите его."
+msgstr "Four seals wait for warriors, and yours are gone. Fallen guards lie by the seals: go to one and press E — raise him."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Воинов на печатях всё нет. Их можно поставить приказом — или поднять павших стражей: подойдите и нажмите E."
+msgstr "Still no warriors on the seals. Put them there with an order — or raise the fallen guards: go to one and press E."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Страж поднят. Рядом лежит его брат — {0}. Поднимите и его."
+msgstr "The guard is raised. His brother lies nearby — {0}. Raise him too."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Страж поднят — брат {0}. Братьям — сцепленные печати."
+msgstr "The guard is raised — {0}'s brother. The linked seals are for brothers."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Страж поднят. Выделите его и ПКМ по печати."
+msgstr "The guard is raised. Select him and RMB on a seal."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Стража поднята. Выделите её и ПКМ по печати."
+msgstr "The guard is raised. Select her and RMB on a seal."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Горят все пять печатей. F — открыть ворота."
+msgstr "All five seals are lit. F — open the gate."
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "брат — {0}"
+msgstr "brother — {0}"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "сестра — {0}"
+msgstr "sister — {0}"
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Не удалось поднять тело."
 msgstr "The body could not be raised."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Страж поднят. Выделите его и ПКМ по печати с мечом."
-msgstr "The guard is raised. Select him and RMB on the sword seal."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Стража поднята. Выделите её и ПКМ по печати с мечом."
-msgstr "The guard is raised. Select her and RMB on the sword seal."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Печати горят: он встал на свою. F — открыть ворота."
-msgstr "The seals are lit: he stood on his. F — open the gate."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Печати горят: она встала на свою. F — открыть ворота."
-msgstr "The seals are lit: she stood on hers. F — open the gate."
 
 #: Gameplay/EscapeZone.cs
 msgid "{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время»."

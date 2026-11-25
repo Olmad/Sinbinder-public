@@ -410,12 +410,16 @@ namespace Sinbinder.UI
             // Примета — под именем: почему так зовут (28-ORDERS, 26.10; Gameplay/Signature).
             // Есть — тело уходит в строку здоровья; нет — как прежде.
             string named = Signature.Why(who);
-            Set(_craftLine, string.IsNullOrEmpty(named) ? ShellLine(who) : named, Muted);
+            // Родня — по знаку души (SoulData.Kin), не по прозвищу: братья у печатей сна (№69 §17.1).
+            string kin = KinLine(who);
+            string craft = string.IsNullOrEmpty(named) ? ShellLine(who) : named;
+            if (!string.IsNullOrEmpty(kin)) craft += " · " + kin;
+            Set(_craftLine, craft, Muted);
             // Примета длиннее строки ремесла (400 точек): в две строки, мельче —
             // в одну её обрезало посередине слова (кадр 26.10).
             if (_craftLine != null)
             {
-                bool longLine = !string.IsNullOrEmpty(named);
+                bool longLine = !string.IsNullOrEmpty(named) || !string.IsNullOrEmpty(kin);
                 _craftLine.horizontalOverflow = longLine ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
                 // Подбор размера у Unity не работает, пока текст может уйти за рамку по высоте:
                 // примета стояла кеглем 20 в две строки и вторая ложилась на «Гордыня тлеет…»
@@ -531,6 +535,31 @@ namespace Sinbinder.UI
                 Order(Loc.T("Отказался от приказа"), why, true);
             else
                 Order(Loc.T("Решает самостоятельно"), why, true);
+        }
+
+        private SoulData _kinOf;
+        private string _kinText;
+        private float _kinAt = -1f;
+
+        /// <summary>«брат — Ивар»: родная душа среди тех, кто в сцене (поднятые и лежащие). Раз в секунду.</summary>
+        private string KinLine(Warrior who)
+        {
+            var soul = who.Soul;
+            if (soul == null || soul.Kin.Length == 0) return null;
+            if (soul == _kinOf && Time.unscaledTime - _kinAt < 1f) return _kinText;
+            _kinOf = soul;
+            _kinAt = Time.unscaledTime;
+            _kinText = null;
+            Warrior best = null;
+            foreach (var w in FindObjectsByType<Warrior>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                // Тот же человек в другом теле (лежащее тело поднятого) — не брат себе.
+                if (w == who || !SoulData.Kindred(soul, w.Soul) || w.Soul.Name == soul.Name) continue;
+                if (best == null || (w.gameObject.activeInHierarchy && !best.gameObject.activeInHierarchy)) best = w;
+            }
+            if (best != null)
+                _kinText = Grammar.Pick(best.Gender, Loc.F("брат — {0}", Loc.Name(best.DisplayName)), Loc.F("сестра — {0}", Loc.Name(best.DisplayName)));
+            return _kinText;
         }
 
         /// <summary>Тело строчными: «зомби», «скелет».</summary>

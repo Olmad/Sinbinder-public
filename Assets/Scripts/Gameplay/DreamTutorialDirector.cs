@@ -1808,20 +1808,33 @@ namespace Sinbinder.Gameplay
                 return (approach, null, approach);
             }
 
-            if (_swordLit)
-            {
-                string crown = Loc.T("Меч горит. Встаньте на печать с венцом.");
-                return (crown, Loc.T("ПКМ"), crown);
-            }
+            int lit = 0;
+            foreach (var on in _sealLit) if (on) lit++;
+            string task = lit == 0
+                ? Loc.T("Зажгите пять печатей: венец — ваша, четыре — для воинов")
+                : Loc.F("Горят печати: {0} из 5", lit);
 
             if (_raiseOffered && !AnyRaisedAlive() && _fallen.Count > 0)
                 return (Loc.T("Поднимите павшего стража (E)"), "E", Loc.T(_line));
-
-            string task = _crownLit ? Loc.T("Венец горит. Прикажите воину встать на печать с мечом.")
-                : Loc.T("Встаньте на печать с венцом, поднятого — на печать с мечом");
             if (NearFallen(_hero.transform.position) != null)
                 return (task, "E", Loc.T("Рядом павший страж. Нажмите E, чтобы поднять его."));
-            return (task, Loc.T("ПКМ"), task);
+
+            // У тёмной печати — кого она ждёт (§5: «при подходе можно узнать требуемый тип, но не
+            // правильного воина»). Имён здесь нет нарочно: кто гневный и кто чей брат — узнаёт игрок.
+            var near = NearSeal(_hero.transform.position, 2.6f);
+            if (near.HasValue && !_sealLit[(int)near.Value]) return (task, Loc.T("ПКМ"), SealNeedLine(near.Value));
+            return (task, Loc.T("ПКМ"), Loc.T(_line));
+        }
+
+        private static string SealNeedLine(DreamRoad.SealKind kind)
+        {
+            switch (kind)
+            {
+                case DreamRoad.SealKind.Lord: return Loc.T("Печать с венцом — ваша: встаньте на неё.");
+                case DreamRoad.SealKind.Wrath: return Loc.T("Печать с мечом ждёт гневного. Выделите воина и ПКМ по печати.");
+                case DreamRoad.SealKind.Order: return Loc.T("Печать с крестом ждёт того, кто служил Ордену.");
+                default: return Loc.T("Сцепленные печати ждут двоих братьев — каждого на свою.");
+            }
         }
 
         // ── Две печати у ворот (план 66, сцена 10) ──
@@ -1831,8 +1844,15 @@ namespace Sinbinder.Gameplay
         // у печатей лежат павшие стражи, поднимите другого (автор: «поднимать других воинов —
         // какой-нибудь не откажется»). Души у стражей свои: один какой выпадет, у второго приказ
         // «встань на печать» ничего в душе не задевает — кто-нибудь да встанет.
+        //
+        // С 25.11 печатей пять (автор 24.11, №69 §17: «игроку, чтобы продолжить, НЕОБХОДИМО понимать
+        // свой отряд… ну или перебирать»): венец — Греховод; меч — гневный; две сцепленные — братья;
+        // крест — служивший Ордену. Ворота — когда все пять горят разом (короткое удержание).
+        // Стражей складывает генератор с ролями §17.1; встанет ли страж — решает его душа.
         private bool _sealsOpen, _sealsAsked, _escortedToSeals, _raiseOffered, _fallenSpawned;
-        private bool _crownLit, _swordLit;
+        private readonly bool[] _sealLit = new bool[5];
+        private readonly Warrior[] _sealOn = new Warrior[5];
+        private float _sealHeld;
         private float _sealsAskedAt = -1f, _sealOrderAt = -1f;
         private Warrior _sealOrderedWarrior;
         private uint _sealOrderRevision, _sealRefusalSaid;
@@ -1845,9 +1865,49 @@ namespace Sinbinder.Gameplay
         /// <summary>Последний поднятый у печатей — для прогона.</summary>
         public Warrior LastRaised => _raised.Count > 0 ? _raised[_raised.Count - 1] : null;
 
-        private static readonly Vector3[] FallenAt = { new Vector3(-5.2f, 0f, 50.2f), new Vector3(5.4f, 0f, 49.0f) };
+        /// <summary>
+        /// Где лежат стражи: гневный, два брата рядом, тихий охотник Ордена, охотник какой выпал.
+        /// Не на печатях и не в проходе арки (пилоны x = ±4,6 на z = 46).
+        /// </summary>
+        private static readonly Vector3[] FallenAt =
+        {
+            new Vector3(-8.0f, 0f, 47.6f),
+            new Vector3(-6.6f, 0f, 42.4f), new Vector3(-5.2f, 0f, 43.2f),
+            new Vector3(7.8f, 0f, 48.0f),
+            new Vector3(4.2f, 0f, 37.6f),
+        };
 
         private static bool OnSeal(Vector3 at, Vector3 seal) => GroundDistance(at, seal) < 1.25f;
+
+        private static DreamRoad.SealKind? NearSeal(Vector3 at, float reach)
+        {
+            DreamRoad.SealKind? best = null;
+            float bestD = reach;
+            for (int i = 0; i < DreamRoad.SealAt.Length; i++)
+            {
+                float d = GroundDistance(at, DreamRoad.SealAt[i]);
+                if (d < bestD) { bestD = d; best = (DreamRoad.SealKind)i; }
+            }
+            return best;
+        }
+
+        /// <summary>Подходит ли душа воина печати — условие мира, не решение души (§5, таблица).</summary>
+        public static bool Fits(DreamRoad.SealKind kind, Warrior w)
+        {
+            var soul = w != null ? w.Soul : null;
+            if (soul == null) return false;
+            switch (kind)
+            {
+                case DreamRoad.SealKind.Wrath: return DreamTutorialChecks.FitsWrath(soul.Sin == SinType.Wrath, soul.Get(SinType.Wrath));
+                case DreamRoad.SealKind.Order: return Trades.OfOrder(soul.Trade);
+                case DreamRoad.SealKind.BrotherLeft:
+                case DreamRoad.SealKind.BrotherRight: return soul.Kin.Length > 0;
+                default: return false;
+            }
+        }
+
+        /// <summary>Горит ли печать сейчас — для прогона.</summary>
+        public bool SealLit(DreamRoad.SealKind kind) => _sealLit[(int)kind];
 
         private static bool EligibleSealWarrior(Warrior w)
             => w != null && !w.IsDead && w.gameObject.activeInHierarchy && w.Team == Team.Player;
@@ -1876,32 +1936,50 @@ namespace Sinbinder.Gameplay
                 _sealsAsked = true;
                 _sealsAskedAt = Time.unscaledTime;
                 Mark("печати");
-                if (alone) OfferRaise();
-                else
-                {
-                    _line = Grammar.Pick(_zombie.Gender,
-                        Loc.N("Ворота ждут двоих. Встаньте на печать с венцом, а его поставьте на печать с мечом: выделите и ПКМ по печати."),
-                        Loc.N("Ворота ждут двоих. Встаньте на печать с венцом, а её поставьте на печать с мечом: выделите и ПКМ по печати."));
-                    Log(_line);
-                }
+                _line = Loc.N("Ворота ждут пятерых: венец — ваша печать, четыре — для воинов. Подойдите к печати — узнаете, кого она ждёт. Павших стражей можно поднять: E у тела.");
+                Log(_line);
             }
 
             // Поднять павшего можно в любой миг на площади: E у тела.
             var near = NearFallen(me);
             if (near != null && Pressed(KeyCode.E)) RaiseFallen(near);
 
-            // Кто на печати с мечом: поднятый у дороги или любой поднятый страж.
-            Warrior onSeal = null;
-            if (!alone && OnSeal(_zombie.transform.position, DreamRoad.WarriorSealAt)) onSeal = _zombie;
-            foreach (var r in _raised)
-                if (onSeal == null && EligibleSealWarrior(r) && OnSeal(r.transform.position, DreamRoad.WarriorSealAt)) onSeal = r;
-            _crownLit = OnSeal(me, DreamRoad.LordSealAt);
-            _swordLit = onSeal != null;
-            DreamRoad.Instance?.LightSeal(false, _crownLit);
-            DreamRoad.Instance?.LightSeal(true, _swordLit);
+            // Кто где стоит: поднятый у дороги или любой поднятый страж; один человек — одна печать.
+            for (int i = 0; i < _sealOn.Length; i++) _sealOn[i] = null;
+            void Place(Warrior w)
+            {
+                if (!EligibleSealWarrior(w)) return;
+                for (int i = 1; i < DreamRoad.SealAt.Length; i++)
+                    if (_sealOn[i] == null && OnSeal(w.transform.position, DreamRoad.SealAt[i])) { _sealOn[i] = w; return; }
+            }
+            Place(_zombie);
+            foreach (var r in _raised) Place(r);
 
-            if (_crownLit && _swordLit) { OpenSeals(onSeal); return; }
-            if (_swordLit) return;
+            var road = DreamRoad.Instance;
+            _sealLit[0] = OnSeal(me, DreamRoad.LordSealAt);
+            foreach (var kind in new[] { DreamRoad.SealKind.Wrath, DreamRoad.SealKind.Order })
+                _sealLit[(int)kind] = Fits(kind, _sealOn[(int)kind]);
+            var left = _sealOn[(int)DreamRoad.SealKind.BrotherLeft];
+            var right = _sealOn[(int)DreamRoad.SealKind.BrotherRight];
+            bool pair = left != null && right != null
+                && DreamTutorialChecks.KinPair(left.Soul?.Kin, left.Soul?.Id, right.Soul?.Kin, right.Soul?.Id);
+            int glowL = DreamTutorialChecks.KinSeal(left != null, Fits(DreamRoad.SealKind.BrotherLeft, left), pair);
+            int glowR = DreamTutorialChecks.KinSeal(right != null, Fits(DreamRoad.SealKind.BrotherRight, right), pair);
+            _sealLit[(int)DreamRoad.SealKind.BrotherLeft] = _sealLit[(int)DreamRoad.SealKind.BrotherRight] = pair;
+            if (road != null)
+            {
+                for (int i = 0; i < _sealLit.Length; i++)
+                {
+                    int glow = i == (int)DreamRoad.SealKind.BrotherLeft ? glowL : i == (int)DreamRoad.SealKind.BrotherRight ? glowR : _sealLit[i] ? 2 : 0;
+                    road.LightSeal((DreamRoad.SealKind)i, (DreamRoad.SealGlow)glow);
+                }
+                road.LightKin(pair);
+            }
+
+            // Все пять разом — и держатся миг (§5: «короткое одновременное удержание»).
+            bool warriors = true;
+            for (int i = 1; i < _sealLit.Length; i++) warriors &= _sealLit[i];
+            if (DreamTutorialChecks.AdvanceSeals(ref _sealHeld, true, warriors, _sealLit[0], Time.deltaTime)) { OpenSeals(); return; }
 
             // Waiting is not evidence of refusal: the warrior may still be walking,
             // blocked, hesitating, or awaiting a decision. Offer a neutral alternative.
@@ -1932,13 +2010,22 @@ namespace Sinbinder.Gameplay
                 _sealOrderAt = Time.unscaledTime;
             }
 
-            if (!_raiseOffered && ((_sealOrderAt >= 0f && Time.unscaledTime - _sealOrderAt > SealWait)
+            // Напоминание «воинов на печатях нет» — только пока и правда никто не стоит.
+            bool anyStands = false;
+            for (int i = 1; i < _sealOn.Length; i++) anyStands |= _sealOn[i] != null;
+            if (!anyStands && !_raiseOffered && ((_sealOrderAt >= 0f && Time.unscaledTime - _sealOrderAt > SealWait)
                 || Time.unscaledTime - _sealsAskedAt > SealPatience)) OfferRaise();
         }
 
+        /// <summary>Приказ «на воинскую печать», которую он ещё не занял. Дошёл — ждать больше нечего.</summary>
         private static bool OrderedToSeal(Warrior w)
-            => EligibleSealWarrior(w) && w.HasCommand && w.Command.Kind == CommandKind.Move
-                && GroundDistance(w.Command.Point, DreamRoad.WarriorSealAt) < 2.5f;
+        {
+            if (!(EligibleSealWarrior(w) && w.HasCommand && w.Command.Kind == CommandKind.Move)) return false;
+            for (int i = 1; i < DreamRoad.SealAt.Length; i++)
+                if (GroundDistance(w.Command.Point, DreamRoad.SealAt[i]) < 1.5f)
+                    return !OnSeal(w.transform.position, DreamRoad.SealAt[i]);
+            return false;
+        }
 
         /// <summary>Решение души об этом самом приказе — отказ (шёпот не уговорил).</summary>
         private static bool RefusedSealOrder(Warrior w, uint revision)
@@ -1960,9 +2047,9 @@ namespace Sinbinder.Gameplay
                     Loc.N("Он не встаёт на печать — это его воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."),
                     Loc.N("Она не встаёт на печать — это её воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."));
             else if (dead)
-                _line = Loc.N("Ворота ждут двоих: печать с мечом — для воина. Вашего воина нет, но у печатей лежат павшие стражи. Подойдите к одному и нажмите E — поднимите его.");
+                _line = Loc.N("Четыре печати ждут воинов, а ваших нет. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите его.");
             else
-                _line = Loc.N("Воина на печати с мечом всё нет. Его можно поставить приказом — или поднять павшего стража: подойдите и нажмите E.");
+                _line = Loc.N("Воинов на печатях всё нет. Их можно поставить приказом — или поднять павших стражей: подойдите и нажмите E.");
             Log(_line);
             Mark(refused != null ? "печати: " + refused.DisplayName + " отказал(а) — поднять другого" : "печати: подсказка поднять стража");
         }
@@ -1976,22 +2063,19 @@ namespace Sinbinder.Gameplay
             var names = new List<string>();
             foreach (var k in _killerSketches) names.Add(k.Name);
             if (_zombie != null) names.Add(_zombie.DisplayName);
-            for (int i = 0; i < FallenAt.Length; i++)
+            foreach (var soul in DreamGuards.Make(_tutorialSeed, names))
             {
-                var sketch = WarriorGenerator.Make(_tutorialSeed + 101 + i, SoulOrigin.Harvest, names);
-                names.Add(sketch.Name);
-                // Второй — тот, кого приказ «встань на печать» ничем не задевает: тихая зависть без
-                // соперника, благочестив. Первый — какой выпал: может и отказать.
-                var soul = i == 1
-                    ? new SoulData(sketch.Name, SinType.Envy, MoralType.Pious, 1, 15f)
-                    : new SoulData(sketch.Name, sketch.Sin, sketch.Moral, 1, Mathf.Max(30f, Mathf.Abs(sketch.Strength)));
-                soul.SetTrade(sketch.Trade);
+                int i = _fallen.Count;
                 var body = CreateLiving(soul, FallenAt[i], Team.Neutral);
                 if (body == null) continue;
                 foreach (var talk in body.GetComponents<Dialogue.DialogueTrigger>()) talk.enabled = false;
                 _fallen.Add(body);
                 StartCoroutine(LieDown(body));
             }
+            var log = new System.Text.StringBuilder("[СОН] Стражи у печатей:");
+            foreach (var f in _fallen)
+                log.Append($" {f.DisplayName} ({f.Soul.Sin} {f.Soul.Get(f.Soul.Sin):0}, {f.Soul.Trade}{(f.Soul.Kin.Length > 0 ? ", родня " + f.Soul.Kin : "")});");
+            Debug.Log(log.ToString());
         }
 
         private static IEnumerator LieDown(Warrior body)
@@ -2027,25 +2111,41 @@ namespace Sinbinder.Gameplay
             _fallen.Remove(body);
             _raised.Add(risen);
             Mark("печати: поднят страж " + risen.DisplayName);
-            Debug.Log("[СОН] Поднят страж у печатей: " + risen.DisplayName);
-            _line = Grammar.Pick(risen.Gender,
-                Loc.N("Страж поднят. Выделите его и ПКМ по печати с мечом."),
-                Loc.N("Стража поднята. Выделите её и ПКМ по печати с мечом."));
+            Debug.Log($"[СОН] Поднят страж у печатей: {risen.DisplayName} ({risen.Soul?.Sin} {risen.Soul?.Get(risen.Soul.Sin):0}, {risen.Soul?.Trade})");
+            // Брат — по душе, не по имени (§17.1): кто ему родня, говорит знак родни. Слова — черновик.
+            Warrior kin = null;
+            foreach (var f in _fallen) if (SoulData.Kindred(risen.Soul, f.Soul)) kin = f;
+            foreach (var r in _raised) if (r != risen && SoulData.Kindred(risen.Soul, r.Soul)) kin = r;
+            if (kin != null && _fallen.Contains(kin))
+                _line = Loc.F("Страж поднят. Рядом лежит его брат — {0}. Поднимите и его.", Loc.Name(kin.DisplayName));
+            else if (kin != null)
+                _line = Loc.F("Страж поднят — брат {0}. Братьям — сцепленные печати.", Loc.Name(kin.DisplayName));
+            else
+                _line = Grammar.Pick(risen.Gender,
+                    Loc.N("Страж поднят. Выделите его и ПКМ по печати."),
+                    Loc.N("Стража поднята. Выделите её и ПКМ по печати."));
             Log(_line);
         }
 
-        private void OpenSeals(Warrior who)
+        private void OpenSeals()
         {
             _sealsOpen = true;
-            SealsResult = who == _zombie ? "встал поднятый у дороги — " + who.DisplayName : "встал поднятый страж — " + who.DisplayName;
+            string Who(DreamRoad.SealKind k)
+            {
+                var w = _sealOn[(int)k];
+                return w == null ? "—" : (w == _zombie ? "поднятый у дороги " : "") + w.DisplayName;
+            }
+            SealsResult = $"меч — {Who(DreamRoad.SealKind.Wrath)}; братья — {Who(DreamRoad.SealKind.BrotherLeft)} и {Who(DreamRoad.SealKind.BrotherRight)}; крест — {Who(DreamRoad.SealKind.Order)}";
             Mark("печати открыты: " + SealsResult);
             Debug.Log("[СОН] Печати: " + SealsResult);
-            _line = Grammar.Pick(who.Gender,
-                Loc.N("Печати горят: он встал на свою. F — открыть ворота."),
-                Loc.N("Печати горят: она встала на свою. F — открыть ворота."));
+            _line = Loc.N("Горят все пять печатей. F — открыть ворота.");
             Log(_line);
-            DreamRoad.Instance?.LightSeal(false, true);
-            DreamRoad.Instance?.LightSeal(true, true);
+            var road = DreamRoad.Instance;
+            if (road != null)
+            {
+                for (int i = 0; i < _sealLit.Length; i++) road.LightSeal((DreamRoad.SealKind)i, DreamRoad.SealGlow.Lit);
+                road.LightKin(true);
+            }
         }
     }
 }

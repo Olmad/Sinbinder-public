@@ -81,6 +81,21 @@ namespace Sinbinder.Core
         public string EarnedTitle => _earnedTitle ?? "";
 
         public void Remember(string title) => _earnedTitle = title ?? "";
+
+        [SerializeField] private string _kin = "";
+
+        /// <summary>
+        /// Родня: общий знак у душ, родных при жизни (братья у пяти печатей сна, №69 §17.1 —
+        /// «вот эти ребяты должны быть братья»). Одинаковое прозвище или перк родства не делают —
+        /// только этот знак. Пусто — родни среди собранных нет.
+        /// </summary>
+        public string Kin => _kin ?? "";
+
+        public void SetKin(string kin) => _kin = kin ?? "";
+
+        /// <summary>Родные ли две разные души.</summary>
+        public static bool Kindred(SoulData a, SoulData b)
+            => a != null && b != null && !ReferenceEquals(a, b) && a.Kin.Length > 0 && a.Kin == b.Kin;
         public int Level => _level;
         public MemorySeed Memory => _memory;
         public bool HasMemory => _memory != null && !string.IsNullOrEmpty(_memory.Story);
@@ -243,6 +258,7 @@ namespace Sinbinder.Core
             // здесь не жатва, терять нечему.
             _trade = other._trade;
             _earnedTitle = other._earnedTitle;
+            _kin = other._kin;   // родня — та же личность; без строки брат после жатвы становился чужим
 
             _spectra = other.CopySpectra();
             _sinType = (int)other.Sin;

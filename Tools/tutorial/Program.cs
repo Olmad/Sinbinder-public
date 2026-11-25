@@ -120,13 +120,49 @@ internal static class Program
               !roadMap.Contains("_leverSeen") && !roadMap.Contains("Whisper.Persuaded(w)"),
             "physical lever uses command revision and actual effective AOS result");
 
-        // Existing two-seal lesson must be safe before adding the five-seal
-        // variant and defections. These are source-linked integration guards.
+        // Five seals (plan 69 §17, 25.11): only living active allies occupy seals,
+        // one person holds one seal. These are source-linked integration guards.
         Check(dreamTrace.Contains("w.gameObject.activeInHierarchy && w.Team == Team.Player") &&
               dreamTrace.Contains("bool alone = !EligibleSealWarrior(_zombie);") &&
-              dreamTrace.Contains("onSeal == null && EligibleSealWarrior(r)") &&
+              dreamTrace.Contains("if (!EligibleSealWarrior(w)) return;") &&
+              dreamTrace.Contains("if (_sealOn[i] == null && OnSeal(w.transform.position, DreamRoad.SealAt[i])) { _sealOn[i] = w; return; }") &&
               dreamTrace.Contains("if (EligibleSealWarrior(_zombie)) return true;"),
-            "only living active allies count as seal occupants or available raised warriors");
+            "only living active allies count as seal occupants; one warrior holds one seal");
+        Check(dreamTrace.Contains("_sealLit[(int)kind] = Fits(kind, _sealOn[(int)kind]);") &&
+              dreamTrace.Contains("DreamTutorialChecks.KinPair(left.Soul?.Kin, left.Soul?.Id, right.Soul?.Kin, right.Soul?.Id)") &&
+              dreamTrace.Contains("DreamTutorialChecks.AdvanceSeals(ref _sealHeld, true, warriors, _sealLit[0], Time.deltaTime)") &&
+              dreamTrace.Contains("DreamTutorialChecks.FitsWrath(soul.Sin == SinType.Wrath, soul.Get(SinType.Wrath))") &&
+              dreamTrace.Contains("return Trades.OfOrder(soul.Trade);") &&
+              dreamTrace.Contains("DreamGuards.Make(_tutorialSeed, names)"),
+            "gate opens only when all five seals hold their real condition together");
+        string soulData = System.IO.File.ReadAllText("Assets/Scripts/Core/Soul/SoulData.cs");
+        Check(soulData.Contains("_kin = other._kin;") && soulData.Contains("!ReferenceEquals(a, b) && a.Kin.Length > 0 && a.Kin == b.Kin"),
+            "kinship survives soul copy and a soul is never its own brother");
+        Check(DreamTutorialChecks.FitsWrath(true, 25f) && DreamTutorialChecks.FitsWrath(true, 90f) &&
+              !DreamTutorialChecks.FitsWrath(true, 24.9f) && !DreamTutorialChecks.FitsWrath(true, -70f) &&
+              !DreamTutorialChecks.FitsWrath(false, 90f) && !DreamTutorialChecks.FitsWrath(true, float.NaN),
+            "sword seal: dominant wrath on the vice side, at least 'smoulders'; meekness does not count");
+        Check(DreamTutorialChecks.KinPair("k", "a", "k", "b") &&
+              !DreamTutorialChecks.KinPair("k", "a", "k", "a") &&
+              !DreamTutorialChecks.KinPair("", "a", "", "b") &&
+              !DreamTutorialChecks.KinPair(null, "a", null, "b") &&
+              !DreamTutorialChecks.KinPair("k", "a", "j", "b") &&
+              !DreamTutorialChecks.KinPair("k", "a", "k", null),
+            "brother seals need two different souls sharing one kin mark");
+        Check(DreamTutorialChecks.KinSeal(true, true, true) == 2 &&
+              DreamTutorialChecks.KinSeal(true, true, false) == 1 &&
+              DreamTutorialChecks.KinSeal(true, false, false) == 0 &&
+              DreamTutorialChecks.KinSeal(false, false, false) == 0,
+            "brother seal: lit for the pair, half while one waits, dark for a stranger");
+        {
+            float fiveHeld = 0f;
+            bool early = DreamTutorialChecks.AdvanceSeals(ref fiveHeld, true, true, true, 0.6f);
+            bool broken = DreamTutorialChecks.AdvanceSeals(ref fiveHeld, true, false, true, 0.6f);
+            bool resetHeld = fiveHeld == 0f;
+            DreamTutorialChecks.AdvanceSeals(ref fiveHeld, true, true, true, 0.6f);
+            bool opened = DreamTutorialChecks.AdvanceSeals(ref fiveHeld, true, true, true, 0.6f);
+            Check(!early && !broken && resetHeld && opened, "five seals must hold together; a gap resets the hold");
+        }
         Check(dreamTrace.Contains("EligibleSealWarrior(w) && w.HasCommand && w.Command.Kind == CommandKind.Move") &&
               dreamTrace.Contains("_sealOrderedWarrior != ordered || _sealOrderRevision != ordered.CommandRevision") &&
               dreamTrace.Contains("_sealOrderedWarrior = null;") &&

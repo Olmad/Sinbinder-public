@@ -4107,6 +4107,49 @@ static class Bench
     /// Строка имени (Core/Naming): легенда старше титула, титул старше
     /// ремесла, прозвище — часть имени (автор, 16 октября).
     /// </summary>
+    /// <summary>
+    /// Стражи пяти печатей сна (№69 §17.1, Core/DreamGuards): при любом seed — гневный, два брата
+    /// с общим знаком родни, тихий охотник Ордена и ещё один охотник; роли не пересекаются,
+    /// имена не повторяются, родство переживает жатву (копию души).
+    /// </summary>
+    static void DreamGuardsCheck()
+    {
+        Console.WriteLine("\n=== СТРАЖИ ПЕЧАТЕЙ: генератор учебного состава ===");
+        int bad = 0, seeds = 3000;
+        void Fail(int seed, string what) { if (bad++ < 12) Console.WriteLine($"  ПРОВАЛ seed {seed}: {what}"); }
+        bool Wrathful(SoulData s) => s.Sin == SinType.Wrath && s.Get(SinType.Wrath) >= 25f;
+
+        for (int seed = 0; seed < seeds; seed++)
+        {
+            var present = new List<string> { "Ульрих", "Конрад", "Ставр Молельник" };
+            var g = DreamGuards.Make(seed * 7919, present);
+            if (g.Count != DreamGuards.Count) { Fail(seed, $"стражей {g.Count}"); continue; }
+            var names = new HashSet<string> { "Ульрих", "Конрад", "Ставр Молельник" };
+            foreach (var s in g) if (!names.Add(s.Name)) Fail(seed, "имя повторилось: " + s.Name);
+
+            SoulData wrath = g[0], a = g[1], b = g[2], quiet = g[3], any = g[4];
+            if (!Wrathful(wrath) || Trades.OfOrder(wrath.Trade) || wrath.Trade == Trade.Hunter) Fail(seed, "гневный не гневный или из Ордена");
+            if (!SoulData.Kindred(a, b)) Fail(seed, "братья не родня");
+            if (SoulData.Kindred(a, a)) Fail(seed, "душа родня сама себе");
+            if (Wrathful(a) || Wrathful(b) || Trades.OfOrder(a.Trade) || Trades.OfOrder(b.Trade)) Fail(seed, "брат читается мечом или крестом");
+            if (a.Sin == SinType.Greed || a.Sin == SinType.Sloth || b.Sin == SinType.Greed || b.Sin == SinType.Sloth) Fail(seed, "брат жадный или ленивый");
+            if (!Trades.OfOrder(quiet.Trade) || Wrathful(quiet) || !Trades.OfOrder(any.Trade)) Fail(seed, "охотников Ордена нет");
+            foreach (var s in new[] { wrath, quiet, any }) if (s.Kin.Length > 0) Fail(seed, "родня у небрата");
+
+            // Жатва копирует душу с новым Id: брат остаётся братом, и не становится братом сам себе.
+            var copy = new SoulData(a);
+            if (copy.Kin != a.Kin || !SoulData.Kindred(copy, b) || copy.Id == a.Id) Fail(seed, "родство потерялось при копии души");
+        }
+        // Разные seed — разные люди: иначе «генератор» — один и тот же отряд.
+        var first = DreamGuards.Make(1, new List<string>());
+        var second = DreamGuards.Make(2, new List<string>());
+        if (first[0].Name == second[0].Name && first[1].Name == second[1].Name && first[3].Name == second[3].Name)
+        { bad++; Console.WriteLine("  ПРОВАЛ: seed не меняет стражей"); }
+        foreach (var s in DreamGuards.Make(0, new List<string>()))
+            Console.WriteLine($"  образец: {Naming.Full(s.Name, s.Trade, "", ""),-26} {s.Sin} {s.Get(s.Sin):0}, {s.Trade}{(s.Kin.Length > 0 ? ", брат" : "")}");
+        Console.WriteLine(bad == 0 ? $"  Стражи печатей: чисто ({seeds} seed)." : $"  Стражи печатей: провалов {bad}.");
+    }
+
     static void NamingCheck()
     {
         Console.WriteLine("\n=== ИМЕНА: что стоит в строке имени ===");
@@ -5568,6 +5611,7 @@ static class Bench
         LootCheck();
         TitleCheck();
         NamingCheck();
+        DreamGuardsCheck();
         RaisedAgainCheck();
         JunctionCheck(cfg);
         MomentsCheck(cfg);
