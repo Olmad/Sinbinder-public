@@ -100,12 +100,25 @@ namespace Sinbinder.Gameplay
         /// не быть. Нет её — фраза всё равно звучит на нижней полосе,
         /// потому что молчаливое поднятие и было тем, что чинится.
         /// </summary>
+        private static string _lastOpening;
+        private static float _lastOpeningAt = -999f;
+
         private static System.Collections.IEnumerator Speak(
             Warrior warrior, SoulData soul, ShellType shell)
         {
             if (warrior == null) yield break;
 
             string line = RisingWords.OnRising(soul, shell);
+
+            // Пятеро стражей у печатей сна поднимаются подряд, и каждый начинал одним и тем же
+            // «Голодно. С самого начала — голодно.» (кадры 25.11). Слова тела у всех в оболочке одни:
+            // прозвучали только что — поднятый говорит своё, то, что от души и ремесла.
+            string opening = RisingWords.Opening(soul, shell);
+            if (!string.IsNullOrEmpty(opening) && opening == _lastOpening && Time.unscaledTime - _lastOpeningAt < 90f
+                && line.StartsWith(opening + " "))
+                line = line.Substring(opening.Length + 1);
+            _lastOpening = opening;
+            _lastOpeningAt = Time.unscaledTime;
 
             var camera = Object.FindFirstObjectByType<Dialogue.DialogueCameraController>();
             if (camera != null)

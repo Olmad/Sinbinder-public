@@ -110,6 +110,10 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>Начало первой фразы — то, что говорит тело (оно у всех в такой оболочке одно).</summary>
+        public static string Opening(SoulData soul, ShellType shell)
+            => soul == null ? "" : Body(shell, soul.HasMemory);
+
         /// <summary>Что говорит тело.</summary>
         private static string Body(ShellType shell, bool remembers)
         {
