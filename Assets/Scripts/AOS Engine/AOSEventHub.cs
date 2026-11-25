@@ -1,5 +1,6 @@
 // Assets/Scripts/AOS Engine/AOSEventHub.cs
 // Перевод: текст через Loc
+using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Gameplay;
 using Sinbinder.Core;
@@ -225,7 +226,7 @@ namespace Sinbinder.AOS
             }
         }
 
-        public void OnBattleEnd(bool playerWon, int enemiesKilled, int alliesLost)
+        internal void OnBattleEnd(BattleResult result, List<Damageable> survivors)
         {
             // Сводка по решениям — единственное место, где видно долю
             // отказов при отданном приказе. Разработчику, не игроку:
@@ -240,42 +241,48 @@ namespace Sinbinder.AOS
             // а в бесконечных миссиях воины замолкали бы навсегда.
             // Снимаем в конце боя: к следующему они снова при голосе.
             if (CombatManager.Instance != null)
-                Object.FindFirstObjectByType<Dialogue.DialogueTrigger>()
-                      ?.ResetAllBattleDialogues();
-            var allWarriors = Object.FindObjectsByType<Warrior>(FindObjectsSortMode.InstanceID);
-            foreach (var w in allWarriors)
+                Object.FindFirstObjectByType<Dialogue.DialogueTrigger>()?.ResetAllBattleDialogues();
+
+            var memories = MemoryProcessor.Instance;
+            bool victory = result.Outcome == BattleOutcome.Victory;
+            // Павшего больше нет в списке боя: пишем исход по его прежнему ID.
+            if (!victory && memories != null)
+                foreach (string warriorId in result.FallenAllies)
+                    memories.RecordBattle(warriorId, result);
+
+            foreach (var ally in survivors)
             {
-                if (w.IsDead) continue;
-                if (w.Team == Team.Player)
+                if (ally == null || ally.IsDead) continue;
+                var w = ally.Warrior;
+                if (w == null || w.IsDead || w.Team != Team.Player) continue;
+                memories?.RecordBattle(w.Id, result);
+
+                var body = w.GetComponent<AOSWarriorWrapper>();
+                if (!victory)
                 {
-                    MemoryProcessor.Instance?.RecordBattle(w, playerWon, enemiesKilled, alliesLost);
-
-                    // Деяние "Выживание в миссии"
-                    w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SurviveMission, Importance = 0.3f });
-
-                    // «Берсерк» стоит на NeverRetreat: за весь бой ни разу
-                    // не побежал. Деяние это не писал никто, и титул был
-                    // недостижим по данным.
-                    var body = w.GetComponent<AOSWarriorWrapper>();
-                    if (body != null && !body.Fled)
-                        w.Reputation.Deeds.Add(new DeedRecord
-                            { Type = DeedType.NeverRetreat, Importance = 0.5f });
-
-                    // «Тень» стоит на StayedOut: был в бою и не ударил ни разу.
-                    // Выжить мало — выживание выше пишется всем подряд,
-                    // и когда «Тень» стояла на нём, ею становился весь отряд.
-                    if (body != null && !body.Struck)
-                        w.Reputation.Deeds.Add(new DeedRecord
-                            { Type = DeedType.StayedOut, Importance = 0.3f });
-
                     if (body != null) body.ForgetBattle();
-
-                    // Если союзников не осталось – "Последний рубеж"
-                    if (alliesLost >= CombatManager.Instance.GetAlivePlayerCount())
-                        w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.LastStand, Importance = 1.0f });
-
-                    TitleManager.UpdateTitle(w);
+                    continue;
                 }
+
+                // Деяние "Выживание в миссии"
+                w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.SurviveMission, Importance = 0.3f });
+
+                // «Берсерк» стоит на NeverRetreat: за весь бой ни разу не побежал.
+                if (body != null && !body.Fled)
+                    w.Reputation.Deeds.Add(new DeedRecord
+                        { Type = DeedType.NeverRetreat, Importance = 0.5f });
+
+                // «Тень» стоит на StayedOut: был в бою и не ударил ни разу.
+                if (body != null && !body.Struck)
+                    w.Reputation.Deeds.Add(new DeedRecord
+                        { Type = DeedType.StayedOut, Importance = 0.3f });
+
+                if (body != null) body.ForgetBattle();
+
+                if (result.AlliesLost > 0 && result.AlliesLost >= survivors.Count)
+                    w.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.LastStand, Importance = 1.0f });
+
+                TitleManager.UpdateTitle(w);
             }
         }
     }

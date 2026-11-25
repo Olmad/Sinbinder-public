@@ -16841,3 +16841,35 @@ msgstr "Up, over to the target at height, straight down; reaches 22 m and seeks 
 #: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
 msgid "Дугой на 11 м; свой на линии — навесом над его головой."
 msgstr "An arc to 11 m; an ally in the line — lobbed over his head."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Забери душу."
+msgstr "Take the soul."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Прикажи ему."
+msgstr "Give him an order."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Опусти мост."
+msgstr "Lower the bridge."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Неповиновение."
+msgstr "Disobedience."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Выделите воина и отдайте приказ ПКМ по земле. Исполнит ли — решает душа."
+msgstr "Select the warrior and right-click the ground to give an order. Whether it is obeyed is the soul's decision."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Тело"
+msgstr "Body"
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Воин"
+msgstr "Warrior"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Отдай приказ."
+msgstr "Give the order."

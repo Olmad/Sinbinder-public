@@ -383,8 +383,22 @@ namespace Sinbinder.Gameplay
         public static bool WalkTo(Vector3 point)
         {
             if (!Holding) return false;
+
+            var visit = PersonalExpedition.DialogueVisit;
+            if (_instance._now == LessonKind.Harvest && visit != null && _instance._leash.Flat(point) > _instance._leash.Radius)
+            {
+                // Щелчок за кольцом задаёт путь после жатвы. Путь к душе остаётся внутри урока.
+                _instance._harvestRoute = (visit, SinbinderPlayer.Instance, point);
+                return true;
+            }
+
             _instance.Road(point);
             return true;
+        }
+
+        internal static void CancelHarvestRoute()
+        {
+            if (_instance != null) _instance._harvestRoute = null;
         }
 
         // ──────────────────────────────────
@@ -411,6 +425,7 @@ namespace Sinbinder.Gameplay
         private readonly List<Vector3> _road = new();
         private int _roadAt;
         private bool _walking;
+        private (PersonalExpedition Visit, SinbinderPlayer Hero, Vector3 Point)? _harvestRoute;
 
         private Animator _heroBody;
         private AnimatorUpdateMode _heroWas;
@@ -442,12 +457,12 @@ namespace Sinbinder.Gameplay
 
         void OnDestroy()
         {
-            End();
+            End(resumeHarvestRoute: false);
             if (_instance == this) _instance = null;
         }
 
         /// <summary>Сцена сменилась под уроком — цель осталась в старой.</summary>
-        private void OnScene(Scene scene, LoadSceneMode mode) => End();
+        private void OnScene(Scene scene, LoadSceneMode mode) => End(resumeHarvestRoute: false);
 
         // ──────────────────────────────────
         // Подсказка без урока
@@ -833,13 +848,18 @@ namespace Sinbinder.Gameplay
             _leash = new Leash(centre, hero.transform.position, floor);
             _road.Clear();
             _walking = false;
+            _harvestRoute = null;
 
             // Шёл по приказу мышью — дойдёт и на уроке: агент встанет
             // вместе с миром, и дорогу поведём сами.
             var agent = hero.GetComponent<NavMeshAgent>();
-            if (agent != null && agent.isOnNavMesh && agent.hasPath)
+            var visit = kind == LessonKind.Harvest ? PersonalExpedition.DialogueVisit : null;
+            bool saveRoute = visit != null && hero.GetComponent<UnitMover>()?.IsAttacking != true;
+            if (agent != null && agent.isOnNavMesh && (agent.hasPath || (saveRoute && agent.pathPending)))
             {
-                Road(agent.destination);
+                var point = agent.destination;
+                if (saveRoute) _harvestRoute = (visit, hero, point);
+                Road(point);
                 agent.ResetPath();
             }
 
@@ -954,7 +974,7 @@ namespace Sinbinder.Gameplay
             return _talked && !UI.GearPanel.Open;
         }
 
-        private void End()
+        private void End(bool resumeHarvestRoute = true)
         {
             if (!_now.HasValue) return;
 
@@ -970,6 +990,8 @@ namespace Sinbinder.Gameplay
             _endedAt = Time.unscaledTime;
             _road.Clear();
             _walking = false;
+            var route = _harvestRoute;
+            _harvestRoute = null;
 
             if (SoulManager.Instance != null) SoulManager.Instance.OnSoulHarvested -= Harvested;
             _soul = null;
@@ -978,11 +1000,30 @@ namespace Sinbinder.Gameplay
             _heroBody = null;
 
             GamePauseController.Instance?.Hold(false);
+            if (resumeHarvestRoute && route.HasValue) ResumeHarvestRoute(route.Value);
 
             if (_ring != null) _ring.enabled = false;
             if (_markRing != null) _markRing.enabled = false;
             ShowPlate(false);
             Debug.Log("[УРОК] конец: мир идёт.");
+        }
+
+        private static void ResumeHarvestRoute((PersonalExpedition Visit, SinbinderPlayer Hero, Vector3 Point) route)
+        {
+            if (!ReferenceEquals(route.Visit, PersonalExpedition.DialogueVisit) ||
+                route.Hero == null || route.Hero != SinbinderPlayer.Instance || route.Hero.IsDead) return;
+
+            var camera = Camera.main;
+            var view = camera != null ? camera.GetComponent<RTS_Camera>() : null;
+            if (view != null && view.FirstPersonNow) return;
+
+            var agent = route.Hero.GetComponent<NavMeshAgent>();
+            if (agent == null || !agent.isActiveAndEnabled || !agent.isOnNavMesh ||
+                agent.isStopped || agent.hasPath || agent.pathPending) return;
+
+            var path = new NavMeshPath();
+            if (agent.CalculatePath(route.Point, path) && path.status == NavMeshPathStatus.PathComplete)
+                agent.SetPath(path);
         }
 
         // ──────────────────────────────────

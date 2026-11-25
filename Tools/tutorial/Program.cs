@@ -194,6 +194,23 @@ internal static class Program
               refreshHint.Contains("_instance._hintWords = words") &&
               !refreshHint.Contains("_instance._hintOwner = owner"),
             "refresh cannot steal another owner's active hint");
+        Check(lessonUI.Contains("(agent.hasPath || (saveRoute && agent.pathPending))") &&
+              lessonUI.Contains("if (saveRoute) _harvestRoute = (visit, hero, point);") &&
+              lessonUI.Contains("_instance._leash.Flat(point) > _instance._leash.Radius"),
+            "harvest preserves an existing world route and separates clicks outside the lesson circle");
+        string playerWalk = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/PlayerWalk.cs");
+        Check(lessonUI.Contains("ReferenceEquals(route.Visit, PersonalExpedition.DialogueVisit)") &&
+              lessonUI.Contains("route.Hero != SinbinderPlayer.Instance || route.Hero.IsDead") &&
+              lessonUI.Contains("agent.isStopped || agent.hasPath || agent.pathPending") &&
+              lessonUI.Contains("path.status == NavMeshPathStatus.PathComplete") &&
+              lessonUI.Contains("agent.SetPath(path);") &&
+              playerWalk.Contains("Lesson.CancelHarvestRoute();"),
+            "harvest restores only a reachable route for the same hero and visit unless replaced or cancelled");
+        string combatWrapper = System.IO.File.ReadAllText("Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs");
+        int hunterRetreat = combatWrapper.IndexOf("CombatManager.Instance?.ReportEnemyRetreat(_self);", StringComparison.Ordinal);
+        int hunterDespawn = combatWrapper.IndexOf("Destroy(gameObject);", StringComparison.Ordinal);
+        Check(hunterRetreat >= 0 && hunterDespawn > hunterRetreat,
+            "confirmed hunter retreat enters the battle resolver before the fleeing body is destroyed");
         string viewHintUI = System.IO.File.ReadAllText("Assets/Scripts/UI/ViewHintUI.cs");
         int campScope = viewHintUI.IndexOf("SceneManager.GetActiveScene().name != \"Prologue_Camp\"", StringComparison.Ordinal);
         int camTransition = viewHintUI.IndexOf("if (_wasEyes && !eyes) _pending = true;", StringComparison.Ordinal);
@@ -277,6 +294,27 @@ internal static class Program
         // Short-Court onboarding must reuse the production SoulCourt and
         // the exact original verdict; consent changes automatic events only.
         string courtSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulCourt.cs");
+        Check(SoulCourtVerdict.DeathReaction(SoulCourtVerdictKind.Refused, true) == "Неповиновение." &&
+              SoulCourtVerdict.DeathReaction(SoulCourtVerdictKind.Refused, false) == null &&
+              SoulCourtVerdict.DeathReaction(SoulCourtVerdictKind.Hesitated, true) == null &&
+              SoulCourtVerdict.DeathReaction(SoulCourtVerdictKind.IndependentMatch, true) == null &&
+              SoulCourtVerdict.DeathReaction(SoulCourtVerdictKind.Obeyed, true) == null,
+            "Death speaks only on recorded disobedience, not hesitation or independent matching");
+        Check(courtSource.Contains("SoulCourtVerdict.DeathReaction(verdict, c != null && c.HasCommand)") &&
+              courtSource.Contains("yield return Line(box, host, verdictTitle, sentence);"),
+            "Death's reaction does not replace the factual court verdict");
+        string deathAudio = System.IO.File.ReadAllText("Assets/Scripts/Audio/DeathVoice.cs");
+        Check(deathAudio.Contains("ticket != _lessonTicket") &&
+              deathAudio.Contains("public static void QuietLesson()") &&
+              deathAudio.Contains("_lessonVoice.Stop();") &&
+              dreamTrace.Contains("_deathSpoken.Add(_stage)") &&
+              dreamTrace.Contains("UpdateDeathLesson(quiet);") &&
+              dreamTrace.Contains("Audio.DeathVoice.QuietLesson();"),
+            "dream cue is once per stage, cancelled separately from the Court");
+        Check(dreamTrace.Contains("WithDeath(Loc.T(_line))") &&
+              dreamTrace.Contains("case Stage.Harvest: case Stage.Rebind:") &&
+              !dreamTrace.Contains("он пойдёт."),
+            "tutorial captions and location markers support the action without promising obedience");
         // Production classifier, not a duplicate copy of its arithmetic.
         // A flag saying "obeyed" cannot turn Attack into a completed Hold.
         Check(SoulCourtVerdict.Classify(true, false, false, false, false) ==
@@ -455,22 +493,7 @@ internal static class Program
         Check(!DreamTutorialChecks.FreshOrderedDecision(true, 11f, 10f, true, false),
             "idle vote without command rejected");
 
-        // Production battle-end gate: one real victory per enemy wave,
-        // never a second victory when an ally dies after the enemy is gone.
-        var battle = new BattleEndGate();
-        Check(!battle.TryComplete(false), "empty scene is not an earned victory");
-        battle.EnemyRegistered();
-        Check(!battle.TryComplete(true), "living enemy prevents victory");
-        Check(battle.TryComplete(false), "last enemy death triggers exactly one victory");
-        Check(!battle.TryComplete(false), "later allied death cannot replay victory");
-        battle.EnemyRegistered();
-        Check(!battle.TryComplete(true), "new enemy wave remains active");
-        Check(battle.TryComplete(false), "new wave earns its own victory once");
-        Check(!battle.TryComplete(false), "second wave cannot duplicate rewards");
-        var combatSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/CombatManager.cs");
-        Check(combatSource.Contains("_battleEndGate.EnemyRegistered()") &&
-              combatSource.Contains("_battleEndGate.TryComplete(_enemyUnits.Exists("),
-              "real CombatManager registers enemy waves and gates OnBattleEnd");
+        CombatIntegrationChecks.Run(Check);
 
         // Source-linked visual causality: removing soul B must not delete A's light.
         // Runtime Play Mode with two simultaneous souls is still required.

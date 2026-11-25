@@ -10,10 +10,12 @@ namespace Sinbinder.Gameplay
         [SerializeField] private float _hp = 30f;
 
         private Warrior _warrior;
+        private bool _deathReported;
 
         public float HP => _hp;
         public float MaxHP => _maxHP;
         public bool IsDead => _hp <= 0f;
+        internal bool HasRetreated { get; private set; }
         public Warrior Warrior => _warrior;
 
         void Awake()
@@ -88,7 +90,7 @@ namespace Sinbinder.Gameplay
             // Nonpositive or nonfinite input is not a hit: never heal through damage,
             // mark hostility, consume a bodyguard watch or produce a death event.
             if (damage <= 0f || float.IsNaN(damage) || float.IsInfinity(damage)) return;
-            if (IsDead) return;
+            if (IsDead || HasRetreated) return;
             if (Untouchable != null && this == Untouchable) return;
 
             // Телохранитель принял этот удар на себя (Bodyguard, «Вороньим следом»).
@@ -223,6 +225,16 @@ namespace Sinbinder.Gameplay
                 CombatManager.Instance.OnUnitKilled(this, killer);
         }
 
+        internal bool TryReportDeath()
+        {
+            if (!IsDead || _deathReported || HasRetreated) return false;
+            _deathReported = true;
+            return true;
+        }
+
+        // A pending hit can land before Unity destroys a hunter that already escaped.
+        internal void ConfirmRetreat() => HasRetreated = true;
+
         /// <summary>Restore wounds without causing a new death/kill event.</summary>
         public void SetHealthFraction(float fraction)
         {
@@ -235,6 +247,8 @@ namespace Sinbinder.Gameplay
         {
             _maxHP = maxHP;
             _hp = maxHP;
+            _deathReported = false;
+            HasRetreated = false;
         }
     }
 }

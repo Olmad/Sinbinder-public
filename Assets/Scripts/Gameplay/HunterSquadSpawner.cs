@@ -27,7 +27,7 @@ namespace Sinbinder.Gameplay
                + "и в здоровье первой волны (_firstWaveHealth).")]
         [SerializeField] private int _level = 1;
 
-        [Tooltip("Выйти не сразу, а когда на поле не останется врагов. "
+        [Tooltip("Выйти после победы над первой волной. "
                + "Так делается вторая волна: первую надо сперва положить.")]
         [SerializeField] private bool _afterFieldClear;
 
@@ -57,8 +57,9 @@ namespace Sinbinder.Gameplay
         [SerializeField] private Audio.Track _music = Audio.Track.None;
 
         private Core.RelationshipSystem _relSystem;
+        private CombatManager _combat;
         private bool _spawned;
-        private bool _sawEnemies;
+        private bool _waiting;
 
         /// <summary>
         /// Охотники берут в наём кого попало, поэтому души у них разные.
@@ -173,8 +174,9 @@ namespace Sinbinder.Gameplay
         {
             if (_afterFieldClear)
             {
-                if (CombatManager.Instance != null)
-                    CombatManager.Instance.OnUnitsChanged += OnUnitsChanged;
+                _combat = CombatManager.Instance;
+                if (_combat != null)
+                    _combat.OnBattleResolved += OnBattleResolved;
                 else
                     // Ждать нечего и некого: без боевого менеджера событие
                     // не придёт никогда, и волна не выйдет молча.
@@ -188,38 +190,17 @@ namespace Sinbinder.Gameplay
 
         void OnDestroy()
         {
-            if (CombatManager.Instance != null)
-                CombatManager.Instance.OnUnitsChanged -= OnUnitsChanged;
+            if (_combat != null) _combat.OnBattleResolved -= OnBattleResolved;
         }
 
-        /// <summary>
-        /// Поле опустело — значит первую волну положили, и пора выходить.
-        ///
-        /// Ноль врагов до первой встречи ничего не значит: в этот момент
-        /// первая волна ещё только создаётся. Поэтому сперва дожидаемся,
-        /// чтобы враги вообще появились.
-        /// </summary>
-        private void OnUnitsChanged()
+        private void OnBattleResolved(BattleResult result)
         {
-            // Сцену выгружают: тела первой волны уничтожаются вместе с ней,
-            // поле «пустеет», и волна, уже выключенная выгрузкой, пыталась
-            // выйти — StartCoroutine на выключенном объекте пишет ошибку.
-            // Так было на «С начала доли» посреди первой волны (14-HANDOFF §105.7).
-            if (!isActiveAndEnabled) return;
-
-            if (_spawned) return;
-
-            var combat = CombatManager.Instance;
-            if (combat == null) return;
-
-            if (combat.GetAliveEnemyCount() > 0) { _sawEnemies = true; return; }
-            if (!_sawEnemies || _waiting) return;
+            if (!isActiveAndEnabled || _spawned || _waiting || PersonalExpedition.Active ||
+                result.Outcome != BattleOutcome.Victory) return;
 
             _waiting = true;
             StartCoroutine(AfterHarvest());
         }
-
-        private bool _waiting;
 
         /// <summary>
         /// Порядок из прохождения автора: лёгкий бой → сбор → подкрепление
@@ -235,11 +216,7 @@ namespace Sinbinder.Gameplay
         /// </summary>
         private System.Collections.IEnumerator AfterHarvest()
         {
-            // Кадр ожидания: смерть последнего охотника сообщается двумя
-            // событиями, и порядок между «поле опустело» и «душа пошла
-            // гаснуть» не гарантирован. Без паузы счётчик душ мог оказаться
-            // нулём ровно в миг, когда последняя ещё не легла, — и волна
-            // вышла бы, не дав её собрать.
+            // Даже без душ подкрепление выходит в новом кадре после победы.
             yield return null;
 
             var souls = SoulManager.Instance;

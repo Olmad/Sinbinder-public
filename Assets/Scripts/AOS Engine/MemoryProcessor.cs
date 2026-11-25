@@ -192,18 +192,28 @@ namespace Sinbinder.AOS
             }
         }
 
-        public void RecordBattle(Warrior warrior, bool won, int enemiesKilled, int alliesLost)
+        internal void RecordBattle(string warriorId, BattleResult result)
         {
-            if (won)
+            if (string.IsNullOrEmpty(warriorId)) return;
+
+            switch (result.Outcome)
             {
-                CreateMemory(warrior, "WonBattle", "", EmotionType.Joy, 0.6f + enemiesKilled * 0.1f);
-                if (alliesLost > 0)
-                    CreateMemory(warrior, "AlliesLost", "", EmotionType.Sadness, alliesLost * 0.3f);
+                case BattleOutcome.Victory:
+                    CreateMemoryById(warriorId, "WonBattle", "", EmotionType.Joy,
+                        Mathf.Clamp01(0.6f + result.EnemiesKilled * 0.1f));
+                    break;
+                case BattleOutcome.Defeat:
+                    CreateMemoryById(warriorId, "LostBattle", "", EmotionType.Anger,
+                        Mathf.Clamp01(0.7f + result.AlliesLost * 0.2f));
+                    return;
+                case BattleOutcome.Draw:
+                    CreateMemoryById(warriorId, "DrewBattle", "", EmotionType.Sadness, 0.6f);
+                    break;
             }
-            else
-            {
-                CreateMemory(warrior, "LostBattle", "", EmotionType.Anger, 0.7f + alliesLost * 0.2f);
-            }
+
+            if (result.AlliesLost > 0)
+                CreateMemoryById(warriorId, "AlliesLost", "", EmotionType.Sadness,
+                    Mathf.Clamp01(result.AlliesLost * 0.3f));
         }
 
         public void RecordInteraction(Warrior subject, Warrior target, string eventType)
