@@ -1799,6 +1799,9 @@ namespace Sinbinder.Tests
 
                 // Начало доли (решение автора): отметка помнит долю, а в игре
                 // с обязательством вернуться к ней нельзя — уговор режима.
+                // Доля набега от прежней игры в редакторе (StagedScene сбрасывает только запуск игры) —
+                // 25.11 после съёмки Shorts проверка падала на ней, а не на отметке.
+                SaveSystem.StagedScene = null;
                 SaveSystem.MarkCheckpoint("Prologue_Camp");
                 Check(SaveSystem.Checkpoint != null && SaveSystem.Checkpoint.Scene == "Prologue_Camp",
                       "отметка начала доли помнит долю");
