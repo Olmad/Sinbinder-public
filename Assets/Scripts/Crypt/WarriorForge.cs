@@ -79,9 +79,20 @@ namespace Sinbinder.Crypt
 
         public static bool Open { get; private set; }
 
+        // Полигон без уроков: мишени стрельбища включали урок «удар в спину», а он останавливает мир
+        // (25.11). Уходя с полигона — как было.
+        private bool _lessonsWere = true;
+
+        void Awake()
+        {
+            _lessonsWere = Lesson.Switch;
+            Lesson.Switch = false;
+        }
+
         void OnDestroy()
         {
             if (Open) Close();
+            Lesson.Switch = _lessonsWere;
         }
 
         void Update()
