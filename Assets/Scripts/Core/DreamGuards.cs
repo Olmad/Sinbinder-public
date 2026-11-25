@@ -11,9 +11,11 @@ namespace Sinbinder.Core
     /// обязательно гневный, ну а Охотников более чем хватает».
     ///
     /// Задаётся душа, не решение: встанет ли страж на печать — голосуют его модули.
-    ///   0 — гневный: Гнев главный и «жжёт»; не из Ордена и не «Охотник» по ремеслу,
-    ///       чтобы одна душа не читалась сразу двумя печатями;
-    ///   1, 2 — братья: общий знак родни (SoulData.Kin), одного дома и ремесла; ни гнева, ни Ордена;
+    ///   0 — гневный: Гнев главный и «жжёт»;
+    ///   1, 2 — братья: общий знак родни (SoulData.Kin); ни гнева, ни Ордена;
+    /// Ремёсла не правятся (автор, 25.11: «Почему ты предопределяешь их ремёсла?»): их даёт
+    /// происхождение — вылазка (гневный) и договор (братья) Ордена не дают, жатва (3, 4) даёт только чины.
+    /// Правка «охотника» в крестьянина оставляла прозвище «Следок» при крестьянине — ложь.
     ///       грех не жадность и не уныние — им приказ «встань» проигрывает добыче и лени, а пара обязательна;
     ///   3 — охотник Ордена, тихий: приказ «встань на печать» в нём ничего не задевает (как прежний страж);
     ///   4 — охотник Ордена, какой выпал: может и отказать — тогда есть 3.
@@ -47,25 +49,23 @@ namespace Sinbinder.Core
                 names.Add(s.Name);
                 return s;
             }
-            // «Ратко Охотник» по ремеслу читался бы крестом Ордена — таким даём крестьянина.
-            Trade Ours(Trade t) => t == Trade.Hunter || Trades.OfOrder(t) ? Trade.Peasant : t;
             SinType Calm(SinType s, SinType instead)
                 => s == SinType.Wrath || s == SinType.Greed || s == SinType.Sloth ? instead : s;
 
             bool Quiet(SinType s) => s != SinType.Wrath && s != SinType.Greed && s != SinType.Sloth;
-            var w = Next(101, SoulOrigin.Sortie, s => s.Sin == SinType.Wrath && !Trades.OfOrder(s.Trade));
+            var w = Next(101, SoulOrigin.Sortie, s => s.Sin == SinType.Wrath);
             var wrath = new SoulData(w.Name, SinType.Wrath, w.Moral == MoralType.Pious ? MoralType.Neutral : w.Moral, 1, Mathf.Max(70f, w.Strength));
-            wrath.SetTrade(Ours(w.Trade));
+            wrath.SetTrade(w.Trade);
             souls.Add(wrath);
 
             string kin = "сон-братья-" + seed;
             var a = Next(102, SoulOrigin.Pact, s => Quiet(s.Sin));
             var b = Next(103, SoulOrigin.Pact, s => Quiet(s.Sin));
-            var trade = Ours(a.Trade);
+            // Ремёсла у братьев свои (автор, 25.11: «не обязательно чтобы братья были одного ремесла»).
             foreach (var (s, instead) in new[] { (a, SinType.Pride), (b, SinType.Envy) })
             {
                 var soul = new SoulData(s.Name, Calm(s.Sin, instead), s.Moral, 1, 35f);
-                soul.SetTrade(trade);
+                soul.SetTrade(s.Trade);
                 soul.SetKin(kin);
                 souls.Add(soul);
             }

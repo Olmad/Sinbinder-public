@@ -29,7 +29,7 @@ namespace Sinbinder.Gameplay
         /// было не из чего.
         /// </summary>
         public static Warrior Rise(SoulData soul, ShellType shell, Vector3 at,
-            Quaternion rotation, RelationshipSystem relations, Warrior corpse = null)
+            Quaternion rotation, RelationshipSystem relations, Warrior corpse = null, string words = null)
         {
             if (soul == null) return null;
 
@@ -85,7 +85,7 @@ namespace Sinbinder.Gameplay
                 // Ведём корутину на настройке сцены: Raising статичен,
                 // а наезд камеры — это ожидание. Тот же приём, что
                 // у церемонии титула.
-                setup.StartCoroutine(Speak(warrior, soul, shell));
+                setup.StartCoroutine(Speak(warrior, soul, shell, words));   // words — первая фраза, если её выбрал зовущий (печати сна)
             }
             else Debug.LogWarning("[СВЯЗЫВАНИЕ] AOSSceneSetup в сцене нет: "
                                 + "поднятый не будет ничего решать.");
@@ -104,11 +104,11 @@ namespace Sinbinder.Gameplay
         private static float _lastOpeningAt = -999f;
 
         private static System.Collections.IEnumerator Speak(
-            Warrior warrior, SoulData soul, ShellType shell)
+            Warrior warrior, SoulData soul, ShellType shell, string words = null)
         {
             if (warrior == null) yield break;
 
-            string line = RisingWords.OnRising(soul, shell);
+            string line = words ?? RisingWords.OnRising(soul, shell);
 
             // Пятеро стражей у печатей сна поднимаются подряд, и каждый начинал одним и тем же
             // «Голодно. С самого начала — голодно.» (кадры 25.11). Слова тела у всех в оболочке одни:

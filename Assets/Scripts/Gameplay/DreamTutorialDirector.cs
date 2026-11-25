@@ -2105,7 +2105,12 @@ namespace Sinbinder.Gameplay
             var at = body.transform.position;
             var face = Flat(_hero.transform.position - at);
             var relations = new RelationshipSystem(AOS.MemoryProcessor.Instance);
-            var risen = Raising.Rise(body.Soul, ShellType.Zombie, at + face * 1.1f, Quaternion.LookRotation(face), relations, corpse: body);
+            // Первые слова — о том, что спрашивают печати (автор, 25.11): брат — о брате, Орден — руки, грех — грех.
+            string kinName = null;
+            foreach (var f in _fallen) if (f != body && SoulData.Kindred(body.Soul, f.Soul)) kinName = Loc.Name(f.DisplayName);
+            foreach (var r in _raised) if (SoulData.Kindred(body.Soul, r.Soul)) kinName = Loc.Name(r.DisplayName);
+            var risen = Raising.Rise(body.Soul, ShellType.Zombie, at + face * 1.1f, Quaternion.LookRotation(face), relations, corpse: body,
+                words: RisingWords.SealWords(body.Soul, ShellType.Zombie, kinName));
             if (risen == null) { Log(Loc.N("Не удалось поднять тело.")); return; }
             body.gameObject.SetActive(false);
             _fallen.Remove(body);

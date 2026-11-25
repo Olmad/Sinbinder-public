@@ -16753,3 +16753,35 @@ msgstr "Consider both reasons for refusal"
 #: Gameplay/OrderAdvice.cs
 msgid "Две причины — попробуйте изменить обе: {0}; {1}."
 msgstr "Two reasons — try addressing both: {0}; {1}."
+
+#: Gameplay/RisingWords.cs
+msgid "Где {0}? Мы с братом всегда стояли рядом."
+msgstr "Where is {0}? My brother and I always stood side by side."
+
+#: Gameplay/RisingWords.cs
+msgid "Где моё? Я помню каждую монету, что не успел забрать."
+msgstr "Where is mine? I remember every coin I never got to take."
+
+#: Gameplay/RisingWords.cs
+msgid "Поднять меня — честь для вас. Запомните это."
+msgstr "Raising me is an honour for you. Remember that."
+
+#: Gameplay/RisingWords.cs
+msgid "Злость не умерла со мной. Она проснулась первой."
+msgstr "The anger did not die with me. It woke up first."
+
+#: Gameplay/RisingWords.cs
+msgid "У других и тела получше. Я вижу."
+msgstr "Others got better bodies too. I can see it."
+
+#: Gameplay/RisingWords.cs
+msgid "Тепло… Хоть кто-нибудь здесь тёплый?"
+msgstr "Warmth… Is anyone here warm?"
+
+#: Gameplay/RisingWords.cs
+msgid "Есть. Сначала — есть."
+msgstr "Eat. First — eat."
+
+#: Gameplay/RisingWords.cs
+msgid "Зачем было будить? Я только лёг."
+msgstr "Why wake me? I had only just lain down."

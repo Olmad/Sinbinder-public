@@ -110,6 +110,41 @@ namespace Sinbinder.Gameplay
             }
         }
 
+        /// <summary>
+        /// Первая фраза стража у пяти печатей сна (автор, 25.11: «показывать фразы определённого
+        /// качества, в зависимости от плиты: Гнев — грех, Охотник — ремесло и т.д.»). Говорит то,
+        /// что в нём правда громче всего из того, что спрашивают печати: родня — о брате; служил
+        /// Ордену — руки (ремесло); грех жжёт (≥ 60, как «жжёт» на панели) — грех. Ничего такого —
+        /// как при любом подъёме. Строки грехов — для всех семи (симметрия грехов), черновики.
+        /// </summary>
+        public static string SealWords(SoulData soul, ShellType shell, string kinName)
+        {
+            if (soul == null) return "…";
+            string body = Body(shell, soul.HasMemory);
+            string tail;
+            if (!string.IsNullOrEmpty(kinName)) tail = Loc.F("Где {0}? Мы с братом всегда стояли рядом.", kinName);
+            else if (Trades.OfOrder(soul.Trade)) tail = Hands(soul.Trade);
+            else if (soul.Get(soul.Sin) >= 60f) tail = SinVoice(soul.Sin);
+            else return OnRising(soul, shell);
+            return string.IsNullOrEmpty(tail) ? body : body + " " + tail;
+        }
+
+        /// <summary>Громкий грех первыми словами. Порядок — как в SinType.</summary>
+        private static string SinVoice(SinType sin)
+        {
+            switch (sin)
+            {
+                case SinType.Greed: return Loc.T("Где моё? Я помню каждую монету, что не успел забрать.");
+                case SinType.Pride: return Loc.T("Поднять меня — честь для вас. Запомните это.");
+                case SinType.Wrath: return Loc.T("Злость не умерла со мной. Она проснулась первой.");
+                case SinType.Envy: return Loc.T("У других и тела получше. Я вижу.");
+                case SinType.Lust: return Loc.T("Тепло… Хоть кто-нибудь здесь тёплый?");
+                case SinType.Gluttony: return Loc.T("Есть. Сначала — есть.");
+                case SinType.Sloth: return Loc.T("Зачем было будить? Я только лёг.");
+                default: return "";
+            }
+        }
+
         /// <summary>Начало первой фразы — то, что говорит тело (оно у всех в такой оболочке одно).</summary>
         public static string Opening(SoulData soul, ShellType shell)
             => soul == null ? "" : Body(shell, soul.HasMemory);
