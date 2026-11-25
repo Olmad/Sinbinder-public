@@ -28,6 +28,10 @@ namespace Sinbinder.EditorTools
         private static Vector3 _walkFrom, _walkTo;
         private static readonly List<Warrior> Party = new List<Warrior>();
         private static readonly List<Warrior> Guards = new List<Warrior>();
+        private static bool _strictMovement, _worldPathSeen, _harvestInterrupted, _worldPathResumed;
+        private static bool _waitingForHarvestEnd;
+        private static Step _interruptedStep;
+        private static Vector3 _worldDestination;
 
         public static string Result { get; private set; } = "не запускалась";
         /// <summary>Откуда и куда снимать карту сверху (для shot верстака).</summary>
@@ -77,17 +81,25 @@ namespace Sinbinder.EditorTools
             return "нет такого места: " + mission;
         }
 
-        public static string Begin()
+        public static string Begin() => StartProbe(strictMovement: false);
+
+        /// <summary>Проверить продолжение маршрута после жатвы одним ПКМ, без повторного приказа и WASD.</summary>
+        public static string BeginStrictMovement() => StartProbe(strictMovement: true);
+
+        private static string StartProbe(bool strictMovement)
         {
             if (!EditorApplication.isPlaying) return "нужен режим игры (play)";
             File.WriteAllText(LogPath, "", new UTF8Encoding(false));
             Party.Clear(); Guards.Clear();
             _retreat = false;
+            _strictMovement = strictMovement;
+            _worldPathSeen = _harvestInterrupted = _worldPathResumed = _waitingForHarvestEnd = false;
             Result = "идёт";
             Next(Step.Camp);
             EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
             Write($"=== ЛИЧНАЯ ЭКСПЕДИЦИЯ В UNITY, сцена {SceneManager.GetActiveScene().name}");
+            if (_strictMovement) Write("Проверка маршрута: один ПКМ к цели или знаку. Жду прерывания жатвой и продолжения того же маршрута.");
             return "запущена";
         }
 
@@ -321,9 +333,11 @@ namespace Sinbinder.EditorTools
         private static void Tick()
         {
             if (!EditorApplication.isPlaying) { Finish("НЕ ПРОЙДЕНО: игра остановлена посреди проверки"); return; }
-            double now = EditorApplication.timeSinceStartup, spent = now - _since;
-            DismissSalary(spent);
+            double now = EditorApplication.timeSinceStartup;
             var hero = SinbinderPlayer.Exists ? SinbinderPlayer.Instance : null;
+            ObserveWorldMove(hero, now);
+            double spent = now - _since;
+            DismissSalary(spent);
             if (AnswerLesson(now, hero)) return;
             switch (_step)
             {
@@ -365,6 +379,12 @@ namespace Sinbinder.EditorTools
                     bool ok = PersonalExpedition.Enter(chapel, names, out var error);
                     Write($"  PersonalExpedition.Enter → {(ok ? "да" : "НЕТ: " + error)}");
                     if (!ok) { Finish("НЕ ПРОЙДЕНО: вход в личную экспедицию отказан"); return; }
+                    if (_strictMovement)
+                    {
+                        var camera = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                        if (camera == null) { Finish("НЕ ПРОЙДЕНО: для приказа мышью нужна тактическая камера"); return; }
+                        camera.SetView(RTS_Camera.CameraView.Tactical);
+                    }
                     foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
                         if (w != null && w.Team == Team.Player && !(w is SinbinderPlayer) && names.Contains(w.DisplayName)) Party.Add(w);
                     Next(Step.Look);
@@ -484,14 +504,12 @@ namespace Sinbinder.EditorTools
                             // Так проверяется и выход из вылазки без победы.
                             Write("бой: " + fight + " — отступаю к знаку, как игрок");
                             _retreat = true;
-                            hero.GetComponent<UnitMover>().CommandMove(Vector3.MoveTowards(Spot("Gate"), hero.transform.position, 1.5f));
-                            Next(Step.Gate);
+                            StartWorldMove(hero, Step.Gate);
                             return;
                         }
                         Write("бой: " + fight);
                         // Цель — как игрок: дойти к янтарному огню и нажать F.
-                        hero.GetComponent<UnitMover>().CommandMove(Vector3.MoveTowards(Spot("Objective"), hero.transform.position, 1.5f));
-                        Next(Step.Goal);
+                        StartWorldMove(hero, Step.Goal);
                     }
                     return;
                 }
@@ -506,16 +524,16 @@ namespace Sinbinder.EditorTools
                     // Урок жатвы уводит Греховода к душе (мир стоит, пока не соберёт).
                     // После урока игрок снова щёлкает к своей точке — так и здесь.
                     // 23.11 без этого Греховод стоял у души в 58 м от знака.
-                    if (!_wasd && left > 3.5f && agent != null && agent.isOnNavMesh && Flat(agent.destination, spot) > 3f)
+                    if (!_strictMovement && !_wasd && left > 3.5f && agent != null && agent.isOnNavMesh && Flat(agent.destination, spot) > 3f)
                     {
                         hero.GetComponent<UnitMover>().CommandMove(Vector3.MoveTowards(spot, hero.transform.position, 1.5f));
                         Write($"  снова к {(_step == Step.Goal ? "цели" : "знаку")}: приказ стоял не туда (после урока)");
                         _since = now;
                     }
                     // Приказ мышью встал — дальше так, как ходит игрок глазами: W шагает agent.Move (PlayerWalk).
-                    if (left > 3.5f && spent > 8 && !_wasd && agent != null && agent.velocity.sqrMagnitude < 0.01f)
+                    if (!_strictMovement && left > 3.5f && spent > 8 && !_wasd && agent != null && agent.velocity.sqrMagnitude < 0.01f)
                     { _wasd = true; Write($"  приказ мышью встал в {left:F1} м от точки — дальше шаг как с клавиш (agent.Move, как PlayerWalk)"); }
-                    if (_wasd && agent != null && agent.isOnNavMesh && left > 3.5f)
+                    if (!_strictMovement && _wasd && agent != null && agent.isOnNavMesh && left > 3.5f)
                     {
                         var path = new NavMeshPath();
                         NavMesh.CalculatePath(hero.transform.position, spot, new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask }, path);
@@ -526,6 +544,8 @@ namespace Sinbinder.EditorTools
                     }
                     _lastTick = now;
                     if (left > 3.5f && spent < 90) return;
+                    if (_strictMovement && left > 3.5f)
+                    { Finish($"НЕ ПРОЙДЕНО: один ПКМ не довёл Греховода до точки, осталось {left:F1} м"); return; }
                     Write($"{(_step == Step.Goal ? "цель" : "знак возврата")}: дошёл за {spent:F0} с, до точки {left:F1} м; F предлагает: "
                         + string.Join(" / ", Offers().ConvertAll(o => o.label)));
                     var want = _step == Step.Goal ? "исследовать" : "вернуться";
@@ -535,8 +555,7 @@ namespace Sinbinder.EditorTools
                     if (_step == Step.Goal)
                     {
                         Write("  после F: " + Notice());
-                        hero.GetComponent<UnitMover>().CommandMove(Vector3.MoveTowards(Spot("Gate"), hero.transform.position, 1.5f));
-                        Next(Step.Gate);
+                        StartWorldMove(hero, Step.Gate);
                     }
                     else Next(Step.Back);
                     return;
@@ -545,6 +564,10 @@ namespace Sinbinder.EditorTools
                 case Step.Back:
                 {
                     if (spent < 3) return;
+                    if (_strictMovement && !_harvestInterrupted)
+                    { Finish("ПРОВЕРКА НЕ ВОСПРОИЗВЕЛАСЬ: урок жатвы не прервал открытый маршрут после боя"); return; }
+                    if (_strictMovement && !_worldPathResumed)
+                    { Finish("НЕ ПРОЙДЕНО: после жатвы не зафиксировано продолжение исходного маршрута"); return; }
                     Write($"после возврата: экспедиция {(PersonalExpedition.Active ? "ВСЁ ЕЩЁ идёт" : "закрыта")}, сцена {SceneManager.GetActiveScene().name}, Греховод у {Flat(hero.transform.position)}");
                     foreach (var w in Party)
                     {
@@ -558,6 +581,50 @@ namespace Sinbinder.EditorTools
                          + $"; письмо в суме {(letter ? "есть" : "НЕТ")}");
                     return;
                 }
+            }
+        }
+
+        private static void StartWorldMove(SinbinderPlayer hero, Step step)
+        {
+            var spot = Spot(step == Step.Goal ? "Objective" : "Gate");
+            _worldDestination = Vector3.MoveTowards(spot, hero.transform.position, 1.5f);
+            _worldPathSeen = false;
+            hero.GetComponent<UnitMover>().CommandMove(_worldDestination);
+            Next(step);
+            ObserveWorldMove(hero, EditorApplication.timeSinceStartup);
+        }
+
+        private static void ObserveWorldMove(SinbinderPlayer hero, double now)
+        {
+            if (!_strictMovement || (_step != Step.Goal && _step != Step.Gate) || hero == null || hero.IsDead) return;
+            var agent = hero.GetComponent<NavMeshAgent>();
+            if (agent == null || !agent.isOnNavMesh) return;
+
+            bool atOriginalDestination = Flat(agent.destination, _worldDestination) < 1f;
+            bool hasOriginalPath = atOriginalDestination && (agent.hasPath || agent.pathPending);
+            if (Lesson.Holding)
+            {
+                float left = Flat(hero.transform.position, _worldDestination);
+                if (!_harvestInterrupted && Lesson.Now == LessonKind.Harvest && _worldPathSeen && !hasOriginalPath && left > 3.5f)
+                {
+                    _harvestInterrupted = _waitingForHarvestEnd = true;
+                    _interruptedStep = _step;
+                    Write($"  жатва прервала путь к {Flat(_worldDestination)}, оставалось {left:F1} м");
+                }
+                return;
+            }
+
+            if (_waitingForHarvestEnd)
+            {
+                _waitingForHarvestEnd = false;
+                _since = now;
+            }
+            if (!hasOriginalPath) return;
+            _worldPathSeen = true;
+            if (_harvestInterrupted && !_worldPathResumed && _step == _interruptedStep)
+            {
+                _worldPathResumed = true;
+                Write($"  после жатвы тот же маршрут к {Flat(_worldDestination)} продолжился без повторного приказа");
             }
         }
 

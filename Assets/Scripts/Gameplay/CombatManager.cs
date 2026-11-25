@@ -38,7 +38,7 @@ namespace Sinbinder.Gameplay
 
         private void Register(Damageable unit, List<Damageable> destination)
         {
-            if (unit == null || unit.IsDead) return;
+            if (unit == null || unit.IsDead || unit.HasRetreated) return;
             if (destination.Contains(unit)
                 && (destination == _playerUnits || !_playerUnits.Contains(unit))
                 && (destination == _enemyUnits || !_enemyUnits.Contains(unit))
@@ -60,6 +60,19 @@ namespace Sinbinder.Gameplay
         {
             if (ReferenceEquals(unit, null) || !RemoveFromTeams(unit)) return;
             ObserveBattleRoster();
+            OnUnitsChanged?.Invoke();
+        }
+
+        internal void ReportEnemyRetreat(Damageable unit)
+        {
+            if (unit == null || unit.IsDead || !_enemyUnits.Contains(unit)) return;
+            SyncBattleScope();
+            if (!OnBattleMap(unit)) return;
+
+            ObserveBattleRoster(AlliesAlive() || _battleTug, enemiesAlive: true);
+            unit.ConfirmRetreat();
+            RemoveFromTeams(unit);
+            _battleEndGate.RecordEnemyRetreat(EnemiesAlive());
             OnUnitsChanged?.Invoke();
         }
 

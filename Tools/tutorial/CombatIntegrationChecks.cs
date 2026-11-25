@@ -17,6 +17,9 @@ internal static class CombatIntegrationChecks
         HeroFall(check, lastEnemyFalls: true);
         Draw(check, enemyFirst: true);
         Draw(check, enemyFirst: false);
+        EnemyRetreat(check);
+        RetreatAndWipe(check, retreatFirst: true);
+        RetreatAndWipe(check, retreatFirst: false);
         Reinforcement(check);
         NonlethalRemoval(check);
         TemporaryCharm(check);
@@ -155,6 +158,83 @@ internal static class CombatIntegrationChecks
         battle.EndFrame();
         check(battle.Hub.Battles.Count == 1 && HasResult(battle.Hub.Battles[0].Result, BattleOutcome.Victory, 2, 0),
             "the final victory includes deaths from before the reinforcement arrived");
+    }
+
+    private static void EnemyRetreat(Action<bool, string> check)
+    {
+        using var battle = new Fixture();
+        var ally = battle.Spawn(Team.Player, "ally");
+        var neutral = battle.Spawn(Team.Neutral, "neutral");
+        var slain = battle.Spawn(Team.Enemy, "slain enemy");
+        var fleeing = battle.Spawn(Team.Enemy, "fleeing enemy");
+        Kill(slain, ally);
+
+        int changes = 0;
+        battle.Manager.OnUnitsChanged += () => changes++;
+        battle.Manager.ReportEnemyRetreat(null);
+        battle.Manager.ReportEnemyRetreat(neutral);
+        battle.Manager.ReportEnemyRetreat(slain);
+        fleeing.gameObject.SetActive(false);
+        battle.Manager.ReportEnemyRetreat(fleeing);
+        fleeing.gameObject.SetActive(true);
+        battle.EndFrame();
+        check(changes == 0 && battle.Manager.GetAliveEnemyCount() == 1 && battle.Hub.Battles.Count == 0,
+            "an absent, neutral, inactive or dead unit cannot report an enemy retreat");
+
+        battle.Manager.ReportEnemyRetreat(fleeing);
+        Kill(fleeing, ally);
+        battle.Manager.RegisterEnemyUnit(fleeing);
+        check(changes == 1 && !fleeing.IsDead && battle.Manager.GetAliveEnemyCount() == 0 &&
+            battle.Deaths.SequenceEqual(new[] { slain }) && battle.Manager.BodiesOnField.Count == 1,
+            "a confirmed retreat cannot be reversed by a late hit or registration before Unity destroys the unit");
+        battle.Manager.ReportEnemyRetreat(fleeing);
+        Call(fleeing, "OnDestroy");
+        check(changes == 1 && !fleeing.IsDead && battle.Manager.GetAliveEnemyCount() == 0 && battle.Hub.Battles.Count == 0,
+            "the final live enemy's retreat unregisters it once and defers the outcome until frame end");
+        battle.EndFrame();
+        check(battle.Hub.Battles.Count == 1 && HasResult(battle.Hub.Battles[0].Result, BattleOutcome.Victory, 1, 0) &&
+            battle.Deaths.SequenceEqual(new[] { slain }) && LootChain.Shares.Count == 1 &&
+            LootChain.Shares[0].Length == 1 && LootChain.Shares[0][0].gameObject.name == "Body_slain enemy",
+            "a victory by retreat counts and loots only the opponent that actually died");
+
+        var nextEnemy = battle.Spawn(Team.Enemy, "next fleeing enemy");
+        battle.Manager.ReportEnemyRetreat(fleeing);
+        battle.EndFrame();
+        check(battle.Hub.Battles.Count == 1, "a stale retreat report cannot finish the next wave");
+        battle.Manager.ReportEnemyRetreat(nextEnemy);
+        var reinforcement = battle.Spawn(Team.Enemy, "reinforcement after retreat");
+        battle.EndFrame();
+        check(battle.Hub.Battles.Count == 1, "a reinforcement cancels a pending retreat victory in the same frame");
+        battle.Manager.ReportEnemyRetreat(reinforcement);
+        battle.EndFrame();
+        battle.EndFrame();
+        check(battle.Hub.Battles.Count == 2 && HasResult(battle.Hub.Battles[1].Result, BattleOutcome.Victory, 0, 0) &&
+            battle.Deaths.Count == 1 && battle.Manager.BodiesOnField.Count == 1 &&
+            LootChain.Shares.Count == 2 && LootChain.Shares[1].Length == 0,
+            "a pure retreat can end a later wave without kills, new corpses or loot");
+    }
+
+    private static void RetreatAndWipe(Action<bool, string> check, bool retreatFirst)
+    {
+        using var battle = new Fixture();
+        var ally = battle.Spawn(Team.Player, "ally");
+        var enemy = battle.Spawn(Team.Enemy, "enemy");
+        if (retreatFirst)
+        {
+            battle.Manager.ReportEnemyRetreat(enemy);
+            Kill(ally, enemy);
+        }
+        else
+        {
+            Kill(ally, enemy);
+            battle.Manager.ReportEnemyRetreat(enemy);
+        }
+
+        battle.EndFrame();
+        check(battle.Hub.Battles.Count == 1 && HasResult(battle.Hub.Battles[0].Result, BattleOutcome.Defeat, 0, 1, ally) &&
+            battle.Deaths.SequenceEqual(new[] { ally }) && LootChain.Shares.Count == 0,
+            retreatFirst ? "the allied wipe after the last enemy flees is a defeat"
+                : "an enemy fleeing after the allied wipe does not change the defeat");
     }
 
     private static void NonlethalRemoval(Action<bool, string> check)

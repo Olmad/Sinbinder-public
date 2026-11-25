@@ -85,27 +85,30 @@ namespace Sinbinder.Gameplay
         }
     }
 
-    /// <summary>Tracks losses independently of the live team lists.</summary>
+    /// <summary>Tracks casualties and confirmed exits independently of the live team lists.</summary>
     internal sealed class BattleEndGate
     {
+        private enum EnemyExit { None, Death, Retreat }
+
         private bool _active;
         private bool _alliesEliminated;
-        private bool _enemiesEliminated;
         private bool _heroFell;
+        private EnemyExit _lastEnemyExit;
         private int _enemiesKilled;
         private int _alliesLost;
         private readonly HashSet<string> _fallenAllies = new();
 
-        public bool HasPendingEnd => _heroFell || _alliesEliminated || _enemiesEliminated;
+        public bool HasPendingEnd => _heroFell || _alliesEliminated || _lastEnemyExit != EnemyExit.None;
 
         public bool RosterChanged(bool alliesAlive, bool enemiesAlive)
         {
             if (alliesAlive) _alliesEliminated = false;
-            if (enemiesAlive) _enemiesEliminated = false;
+            if (enemiesAlive) _lastEnemyExit = EnemyExit.None;
 
-            // Roster changes can cancel an encounter. Only recorded deaths end it.
+            // Roster changes can cancel an encounter. A final death or confirmed retreat can end it.
             if (alliesAlive && enemiesAlive) _active = true;
-            else if ((!alliesAlive && !_alliesEliminated && !_heroFell) || (!enemiesAlive && !_enemiesEliminated)) Reset();
+            else if ((!alliesAlive && !_alliesEliminated && !_heroFell) ||
+                     (!enemiesAlive && _lastEnemyExit == EnemyExit.None)) Reset();
             return _active;
         }
 
@@ -122,8 +125,13 @@ namespace Sinbinder.Gameplay
             else
             {
                 _enemiesKilled++;
-                _enemiesEliminated = !sideAlive;
+                _lastEnemyExit = sideAlive ? EnemyExit.None : EnemyExit.Death;
             }
+        }
+
+        public void RecordEnemyRetreat(bool enemiesAlive)
+        {
+            if (_active) _lastEnemyExit = enemiesAlive ? EnemyExit.None : EnemyExit.Retreat;
         }
 
         public bool TryComplete(out BattleResult result)
@@ -131,7 +139,7 @@ namespace Sinbinder.Gameplay
             result = default;
             if (!_active || !HasPendingEnd) return false;
 
-            var outcome = _alliesEliminated && _enemiesEliminated ? BattleOutcome.Draw
+            var outcome = _alliesEliminated && _lastEnemyExit == EnemyExit.Death ? BattleOutcome.Draw
                 : _alliesEliminated || _heroFell ? BattleOutcome.Defeat : BattleOutcome.Victory;
             var fallen = new string[_fallenAllies.Count];
             _fallenAllies.CopyTo(fallen);
@@ -142,7 +150,8 @@ namespace Sinbinder.Gameplay
 
         public void Reset()
         {
-            _active = _alliesEliminated = _enemiesEliminated = _heroFell = false;
+            _active = _alliesEliminated = _heroFell = false;
+            _lastEnemyExit = EnemyExit.None;
             _enemiesKilled = _alliesLost = 0;
             _fallenAllies.Clear();
         }

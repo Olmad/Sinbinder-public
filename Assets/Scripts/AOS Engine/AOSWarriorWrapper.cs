@@ -162,6 +162,7 @@ namespace Sinbinder.AOS
             if (_goal != null && action == ActionType.Flee && (Escaped() || Time.time - _fleeSince > FleeOut))
             {
                 Debug.Log($"[НАБЕГ] {_warrior.DisplayName} сбежал с поля");
+                CombatManager.Instance?.ReportEnemyRetreat(_self);
                 Destroy(gameObject);
                 return;
             }

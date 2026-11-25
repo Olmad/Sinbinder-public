@@ -157,6 +157,23 @@ internal static class Program
               refreshHint.Contains("_instance._hintWords = words") &&
               !refreshHint.Contains("_instance._hintOwner = owner"),
             "refresh cannot steal another owner's active hint");
+        Check(lessonUI.Contains("(agent.hasPath || (saveRoute && agent.pathPending))") &&
+              lessonUI.Contains("if (saveRoute) _harvestRoute = (visit, hero, point);") &&
+              lessonUI.Contains("_instance._leash.Flat(point) > _instance._leash.Radius"),
+            "harvest preserves an existing world route and separates clicks outside the lesson circle");
+        string playerWalk = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/PlayerWalk.cs");
+        Check(lessonUI.Contains("ReferenceEquals(route.Visit, PersonalExpedition.DialogueVisit)") &&
+              lessonUI.Contains("route.Hero != SinbinderPlayer.Instance || route.Hero.IsDead") &&
+              lessonUI.Contains("agent.isStopped || agent.hasPath || agent.pathPending") &&
+              lessonUI.Contains("path.status == NavMeshPathStatus.PathComplete") &&
+              lessonUI.Contains("agent.SetPath(path);") &&
+              playerWalk.Contains("Lesson.CancelHarvestRoute();"),
+            "harvest restores only a reachable route for the same hero and visit unless replaced or cancelled");
+        string combatWrapper = System.IO.File.ReadAllText("Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs");
+        int hunterRetreat = combatWrapper.IndexOf("CombatManager.Instance?.ReportEnemyRetreat(_self);", StringComparison.Ordinal);
+        int hunterDespawn = combatWrapper.IndexOf("Destroy(gameObject);", StringComparison.Ordinal);
+        Check(hunterRetreat >= 0 && hunterDespawn > hunterRetreat,
+            "confirmed hunter retreat enters the battle resolver before the fleeing body is destroyed");
         string viewHintUI = System.IO.File.ReadAllText("Assets/Scripts/UI/ViewHintUI.cs");
         int campScope = viewHintUI.IndexOf("SceneManager.GetActiveScene().name != \"Prologue_Camp\"", StringComparison.Ordinal);
         int camTransition = viewHintUI.IndexOf("if (_wasEyes && !eyes) _pending = true;", StringComparison.Ordinal);
