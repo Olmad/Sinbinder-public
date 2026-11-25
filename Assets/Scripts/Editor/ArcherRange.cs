@@ -68,6 +68,58 @@ namespace Sinbinder.EditorTools
             return "приказ: бить " + aim.name;
         }
 
+        /// <summary>Карта из папки карт — на поле «Перетягивания» (в идущей игре).</summary>
+        public static string Field(string file)
+        {
+            if (!Application.isPlaying) return "нужна идущая игра (play)";
+            var path = System.IO.Path.Combine(MapData.Folder, file);
+            var map = MapData.Load(path);
+            if (map == null) return "не прочиталась: " + path;
+            MapSession.Choose(path, map);
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Field");
+            return "грузится «" + map.Name + "»";
+        }
+
+        /// <summary>
+        /// Форты и замки на поле (патч v303): стоят ли на земле, сколько стрелков и чем стреляют.
+        /// bait — поставить у первого форта своего: стрелкам будет в кого стрелять.
+        /// </summary>
+        public static string Forts(bool bait)
+        {
+            var map = MapSession.Map;
+            var sb = new StringBuilder();
+            Transform first = null;
+            int forts = 0;
+            foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
+            {
+                if (go.transform.parent == null || !(go.name.StartsWith("Форт — ") || go.name.StartsWith("Замок — "))) continue;
+                forts++;
+                first ??= go.transform;
+                var p = go.transform.position;
+                float ground = map != null ? MapTerrain.HeightAt(map, p.x, p.z) : 0f;
+                if (forts <= 4) sb.Append($"{go.name}: y {p.y:0.0}, земля {ground:0.0}; ");
+            }
+            int archers = 0, bows = 0, shots = 0, hits = 0;
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+            {
+                if (!w.name.StartsWith("Стрелок форта")) continue;
+                archers++;
+                if (w.Soul != null && w.Soul.Trade == Trade.Archer) bows++;
+                var a = w.GetComponent<AutoAttack>();
+                if (a != null) { shots += a.Shots; hits += a.Hits + a.FriendlyHits; }
+            }
+            int beams = 0, arrows = 0;
+            foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
+            { if (go.name == "Выстрел со стены") beams++; else if (go.name == "Стрела") arrows++; }
+            if (bait && first != null && Application.isPlaying)
+            {
+                var at = Ground(first.position + first.forward * 22f);
+                Sinbinder.Crypt.ShootingRange.Stand("Приманка", Team.Player, at, -first.forward, new RelationshipSystem(AOS.MemoryProcessor.Instance));
+                sb.Append($"приманка у {at.x:0},{at.z:0}; ");
+            }
+            return $"карта «{(map != null ? map.Name : "—")}»: фортов и замков {forts}; стрелков {archers} (лучников {bows}), выпущено {shots}, попало {hits}; стрел в воздухе/торчит {arrows}, лучей {beams}; " + sb;
+        }
+
         public static string Report()
         {
             var sb = new StringBuilder();
