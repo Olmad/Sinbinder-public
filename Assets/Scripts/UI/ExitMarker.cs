@@ -94,6 +94,11 @@ namespace Sinbinder.UI
             float reachY = Mathf.Abs(ray.y) > 0.001f ? (centre.y - Margin) / Mathf.Abs(ray.y) : float.MaxValue;
             var edge = centre + ray * Mathf.Min(reachX, reachY);
 
+            // Низ экрана занят панелью воина, левый низ — ещё и плашкой урока: кадр сна 25.11 —
+            // «← Лесная тропа» легла поверх строк плашки. У края метка стоит выше них.
+            float floor = height * (edge.x < width * 0.3f ? 0.46f : 0.26f);
+            if (edge.y < floor) edge.y = floor;
+
             if (Mathf.Abs(ray.x) >= Mathf.Abs(ray.y))
                 text = ray.x > 0f ? word + " →" : "← " + word;
             else

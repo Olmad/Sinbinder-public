@@ -167,6 +167,10 @@ namespace Sinbinder.Gameplay
                 float height = Mathf.Max(0.3f, _animator.transform.lossyScale.y);
                 if (agent != null && agent.isOnNavMesh)
                     want = Mathf.Clamp(agent.velocity.magnitude / (WalkPace(_warrior.Shell) * height), 0.6f, FastestPace);
+                // Скорость агента скачет от кадра к кадру (обход, толкотня), и клип то нёсся, то вяз —
+                // голову дёргало (автор, 25.11: «головы персонажей при ходьбе жутко дёргает»).
+                // Темп меняется плавно: четверть секунды на переход.
+                want = Mathf.Lerp(_animator.speed, want, 1f - Mathf.Exp(-Time.deltaTime / 0.25f));
             }
             if (!Mathf.Approximately(_animator.speed, want)) _animator.speed = want;
         }
@@ -244,10 +248,16 @@ namespace Sinbinder.Gameplay
             if (_warrior is SinbinderPlayer && Lesson.HeroWalking) return true;
 
             var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
-            if (agent == null || !agent.isOnNavMesh) return false;
+            if (agent == null || !agent.isOnNavMesh) return _walking = false;
 
-            return agent.velocity.sqrMagnitude > 0.04f;
+            // С запасом: тронулся — с 0,3 м/с, встал — ниже 0,15. Одна черта 0,2 м/с на толкотне
+            // переключала «идёт/стоит» через кадр — тело вздрагивало сменой клипа.
+            float v = agent.velocity.sqrMagnitude;
+            _walking = _walking ? v > 0.0225f : v > 0.09f;
+            return _walking;
         }
+
+        private bool _walking;
 
         /// <summary>
         /// Говорит ли <b>этот</b> воин прямо сейчас.

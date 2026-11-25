@@ -493,7 +493,7 @@ namespace Sinbinder.EditorTools
                         ShotFrom("сон — площадь, глазами с входа", new Vector3(0.4f, 1.65f, DreamRoad.SquareFrom - 1f), new Vector3(0f, 2.5f, DreamRoad.GateZ));
                         ShotFrom("сон — алтарь лука", DreamRoad.AltarAt + new Vector3(2.8f, 1.9f, -2.6f), DreamRoad.AltarAt + Vector3.up * 0.9f);
                         ShotFrom("сон — арка противовеса", new Vector3(-3.5f, 2.0f, DreamRoad.ArchZ.z - 9f), new Vector3(0f, 4.0f, DreamRoad.ArchZ.z));
-                        ShotFrom("сон — пять печатей у ворот", new Vector3(0f, 7.5f, DreamRoad.LordSealAt.z - 10f), new Vector3(0f, 0.3f, DreamRoad.LordSealAt.z - 2.5f));
+                        ShotFrom("сон — пять печатей у ворот", new Vector3(0f, 10.5f, DreamRoad.LordSealAt.z - 5.8f), new Vector3(0f, 0f, DreamRoad.LordSealAt.z - 1.8f));   // выше перемычки: снизу кадр закрывал противовес
                         // Печати — замок ворот (17.11; с 25.11 их пять, №69 §17): Греховод — на венец,
                         // поднятому у дороги — приказ на меч с выключенным умом (проверка отказа),
                         // потом стражи: каждого — на ту печать, что ему подходит (Fits), один — сперва на чужую.
@@ -619,7 +619,7 @@ namespace Sinbinder.EditorTools
                             if (GroundDist(p.Value.transform.position, Seal(p.Key)) >= 1.25f) p.Value.IssueCommand(CommandKind.Move, Seal(p.Key));
                         _sealsWaitAt = now + 20f;
                     }
-                    if (_sealShotAt < 0f && dream.SealsOpen) _sealShotAt = now + 0.6f;
+                    if (_sealShotAt < 0f && dream.SealsOpen) _sealShotAt = now + 6f;   // после слов последнего поднятого: кадр 25.11 лёг на его заставку
                     if (!_sealShot && _sealShotAt > 0f && now > _sealShotAt)
                     {
                         _sealShot = true;

@@ -500,7 +500,21 @@ namespace Sinbinder.Gameplay
 
             // Печати перед воротами: резьба в камне — диск, кольцо и знак, свет едва тлеет.
             // Это замок ворот (сцена 10): встал на печать — её знак разгорается (LightSeal).
-            for (int i = 0; i < SealAt.Length; i++) _runes[i] = Seal(root, SealAt[i], (SealKind)i, dark, dressed);
+            for (int i = 0; i < SealAt.Length; i++)
+            {
+                _runes[i] = Seal(root, SealAt[i], (SealKind)i, dark, dressed);
+                var glow = new GameObject("Свет печати");
+                glow.transform.SetParent(root, false);
+                glow.transform.position = SealAt[i] + Vector3.up * 0.6f;
+                var l = glow.AddComponent<Light>();
+                l.type = LightType.Point;
+                l.color = new Color(0.62f, 0.88f, 1f);
+                l.range = 3.2f;
+                l.intensity = 0f;
+                l.shadows = LightShadows.None;
+                l.enabled = false;
+                _sealLights[i] = l;
+            }
             // Две печати братьев сцеплены желобом: читаются парой, горят вместе.
             _kinRune = Glowing(new Color(0.22f, 0.40f, 0.56f), 0.7f);
             Piece(root, PrimitiveType.Cube, "Желоб братьев", (SealAt[2] + SealAt[3]) * 0.5f + Vector3.up * 0.085f,
@@ -530,6 +544,32 @@ namespace Sinbinder.Gameplay
         {
             var rune = _runes[(int)kind];
             if (rune != null) rune.color = glow == SealGlow.Lit ? RuneLit : glow == SealGlow.Waiting ? RuneWaiting : RuneDim;
+            _sealWant[(int)kind] = glow == SealGlow.Lit ? 2.2f : glow == SealGlow.Waiting ? 0.7f : 0f;
+        }
+
+        // Свет из-под печати (25.11): зажглась — холодное сияние поднимается на ноги стоящего,
+        // с коротким всплеском в миг зажжения; погасла — уходит за полсекунды. Знак один не читался издали.
+        private readonly Light[] _sealLights = new Light[5];
+        private readonly float[] _sealWant = new float[5];
+        private readonly float[] _sealFlash = new float[5];
+        private readonly bool[] _sealWasLit = new bool[5];
+
+        private void SealGlowTick(float dt)
+        {
+            for (int i = 0; i < _sealLights.Length; i++)
+            {
+                var l = _sealLights[i];
+                if (l == null) continue;
+                float want = _sealWant[i];
+                bool lit = want > 1.5f;
+                if (lit && !_sealWasLit[i]) _sealFlash[i] = 1f;   // только что зажглась — всплеск
+                if (!lit) _sealFlash[i] = 0f;
+                _sealWasLit[i] = lit;
+                _sealFlash[i] = Mathf.Max(0f, _sealFlash[i] - dt * 2.5f);
+                float target = want + _sealFlash[i] * 3f;
+                l.intensity = Mathf.MoveTowards(l.intensity, target, dt * (target > l.intensity ? 12f : 4.5f));
+                l.enabled = l.intensity > 0.01f;
+            }
         }
 
         /// <summary>Желоб между печатями братьев горит, когда на них стоит пара.</summary>
@@ -550,28 +590,37 @@ namespace Sinbinder.Gameplay
             void Bar(string name, float x, float z, float w, float l, float yaw = 0f)
                 => Piece(root, PrimitiveType.Cube, name, at + new Vector3(x, 0.085f, z), new Vector3(w, 0.012f, l), rune, false)
                     .transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            // Кадр 25.11: меч и крест читались одним знаком, «двое» — буквой Н. Теперь у каждого
+            // свой силуэт: венец с высоким средним зубцом, меч с рукоятью и навершием, равноконечный
+            // крест с перекладинами на концах, братья — два сцепленных кольца.
             switch (kind)
             {
                 case SealKind.Lord:
-                    Bar("Обод венца", 0f, -0.3f, 1.2f, 0.14f);
-                    foreach (float x in new[] { -0.45f, 0f, 0.45f }) Bar("Зубец венца", x, 0.1f, 0.14f, 0.7f);
+                    Bar("Обод венца", 0f, -0.32f, 1.2f, 0.14f);
+                    Bar("Зубец венца", 0f, 0.12f, 0.14f, 0.85f);
+                    Bar("Зубец венца", -0.42f, 0.0f, 0.13f, 0.62f, 14f);
+                    Bar("Зубец венца", 0.42f, 0.0f, 0.13f, 0.62f, -14f);
                     break;
                 case SealKind.Wrath:
-                    // Меч — прежний знак воина, теперь ярости.
-                    Bar("Клинок", 0f, 0.1f, 0.14f, 1.3f);
-                    Bar("Гарда", 0f, -0.35f, 0.7f, 0.12f);
+                    Bar("Клинок", 0f, 0.22f, 0.13f, 1.1f);
+                    Bar("Гарда", 0f, -0.36f, 0.62f, 0.11f);
+                    Bar("Рукоять", 0f, -0.52f, 0.09f, 0.26f);
+                    Bar("Навершие", 0f, -0.68f, 0.2f, 0.09f);
                     break;
                 case SealKind.BrotherLeft:
                 case SealKind.BrotherRight:
-                    // Двое за руки: два стана и сцепка между ними.
-                    Bar("Стан", -0.28f, 0f, 0.14f, 1.0f);
-                    Bar("Стан", 0.28f, 0f, 0.14f, 1.0f);
-                    Bar("Сцепка", 0f, 0.05f, 0.56f, 0.12f);
+                    // Два кольца внахлёст: светящийся круг, поверх — камень поменьше. Камень второго
+                    // кольца режет дугу первого внутри — читается парой, сцепленной.
+                    foreach (float x in new[] { -0.2f, 0.2f })
+                        Piece(root, PrimitiveType.Cylinder, "Кольцо брата", at + new Vector3(x, 0.082f, 0f), new Vector3(0.78f, 0.006f, 0.78f), rune, false);
+                    foreach (float x in new[] { -0.2f, 0.2f })
+                        Piece(root, PrimitiveType.Cylinder, "Кольцо брата — середина", at + new Vector3(x, 0.088f, 0f), new Vector3(0.58f, 0.006f, 0.58f), dressed, false);
                     break;
                 case SealKind.Order:
-                    // Крест Ордена — как на груди у охотников.
-                    Bar("Крест", 0f, 0f, 0.14f, 1.3f);
-                    Bar("Перекладина", 0f, 0.22f, 0.8f, 0.14f);
+                    Bar("Крест", 0f, 0f, 0.13f, 1.0f);
+                    Bar("Крест", 0f, 0f, 1.0f, 0.13f);
+                    foreach (var (x, z, w, l) in new[] { (0f, 0.5f, 0.36f, 0.1f), (0f, -0.5f, 0.36f, 0.1f), (0.5f, 0f, 0.1f, 0.36f), (-0.5f, 0f, 0.1f, 0.36f) })
+                        Bar("Перекладина креста", x, z, w, l);
                     break;
             }
             return rune;
@@ -1288,6 +1337,7 @@ namespace Sinbinder.Gameplay
         {
             float dt = Time.deltaTime;
             BridgeTick(dt);
+            SealGlowTick(dt);
             if (_dummy != null && (_tilt.sqrMagnitude > 1e-4f || _tiltVel.sqrMagnitude > 1e-4f
                                    || Mathf.Abs(_spin) > 0.01f || Mathf.Abs(_spinVel) > 0.01f))
             {
