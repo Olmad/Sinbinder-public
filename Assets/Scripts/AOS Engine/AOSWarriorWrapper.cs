@@ -323,7 +323,7 @@ namespace Sinbinder.AOS
                         {
                             var autoAttack = GetComponent<AutoAttack>();
                             bool reach = autoAttack != null
-                                && Vector3.Distance(transform.position, cmd.Target.transform.position) <= autoAttack.AttackRange;
+                                && Vector3.Distance(transform.position, cmd.Target.transform.position) <= autoAttack.Reach;
                             // В досягаемости — стоит и бьёт; не дошёл — идёт. Раньше шёл
                             // и в досягаемости: упирался в цель грудью (п. 8 отзыва 21.10).
                             if (mover != null)
@@ -406,7 +406,7 @@ namespace Sinbinder.AOS
             {
                 if (enemy == null || enemy.IsDead) continue;
                 float distance = Vector3.Distance(transform.position, enemy.transform.position);
-                if (distance <= aa.AttackRange && distance < closestDistance)
+                if (distance <= aa.Reach && distance < closestDistance)
                 {
                     closest = enemy;
                     closestDistance = distance;
@@ -433,7 +433,7 @@ namespace Sinbinder.AOS
             // его и не было — значит на каждом решении Attack, у каждого,
             // дважды в секунду, летело исключение.
             var autoAttack = GetComponent<AutoAttack>();
-            bool reach = autoAttack != null && dist <= autoAttack.AttackRange;
+            bool reach = autoAttack != null && dist <= autoAttack.Reach;   // лучник — с выстрела
             // В досягаемости — стоит; не дошёл — идёт (п. 8 отзыва 21.10).
             if (mover != null)
             {

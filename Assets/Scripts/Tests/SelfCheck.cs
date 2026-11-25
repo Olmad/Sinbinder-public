@@ -2424,7 +2424,7 @@ namespace Sinbinder.Tests
             ("раз", "Gameplay.CampfireStoke.Said Gameplay.Signature.Greeted Gameplay.Signature.Born Gameplay.SoulCourt.Decided " +
                     "UI.HintArrival.Flown"),
             // кэш: справочники, таблицы, звуки
-            ("кэш", "AOS.AOSWarriorWrapper._iconCache AOS.Counterfactual.Order AOS.Counterfactual.VoiceOrder AOS.PerkResolver._warned " +
+            ("кэш", "Gameplay.AutoAttack._shaftMat Gameplay.AutoAttack._featherMat Gameplay.AutoAttack._tipMat Gameplay.AutoAttack._trailMat AOS.AOSWarriorWrapper._iconCache AOS.Counterfactual.Order AOS.Counterfactual.VoiceOrder AOS.PerkResolver._warned " +
                     "AOS.SkillCatalog.Diligence AOS.SkillCatalog.Gluttony AOS.SkillCatalog.Lust AOS.SkillCatalog.None " +
                     "AOS.SkillCatalog.Patience AOS.SkillCatalog.Sloth AOS.SkillCatalog.Wrath AOS.TemptationResolver.Pull " +
                     "AOS.TitleDatabase.Granted AOS.TitleDatabase.Rules Audio.DeathVoice.VowelFormants Audio.Music.Clips Audio.Music.Told " +

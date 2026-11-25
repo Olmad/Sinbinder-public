@@ -155,6 +155,15 @@ namespace Sinbinder.Crypt
             Row(Loc.T("Собрать генератором"), Loc.T("Человек целиком: ремесло, грехи, примета, история."), MakeGenerated);
             if (_made.Count > 0)
                 Row(Loc.T("Убрать созданных"), Loc.T("Площадка снова пуста — девять лагеря остаются."), Clear);
+
+            // Стрельбище (автор, 25.11: «нам нужны лучники!», «почему бы не сделать полигон?»).
+            y -= h * 0.3f;
+            Row(_targets.Count > 0 ? Loc.T("Стрельбище — поставить мишени заново") : Loc.T("Стрельбище — поставить мишени"),
+                Loc.T("Перед Греховодом: враг в схватке со своим, мишень на ходу, дальняя мишень."), PlaceTargets);
+            Row(Loc.F("Лук лучников: {0}", _skyBow ? Loc.T("небесный") : Loc.T("обычный")),
+                _skyBow ? Loc.T("Вверх, к цели на высоте, отвесно вниз; бьёт на 22 м и наводится сам.")
+                        : Loc.T("Дугой на 11 м; свой на линии — навесом над его головой."),
+                () => { _skyBow = !_skyBow; ApplyBows(); Draw(); });
             Row(Loc.T("Закрыть"), Loc.F("{0} или Esc.", Key), Close);
         }
 
@@ -246,6 +255,7 @@ namespace Sinbinder.Crypt
                 warrior.Soul.Set((SinType)_second, Mathf.Max(warrior.Soul.Get((SinType)_second), strength * 0.6f));
 
             _made.Add(warrior);
+            ApplyBows();
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(
                 Loc.F("{0} встал на площадке.", Loc.Name(member.Name)));
             _number++;
@@ -292,6 +302,7 @@ namespace Sinbinder.Crypt
             if (warrior.Soul != null)
                 warrior.Soul.Set(k.Second, Mathf.Max(warrior.Soul.Get(k.Second), k.Strength * 0.6f));
             Signature.Give(k.Name, k.Why, k.First, k.Death);
+            ApplyBows();
 
             _made.Add(warrior);
             var log = Object.FindFirstObjectByType<UI.BattleLogUI>();
@@ -299,6 +310,26 @@ namespace Sinbinder.Crypt
             if (k.Seed != null && !string.IsNullOrEmpty(k.Seed.Story)) log?.Write(k.Seed.Story);
             _number++;
             Draw();
+        }
+
+        private readonly List<GameObject> _targets = new();
+        private bool _skyBow;
+
+        private void PlaceTargets()
+        {
+            foreach (var t in _targets) if (t != null) Destroy(t);
+            _targets.Clear();
+            _targets.AddRange(ShootingRange.PlaceTargets());
+            Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.T("Мишени встали перед Греховодом."));
+            Draw();
+        }
+
+        /// <summary>Лук у всех лучников площадки — обычный или небесный (проба, AutoAttack.SkyBow).</summary>
+        private void ApplyBows()
+        {
+            foreach (var w in Object.FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                if (w != null && w.Soul != null && w.Soul.Trade == Trade.Archer && w.TryGetComponent<AutoAttack>(out var bow))
+                    bow.SkyBow = _skyBow;
         }
 
         private void Clear()

@@ -65,6 +65,15 @@ namespace Sinbinder.Gameplay
             ApplyDamage(damage, attacker, allowGuardInterception: true);
         }
 
+        /// <summary>
+        /// Стрела долетела (AutoAttack, лучник). Как удар, только без взмаха у стрелявшего:
+        /// он выстрелил полсекунды назад, и второй взмах в миг попадания читался бы новым ударом.
+        /// </summary>
+        public void TakeArrow(float damage, GameObject archer)
+        {
+            ApplyDamage(damage, archer, allowGuardInterception: true, swing: false);
+        }
+
         // A bodyguard must take the intercepted hit directly. Allowing this
         // hit to enter Bodyguard.Absorb again could bounce between two wounded
         // warriors who are each guarding the other, producing two false saves.
@@ -74,7 +83,7 @@ namespace Sinbinder.Gameplay
             ApplyDamage(damage, attacker, allowGuardInterception: false);
         }
 
-        private void ApplyDamage(float damage, GameObject attacker, bool allowGuardInterception)
+        private void ApplyDamage(float damage, GameObject attacker, bool allowGuardInterception, bool swing = true)
         {
             // Nonpositive or nonfinite input is not a hit: never heal through damage,
             // mark hostility, consume a bodyguard watch or produce a death event.
@@ -111,7 +120,7 @@ namespace Sinbinder.Gameplay
             // Engagement, умения), а ловить его надёжно — здесь, где он
             // доходит. Автор, 21 октября: «оружие достают, а махать им так
             // и не научились».
-            if (attacker != null
+            if (swing && attacker != null
                 && attacker.TryGetComponent<WarriorAnimation>(out var arm))
                 arm.Struck();
 

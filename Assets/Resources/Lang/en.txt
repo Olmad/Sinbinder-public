@@ -16785,3 +16785,59 @@ msgstr "Eat. First — eat."
 #: Gameplay/RisingWords.cs
 msgid "Зачем было будить? Я только лёг."
 msgstr "Why wake me? I had only just lain down."
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "создатель воинов (N) и стрельбище"
+msgstr "warrior maker (N) and shooting range"
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Мишень"
+msgstr "Target"
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Свой в схватке"
+msgstr "Ally in the fray"
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Мишень на ходу"
+msgstr "Moving target"
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Дальняя мишень"
+msgstr "Far target"
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Мишени встали перед Греховодом."
+msgstr "The targets stand before the Sinbinder."
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Стрельбище — поставить мишени"
+msgstr "Shooting range — set up targets"
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Стрельбище — поставить мишени заново"
+msgstr "Shooting range — set up targets again"
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Перед Греховодом: враг в схватке со своим, мишень на ходу, дальняя мишень."
+msgstr "Before the Sinbinder: a foe fighting an ally, a moving target, a far target."
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Лук лучников: {0}"
+msgstr "Archers' bow: {0}"
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "небесный"
+msgstr "skyward"
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "обычный"
+msgstr "ordinary"
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Вверх, к цели на высоте, отвесно вниз; бьёт на 22 м и наводится сам."
+msgstr "Up, over to the target at height, straight down; reaches 22 m and seeks its mark."
+
+#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
+msgid "Дугой на 11 м; свой на линии — навесом над его головой."
+msgstr "An arc to 11 m; an ally in the line — lobbed over his head."

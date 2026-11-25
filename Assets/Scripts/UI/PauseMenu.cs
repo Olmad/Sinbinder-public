@@ -221,6 +221,10 @@ namespace Sinbinder.UI
             else
                 Add(ref y, Loc.T("Сон Греховода"), Loc.T("обучение и суд души"), () => Field(StartPanel.Dream));
 
+            // Полигон (Crypt_Test): создатель воинов и стрельбище (автор, 25.11: «добавь полигон в меню паузы»).
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Crypt_Test")
+                Add(ref y, Loc.T("Полигон"), Loc.T("создатель воинов (N) и стрельбище"), () => Field("Crypt_Test"));
+
             y -= MenuRows.Height * 0.5f;
             Add(ref y, Loc.T("Выйти из игры"), Commitment.On
                     ? Loc.T("Игра с обязательством — записывайте перед выходом")
