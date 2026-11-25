@@ -57,6 +57,7 @@ namespace Sinbinder.EditorTools
             "get Тип.Член | Тип#член — значение (# — у первого такого в сцене); set Тип.Член <знач>\n" +
             "call Тип.Метод [арг…] | Тип#Метод — вызвать; числа через точку, вектор x,y,z, enum по имени\n" +
             "buttons — видимые кнопки UI; click <надпись или имя> — нажать, как игрок; hover <надпись> — навести\n" +
+            "film лагерь | поле | 1 3 — вертикальные Shorts 1080×1920 (Editor/TrailerShorts) в D:\\Claude\\Shorts\\кадры\n" +
             "log [n] — последние строки журнала Unity; quit — выйти";
 
         private static readonly List<string> Recent = new();
@@ -179,6 +180,9 @@ namespace Sinbinder.EditorTools
                 case "wait":
                     if (since >= PendingFor) Done($"прошло {PendingFor:0.#} с; " + State());
                     return;
+                case "film":
+                    if (!Sinbinder.Utilets.TrailerShoot.ShortsBusy) Done(Sinbinder.Utilets.TrailerShoot.ShortsReport);
+                    return;
                 case "dream":
                     // Отвечают DreamEnded и StopAt; это — страховка, если сон кончился без них.
                     if (since > 5f && !EditorApplication.isPlayingOrWillChangePlaymode && !SessionState.GetBool(DreamActive, false))
@@ -279,6 +283,10 @@ namespace Sinbinder.EditorTools
                     return all.Count == 0 ? "видимых кнопок нет" : string.Join("\n", all);
                 case "click": return Click(string.Join(" ", a.Skip(1)));
                 case "hover": return Hover(string.Join(" ", a.Skip(1)));
+                case "film":
+                    Pend(id, "film");
+                    Sinbinder.Utilets.TrailerShoot.Film(string.Join(" ", a.Skip(1)));
+                    return null;
                 case "log":
                     int n = a.Count > 1 ? int.Parse(a[1]) : 30;
                     return Recent.Count == 0 ? "(журнал пуст с последней перезагрузки)" : string.Join("\n", Recent.Skip(Math.Max(0, Recent.Count - n)));

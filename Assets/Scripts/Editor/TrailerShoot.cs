@@ -19,7 +19,7 @@ namespace Sinbinder.Utilets
     ///     Unity -batchmode -projectPath … -executeMethod Sinbinder.Utilets.TrailerShoot.CampBatch
     /// </summary>
     [InitializeOnLoad]
-    public static class TrailerShoot
+    public static partial class TrailerShoot
     {
         private const string Folder = "D:/Claude/трейлер/кадры";
         private const string Active = "Sinbinder.TrailerShoot.Active";

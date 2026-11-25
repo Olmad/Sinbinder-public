@@ -35,6 +35,12 @@ namespace Sinbinder.Dev
         public string Folder;
         public Action Done;
 
+        /// <summary>Размер кадра. Вертикальные Shorts (автор, 24.11) — 1080×1920; трейлер — 1920×1080.</summary>
+        public int Width = W, Height = H;
+
+        /// <summary>Сколько кадров снято (для очереди Shorts в Editor/TrailerShoot).</summary>
+        public int Frames => _frame;
+
         private Camera _cam;
         private RenderTexture _rt;
         private Texture2D _read;
@@ -48,8 +54,8 @@ namespace Sinbinder.Dev
             foreach (var f in Directory.GetFiles(Folder, "*.jpg")) File.Delete(f);
             File.Delete(Path.Combine(Folder, "снято.txt"));
             Time.captureFramerate = Fps;
-            _rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
-            _read = new Texture2D(W, H, TextureFormat.RGB24, false);
+            _rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            _read = new Texture2D(Width, Height, TextureFormat.RGB24, false);
             Next();
         }
 
@@ -94,7 +100,7 @@ namespace Sinbinder.Dev
             _cam.targetTexture = null;
             var was = RenderTexture.active;
             RenderTexture.active = _rt;
-            _read.ReadPixels(new Rect(0, 0, W, H), 0, 0);
+            _read.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
             _read.Apply(false);
             RenderTexture.active = was;
             File.WriteAllBytes(Path.Combine(Folder, $"{_frame:00000}.jpg"), _read.EncodeToJPG(92));
