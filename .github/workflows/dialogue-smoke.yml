@@ -4,8 +4,12 @@ on:
   push:
     branches:
       - feature/server-prototype
+      - 'feature/sinbinder-canonical-integration-*'
     paths:
       - "Assets/Scripts/Dialogue/**"
+      - "Assets/Scripts/Gameplay/PersonalExpedition.cs"
+      - "Assets/Scripts/UI/DialogueUI.cs"
+      - "Assets/Scripts/UI/SpeechBubbles.cs"
       - "Assets/Scripts/Core/Loc.cs"
       - "Assets/Scripts/Core/Soul/SinType.cs"
       - "Assets/Resources/Lang/en.txt"
@@ -14,6 +18,9 @@ on:
   pull_request:
     paths:
       - "Assets/Scripts/Dialogue/**"
+      - "Assets/Scripts/Gameplay/PersonalExpedition.cs"
+      - "Assets/Scripts/UI/DialogueUI.cs"
+      - "Assets/Scripts/UI/SpeechBubbles.cs"
       - "Assets/Scripts/Core/Loc.cs"
       - "Assets/Scripts/Core/Soul/SinType.cs"
       - "Assets/Resources/Lang/en.txt"

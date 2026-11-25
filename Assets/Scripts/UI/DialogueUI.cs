@@ -21,8 +21,11 @@ namespace Sinbinder.UI
         [SerializeField] private bool _useVoice = true; // Включить/выключить голос
 
         private Queue<DialogueLine> _queue = new();
+        private readonly Queue<DialogueLine> _ambientQueue = new();
         private bool _isShowing = false;
         private List<Warrior> _allWarriors;
+        private Coroutine _ambientRunning;
+        private int _ambientBubble;
 
         /// <summary>
         /// От кого подписались. Хранится, а не ищется при отписке.
@@ -55,6 +58,7 @@ namespace Sinbinder.UI
 
         void OnDestroy()
         {
+            CutAmbient();
             if (_trigger != null)
             {
                 _trigger.OnDialogueStart -= OnDialogueStart;
@@ -66,7 +70,13 @@ namespace Sinbinder.UI
         {
             // Вторая линия обороны: если подписка всё же пережила экран,
             // уничтоженный экран молчит, а не роняет разговор.
-            if (this == null) return;
+            if (this == null || lines.Count == 0) return;
+
+            if (!ReferenceEquals(lines[0].Expedition, null))
+            {
+                foreach (var line in lines) QueueAmbient(line);
+                return;
+            }
 
             _queue.Clear();
             foreach (var line in lines)
@@ -79,6 +89,12 @@ namespace Sinbinder.UI
         private void OnLineAdded(DialogueLine line)
         {
             if (this == null) return;
+
+            if (!ReferenceEquals(line.Expedition, null))
+            {
+                QueueAmbient(line);
+                return;
+            }
 
             _queue.Enqueue(line);
             if (!_isShowing)
@@ -104,6 +120,8 @@ namespace Sinbinder.UI
         /// </summary>
         public void Cut()
         {
+            CutAmbient();
+
             if (!_isShowing) return;
 
             if (_running != null) StopCoroutine(_running);
@@ -119,6 +137,63 @@ namespace Sinbinder.UI
             // каким его оставили, а не крупный план на полуслове.
             if (_cameraController != null)
                 _cameraController.StartCoroutine(_cameraController.RestoreCamera());
+        }
+
+        private void CutAmbient()
+        {
+            if (_ambientRunning != null) StopCoroutine(_ambientRunning);
+            _ambientRunning = null;
+            _ambientQueue.Clear();
+            SpeechBubbles.Withdraw(_ambientBubble);
+            _ambientBubble = 0;
+        }
+
+        private void QueueAmbient(DialogueLine line)
+        {
+            if (!ReferenceEquals(line.Expedition, PersonalExpedition.DialogueVisit)) return;
+
+            _ambientQueue.Enqueue(line);
+            if (_ambientRunning == null)
+                _ambientRunning = StartCoroutine(ShowAmbientDialogue());
+        }
+
+        private IEnumerator ShowAmbientDialogue()
+        {
+            yield return null;
+            while (_ambientQueue.Count > 0)
+            {
+                var line = _ambientQueue.Dequeue();
+                var visit = line.Expedition;
+                while (ReferenceEquals(visit, PersonalExpedition.DialogueVisit) &&
+                       (GamePauseController.Stopped || PersonalExpedition.HoldBanter))
+                    yield return null;
+                if (!ReferenceEquals(visit, PersonalExpedition.DialogueVisit)) continue;
+
+                Warrior speaker = null;
+                foreach (var warrior in FindObjectsByType<Warrior>(FindObjectsSortMode.None))
+                    if (warrior != null && warrior.Id == line.SpeakerId &&
+                        warrior.gameObject.scene == visit.gameObject.scene)
+                    {
+                        speaker = warrior;
+                        break;
+                    }
+                if (speaker == null || speaker.IsDead || FogOfWar.Hides(speaker)) continue;
+
+                string full = Loc.T(line.Text);
+                if (string.IsNullOrEmpty(full)) continue;
+                float duration = Mathf.Max(line.Duration, 1.4f + full.Length / 15f);
+                _ambientBubble = SpeechBubbles.SayTracked(speaker, full, duration);
+                FindFirstObjectByType<BattleLogUI>()?.Write(Loc.F("{0}: «{1}»", Loc.Name(speaker.DisplayName), full));
+
+                float until = Time.unscaledTime + duration;
+                while (ReferenceEquals(visit, PersonalExpedition.DialogueVisit) && Time.unscaledTime < until &&
+                       speaker != null && !speaker.IsDead && !FogOfWar.Hides(speaker))
+                    yield return null;
+
+                SpeechBubbles.Withdraw(_ambientBubble);
+                _ambientBubble = 0;
+            }
+            _ambientRunning = null;
         }
 
         private IEnumerator ShowDialogue()

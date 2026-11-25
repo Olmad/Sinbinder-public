@@ -15,6 +15,7 @@ namespace Sinbinder.Dialogue
         public string SpeakerName;
         public string Text;
         public float Duration;
+        internal PersonalExpedition Expedition;
     }
 
     public class DialogueTrigger : MonoBehaviour
@@ -145,9 +146,10 @@ namespace Sinbinder.Dialogue
 
             var firstSpeaker = allies[0].Warrior;
             var firstTarget = enemies[0].Warrior;
+            var expedition = PersonalExpedition.DialogueVisit;
 
-            lines.Add(new DialogueLine { SpeakerId = firstSpeaker.Id, ListenerId = firstTarget.Id, SpeakerName = firstSpeaker.DisplayName, Text = GetDialogueLine(firstSpeaker, firstTarget, "PRE_01"), Duration = 3f });
-            lines.Add(new DialogueLine { SpeakerId = firstTarget.Id, ListenerId = firstSpeaker.Id, SpeakerName = firstTarget.DisplayName, Text = GetDialogueLine(firstTarget, firstSpeaker, "PRE_01"), Duration = 3f });
+            lines.Add(new DialogueLine { SpeakerId = firstSpeaker.Id, ListenerId = firstTarget.Id, SpeakerName = firstSpeaker.DisplayName, Text = GetDialogueLine(firstSpeaker, firstTarget, "PRE_01"), Duration = 3f, Expedition = expedition });
+            lines.Add(new DialogueLine { SpeakerId = firstTarget.Id, ListenerId = firstSpeaker.Id, SpeakerName = firstTarget.DisplayName, Text = GetDialogueLine(firstTarget, firstSpeaker, "PRE_01"), Duration = 3f, Expedition = expedition });
 
             firstSpeaker.MarkSpokenWith(firstTarget.Id);
             firstTarget.MarkSpokenWith(firstSpeaker.Id);
@@ -155,65 +157,79 @@ namespace Sinbinder.Dialogue
             _activeSpeakers.Add(firstTarget);
 
             OnDialogueStart?.Invoke(lines);
-            StartCoroutine(CheckForJoiners(allies, enemies));
+            StartCoroutine(CheckForJoiners(allies, enemies, expedition));
         }
 
-        private System.Collections.IEnumerator CheckForJoiners(List<Damageable> allies, List<Damageable> enemies)
+        private System.Collections.IEnumerator CheckForJoiners(List<Damageable> allies,
+            List<Damageable> enemies, PersonalExpedition expedition)
         {
-            yield return new WaitForSeconds(1.5f);
-
-            foreach (var allyDmg in allies)
+            try
             {
-                if (_activeSpeakers.Count >= _maxParticipants) break;
-                var ally = allyDmg.Warrior;
-                if (ally == null || _activeSpeakers.Contains(ally)) continue;
-
-                foreach (var enemyDmg in enemies)
-                {
-                    if (_activeSpeakers.Count >= _maxParticipants) break;
-                    var enemy = enemyDmg.Warrior;
-                    if (enemy == null || _activeSpeakers.Contains(enemy)) continue;
-                    if (ally.HasSpokenWith(enemy.Id)) continue;
-
-                    float dist = Vector3.Distance(ally.transform.position, enemy.transform.position);
-                    if (dist <= _joinRadius)
-                    {
-                        AddJoiner(ally, enemy);
-                        yield return new WaitForSeconds(1.5f);
-                        break;
-                    }
-                }
-            }
-
-            foreach (var enemyDmg in enemies)
-            {
-                if (_activeSpeakers.Count >= _maxParticipants) break;
-                var enemy = enemyDmg.Warrior;
-                if (enemy == null || _activeSpeakers.Contains(enemy)) continue;
+                yield return new WaitForSeconds(1.5f);
+                if (!ReferenceEquals(expedition, PersonalExpedition.DialogueVisit)) yield break;
 
                 foreach (var allyDmg in allies)
                 {
                     if (_activeSpeakers.Count >= _maxParticipants) break;
+                    if (allyDmg == null || allyDmg.IsDead) continue;
                     var ally = allyDmg.Warrior;
                     if (ally == null || _activeSpeakers.Contains(ally)) continue;
-                    if (enemy.HasSpokenWith(ally.Id)) continue;
 
-                    float dist = Vector3.Distance(enemy.transform.position, ally.transform.position);
-                    if (dist <= _joinRadius)
+                    foreach (var enemyDmg in enemies)
                     {
-                        AddJoiner(enemy, ally);
-                        yield return new WaitForSeconds(1.5f);
-                        break;
+                        if (_activeSpeakers.Count >= _maxParticipants) break;
+                        if (enemyDmg == null || enemyDmg.IsDead) continue;
+                        var enemy = enemyDmg.Warrior;
+                        if (enemy == null || _activeSpeakers.Contains(enemy)) continue;
+                        if (ally.HasSpokenWith(enemy.Id)) continue;
+
+                        float dist = Vector3.Distance(ally.transform.position, enemy.transform.position);
+                        if (dist <= _joinRadius)
+                        {
+                            AddJoiner(ally, enemy, expedition);
+                            yield return new WaitForSeconds(1.5f);
+                            if (!ReferenceEquals(expedition, PersonalExpedition.DialogueVisit)) yield break;
+                            break;
+                        }
                     }
                 }
-            }
 
-            yield return new WaitForSeconds(3f);
-            _dialogueInProgress = false;
-            _activeSpeakers.Clear();
+                foreach (var enemyDmg in enemies)
+                {
+                    if (_activeSpeakers.Count >= _maxParticipants) break;
+                    if (enemyDmg == null || enemyDmg.IsDead) continue;
+                    var enemy = enemyDmg.Warrior;
+                    if (enemy == null || _activeSpeakers.Contains(enemy)) continue;
+
+                    foreach (var allyDmg in allies)
+                    {
+                        if (_activeSpeakers.Count >= _maxParticipants) break;
+                        if (allyDmg == null || allyDmg.IsDead) continue;
+                        var ally = allyDmg.Warrior;
+                        if (ally == null || _activeSpeakers.Contains(ally)) continue;
+                        if (enemy.HasSpokenWith(ally.Id)) continue;
+
+                        float dist = Vector3.Distance(enemy.transform.position, ally.transform.position);
+                        if (dist <= _joinRadius)
+                        {
+                            AddJoiner(enemy, ally, expedition);
+                            yield return new WaitForSeconds(1.5f);
+                            if (!ReferenceEquals(expedition, PersonalExpedition.DialogueVisit)) yield break;
+                            break;
+                        }
+                    }
+                }
+
+                yield return new WaitForSeconds(3f);
+            }
+            finally
+            {
+                _dialogueInProgress = false;
+                _activeSpeakers.Clear();
+            }
         }
 
-        private void AddJoiner(Warrior speaker, Warrior target)
+        private void AddJoiner(Warrior speaker, Warrior target, PersonalExpedition expedition)
         {
             var line1 = new DialogueLine
             {
@@ -221,7 +237,8 @@ namespace Sinbinder.Dialogue
                 ListenerId = target.Id,
                 SpeakerName = speaker.DisplayName,
                 Text = GetDialogueLine(speaker, target, "JOIN_01"),
-                Duration = 2.5f
+                Duration = 2.5f,
+                Expedition = expedition
             };
             speaker.MarkSpokenWith(target.Id);
             target.MarkSpokenWith(speaker.Id);
@@ -237,7 +254,8 @@ namespace Sinbinder.Dialogue
                     ListenerId = speaker.Id,
                     SpeakerName = target.DisplayName,
                     Text = GetDialogueLine(target, speaker, "JOIN_01"),
-                    Duration = 2.5f
+                    Duration = 2.5f,
+                    Expedition = expedition
                 };
                 OnLineAdded?.Invoke(line2);
             }

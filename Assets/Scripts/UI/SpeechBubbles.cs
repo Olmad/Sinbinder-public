@@ -70,12 +70,24 @@ namespace Sinbinder.UI
         /// <summary>Сказать вслух: строка над головой на столько секунд.</summary>
         public static void Say(Warrior who, string line, float seconds = 4.5f)
         {
-            if (_instance == null || who == null || string.IsNullOrEmpty(line)) return;
-            if (!Core.Transparency.Shows(Core.Clarity.Icons)) return;
-            _instance.Put(who, line, seconds);
+            SayTracked(who, line, seconds);
         }
 
-        private void Put(Warrior who, string line, float seconds)
+        internal static int SayTracked(Warrior who, string line, float seconds)
+        {
+            if (_instance == null || who == null || string.IsNullOrEmpty(line)) return 0;
+            if (!Core.Transparency.Shows(Core.Clarity.Icons)) return 0;
+            return _instance.Put(who, line, seconds);
+        }
+
+        internal static void Withdraw(int lineId)
+        {
+            if (_instance == null || lineId == 0) return;
+            int index = _instance._live.FindIndex(b => b.Said == lineId);
+            if (index >= 0) _instance.RemoveAt(index);
+        }
+
+        private int Put(Warrior who, string line, float seconds)
         {
             if (_canvas == null) Build();
 
@@ -134,6 +146,15 @@ namespace Sinbinder.UI
             // стоит сделать тише»): облачка идут всё время, это фон лагеря.
             if (who.TryGetComponent<Sinbinder.Audio.VoiceGenerator>(out var voice))
                 voice.Babble(line, Mathf.Min(seconds - 1f, line.Length / 26f + 0.3f), 0.45f);
+            return bubble.Said;
+        }
+
+        private void RemoveAt(int index)
+        {
+            var bubble = _live[index];
+            if (bubble.Line != null) Destroy(bubble.Line.gameObject);
+            if (bubble.Back != null) Destroy(bubble.Back.gameObject);
+            _live.RemoveAt(index);
         }
 
         void LateUpdate()
@@ -153,9 +174,7 @@ namespace Sinbinder.UI
                 var b = _live[i];
                 if (b.Who == null || b.Who.IsDead || Time.unscaledTime > b.Until || b.Line == null)
                 {
-                    if (b.Line != null) Destroy(b.Line.gameObject);
-                    if (b.Back != null) Destroy(b.Back.gameObject);
-                    _live.RemoveAt(i);
+                    RemoveAt(i);
                     continue;
                 }
 

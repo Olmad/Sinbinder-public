@@ -41,6 +41,7 @@ namespace Sinbinder.Gameplay
         private static readonly Dictionary<string, SavedPersonalExpedition> Progress = new();
 
         public static bool Active => _active != null;
+        internal static PersonalExpedition DialogueVisit => _active != null && !_active._exiting ? _active : null;
 
         /// <summary>Ушёл ли воин на эту вылазку (Греховод — тоже). Не ушёл — его на карте быть не может.</summary>
         public static bool Travels(Warrior w)
