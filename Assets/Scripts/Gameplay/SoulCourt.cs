@@ -986,14 +986,15 @@ namespace Sinbinder.Gameplay
             // кто за, кто против и почему — голос суда. Ничьей Смерть не судит: решения нет.
             string verdictTitle = Loc.T("Вердикт");
             string sentence = Sentence(verdict, voting);
-            int cut = d.Hesitated ? -1 : sentence.IndexOf(". ", System.StringComparison.Ordinal);
-            if (!d.Hesitated)
+            // Death reacts to disobedience, never celebrates independent
+            // will. The Court itself states the full factual verdict.
+            string deathWord = SoulCourtVerdict.DeathReaction(verdict, c != null && c.HasCommand);
+            if (!string.IsNullOrEmpty(deathWord))
             {
                 yield return Beat(0.6f);
-                yield return Death(box, Loc.T("Бог Смерти"), cut > 0 ? sentence.Substring(0, cut + 1) : sentence);
+                yield return Death(box, Loc.T("Бог Смерти"), Loc.T(deathWord));
             }
-            if (d.Hesitated || cut > 0)
-                yield return Line(box, host, verdictTitle, d.Hesitated ? sentence : sentence.Substring(cut + 2));
+            yield return Line(box, host, verdictTitle, sentence);
             // Голосов «за» больше, а приказ отвергнут — новичок решит, что суд считает неправильно.
             string weight = independent ? null : Weight(d, voting);
             if (weight != null) yield return Line(box, host, verdictTitle, weight);

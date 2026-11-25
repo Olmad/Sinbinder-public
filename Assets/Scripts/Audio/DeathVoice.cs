@@ -49,6 +49,7 @@ namespace Sinbinder.Audio
                 var go = new GameObject("DeathVoice");
                 _instance = go.AddComponent<DeathVoice>();
             }
+            _instance.StopLesson();
             _instance.Open(where);
         }
 
@@ -84,12 +85,69 @@ namespace Sinbinder.Audio
             if (string.IsNullOrEmpty(line) || UI.Letterbox.Skipping) return 0f;   // суд пропускают — Смерть молчит
             if (_instance == null) _instance = new GameObject("DeathVoice").AddComponent<DeathVoice>();
             var me = _instance;
+            me.StopLesson();
             int ticket = ++me._ticket;
             // Строка строится 0,1–0,2 с (замер 07.11): в главном потоке кадр дёрнулся бы на каждой
             // строке Смерти. Строим фоном; полоса тем временем уже печатает.
             var job = System.Threading.Tasks.Task.Run(() => Court(line, out float _));
             me.StartCoroutine(me.Speak(job, ticket));
             return Clock(line);
+        }
+
+        // Lesson speech uses the existing synthesis but its own playback
+        // source. Cancelling a tutorial cue cannot stop the Court's verdict.
+        private AudioSource _lessonVoice;
+        private int _lessonTicket;
+
+        public static void UtterLesson(string line)
+        {
+            if (string.IsNullOrEmpty(line)) return;
+            if (_instance == null) _instance = new GameObject("DeathVoice").AddComponent<DeathVoice>();
+            var me = _instance;
+            me.StopLesson();
+            int ticket = me._lessonTicket;
+            var job = System.Threading.Tasks.Task.Run(() => Court(line, out float _));
+            me.StartCoroutine(me.SpeakLesson(job, ticket));
+        }
+
+        public static void QuietLesson()
+        {
+            if (_instance != null) _instance.StopLesson();
+        }
+
+        private void StopLesson()
+        {
+            _lessonTicket++;
+            if (_lessonVoice == null) return;
+            _lessonVoice.Stop();
+            var clip = _lessonVoice.clip;
+            _lessonVoice.clip = null;
+            if (clip != null) Destroy(clip);
+        }
+
+        private IEnumerator SpeakLesson(System.Threading.Tasks.Task<float[]> job, int ticket)
+        {
+            while (!job.IsCompleted) yield return null;
+            if (job.IsFaulted)
+            {
+                Debug.LogWarning("[СОН] голос Смерти не построился: " + job.Exception?.GetBaseException().Message);
+                yield break;
+            }
+            if (job.IsCanceled || ticket != _lessonTicket) yield break;
+            if (_lessonVoice == null)
+            {
+                _lessonVoice = gameObject.AddComponent<AudioSource>();
+                _lessonVoice.playOnAwake = false;
+                _lessonVoice.spatialBlend = 0f;
+                _lessonVoice.ignoreListenerPause = true;
+            }
+            var data = job.Result;
+            var clip = AudioClip.Create("Бог Смерти — урок", data.Length, 1, Rate, false);
+            clip.SetData(data, 0);
+            _lessonVoice.clip = clip;
+            _lessonVoice.Play();
+            while (_lessonVoice.isPlaying && ticket == _lessonTicket) yield return null;
+            if (ticket == _lessonTicket) StopLesson();
         }
 
         private int _ticket;

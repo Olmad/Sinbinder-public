@@ -16741,3 +16741,31 @@ msgstr "Consider both reasons for refusal"
 #: Gameplay/OrderAdvice.cs
 msgid "Две причины — попробуйте изменить обе: {0}; {1}."
 msgstr "Two reasons — try addressing both: {0}; {1}."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Забери душу."
+msgstr "Take the soul."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Прикажи ему."
+msgstr "Give him an order."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Опусти мост."
+msgstr "Lower the bridge."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Неповиновение."
+msgstr "Disobedience."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Выделите воина и отдайте приказ ПКМ по земле. Исполнит ли — решает душа."
+msgstr "Select the warrior and right-click the ground to give an order. Whether it is obeyed is the soul's decision."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Тело"
+msgstr "Body"
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Воин"
+msgstr "Warrior"

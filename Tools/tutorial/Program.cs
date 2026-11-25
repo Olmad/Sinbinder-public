@@ -257,6 +257,27 @@ internal static class Program
         // Short-Court onboarding must reuse the production SoulCourt and
         // the exact original verdict; consent changes automatic events only.
         string courtSource = System.IO.File.ReadAllText("Assets/Scripts/Gameplay/SoulCourt.cs");
+        Check(SoulCourtVerdict.DeathReaction(SoulCourtVerdictKind.Refused, true) == "Неповиновение." &&
+              SoulCourtVerdict.DeathReaction(SoulCourtVerdictKind.Refused, false) == null &&
+              SoulCourtVerdict.DeathReaction(SoulCourtVerdictKind.Hesitated, true) == null &&
+              SoulCourtVerdict.DeathReaction(SoulCourtVerdictKind.IndependentMatch, true) == null &&
+              SoulCourtVerdict.DeathReaction(SoulCourtVerdictKind.Obeyed, true) == null,
+            "Death speaks only on recorded disobedience, not hesitation or independent matching");
+        Check(courtSource.Contains("SoulCourtVerdict.DeathReaction(verdict, c != null && c.HasCommand)") &&
+              courtSource.Contains("yield return Line(box, host, verdictTitle, sentence);"),
+            "Death's reaction does not replace the factual court verdict");
+        string deathAudio = System.IO.File.ReadAllText("Assets/Scripts/Audio/DeathVoice.cs");
+        Check(deathAudio.Contains("ticket != _lessonTicket") &&
+              deathAudio.Contains("public static void QuietLesson()") &&
+              deathAudio.Contains("_lessonVoice.Stop();") &&
+              dreamTrace.Contains("_deathSpoken.Add(_stage)") &&
+              dreamTrace.Contains("UpdateDeathLesson(quiet);") &&
+              dreamTrace.Contains("Audio.DeathVoice.QuietLesson();"),
+            "dream cue is once per stage, cancelled separately from the Court");
+        Check(dreamTrace.Contains("WithDeath(Loc.T(_line))") &&
+              dreamTrace.Contains("case Stage.Harvest: case Stage.Rebind:") &&
+              !dreamTrace.Contains("он пойдёт."),
+            "tutorial captions and location markers support the action without promising obedience");
         // Production classifier, not a duplicate copy of its arithmetic.
         // A flag saying "obeyed" cannot turn Attack into a completed Hold.
         Check(SoulCourtVerdict.Classify(true, false, false, false, false) ==
