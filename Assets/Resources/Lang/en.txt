@@ -16769,3 +16769,7 @@ msgstr "Body"
 #: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
 msgid "Воин"
 msgstr "Warrior"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Отдай приказ."
+msgstr "Give the order."

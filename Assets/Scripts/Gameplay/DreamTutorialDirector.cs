@@ -210,7 +210,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Harvest: return Loc.T("Забери душу.");
                 case Stage.Command:
                     return _zombie != null && !_zombie.IsDead && _orderedAt < 0f && !OrderedSinceMark()
-                        ? Loc.T("Прикажи ему.") : null;
+                        ? Loc.T("Отдай приказ.") : null;
                 case Stage.Bridge:
                     return _zombie != null && !_zombie.IsDead && DreamRoad.BridgeRaised && !LeverOrderedSinceMark()
                         ? Loc.T("Опусти мост.") : null;
