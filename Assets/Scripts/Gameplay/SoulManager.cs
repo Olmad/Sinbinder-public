@@ -192,7 +192,7 @@ namespace Sinbinder.Gameplay
 
                 if (soul.RemainingTime <= 0f)
                 {
-                    Debug.Log($"[SOUL] Душа {soul.Warrior.DisplayName} угасла навсегда");
+                    Debug.Log($"[SOUL] Душа {soul.NameAtDeath} угасла навсегда");
                     OnSoulFaded?.Invoke(soul);
 
                     RemoveIndicator(soul);
@@ -218,6 +218,7 @@ namespace Sinbinder.Gameplay
             var fadingSoul = new FadingSoul
             {
                 Warrior = warrior,
+                DeathSnapshot = Core.SoulData.CaptureDeath(warrior.Soul, warrior.Soul.EarnedTitle),
                 Position = position,
                 RemainingTime = FadeTime,
                 SoulQuality = Core.SoulQuality.Shock
@@ -291,13 +292,13 @@ namespace Sinbinder.Gameplay
             {
                 // Копия с потерями по качеству. Оригинал остаётся у мертвеца.
                 // До подтверждения назначения огонёк и право на жатву остаются.
-                var kept = Core.SoulDecay.Harvest(closest.Warrior.Soul, closest.SoulQuality);
+                var kept = Core.SoulDecay.Harvest(closest.DeathSnapshot, closest.SoulQuality);
                 if (kept == null || !store(new Kept(kept, closest.SoulQuality))) return null;
                 _fadingSouls.Remove(closest);
                 RemoveIndicator(closest);
                 // Listeners now observe the committed destination and cannot
                 // accidentally cause the harvester to take a different soul.
-                Debug.Log($"[SOUL] Душа {closest.Warrior.DisplayName} собрана! Осталось угасающих: {_fadingSouls.Count}");
+                Debug.Log($"[SOUL] Душа {closest.NameAtDeath} собрана! Осталось угасающих: {_fadingSouls.Count}");
                 OnSoulHarvested?.Invoke(closest);
                 return closest;
             }
@@ -343,6 +344,9 @@ namespace Sinbinder.Gameplay
     public class FadingSoul
     {
         public Warrior Warrior;
+        // Only used as a historical source for decay, not as a new owner.
+        internal Core.SoulData DeathSnapshot { get; set; }
+        public string NameAtDeath => DeathSnapshot != null ? DeathSnapshot.Name : "";
         public Vector3 Position;
         public float RemainingTime;
         public Core.SoulQuality SoulQuality;
