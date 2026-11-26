@@ -108,6 +108,18 @@ namespace Sinbinder.Core
         /// </summary>
         public static bool Anything() => Jars > 0;
 
+        // Tutorial resurrection must identify the actual departed person,
+        // not an arbitrary occupied slot or a soul with the same name.
+        public static bool HoldsPerson(int index, SoulData person)
+            => SoulData.SamePerson(At(index).Soul, person);
+
+        public static int FindPerson(SoulData person)
+        {
+            for (int i = 0; i < Jars; i++)
+                if (HoldsPerson(i, person)) return i;
+            return -1;
+        }
+
         /// <summary>
         /// Ещё одна пустая банка при себе — трофей экспедиции «Перетягивания» (Trophies). Больше
         /// <see cref="Max"/> не унести: ложь.
