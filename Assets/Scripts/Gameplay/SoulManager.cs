@@ -260,6 +260,19 @@ namespace Sinbinder.Gameplay
         }
 
         public FadingSoul TryHarvestSoul(Vector3 harvesterPosition)
+            => TryHarvestSoul(harvesterPosition, kept =>
+            {
+                _harvested.Add(kept);
+                return true;
+            });
+
+        // The player's harvest is a transfer directly into the reserved jar,
+        // never a temporary shelf entry that an event listener can reorder.
+        internal FadingSoul TryHarvestIntoJar(Vector3 harvesterPosition, int jar)
+            => TryHarvestSoul(harvesterPosition,
+                kept => Core.Satchel.Fill(jar, kept.Soul, kept.Quality));
+
+        private FadingSoul TryHarvestSoul(Vector3 harvesterPosition, System.Func<Kept, bool> store)
         {
             FadingSoul closest = null;
             float minDist = _harvestRadius;
@@ -276,12 +289,14 @@ namespace Sinbinder.Gameplay
 
             if (closest != null)
             {
-                _fadingSouls.Remove(closest);
-
-                // Копия с потерями по качеству. Оригинал остаётся у мертвеца:
-                // мы забираем не его, а то, что от него осталось.
+                // Копия с потерями по качеству. Оригинал остаётся у мертвеца.
+                // До подтверждения назначения огонёк и право на жатву остаются.
                 var kept = Core.SoulDecay.Harvest(closest.Warrior.Soul, closest.SoulQuality);
-                if (kept != null) _harvested.Add(new Kept(kept, closest.SoulQuality));
+                if (kept == null || !store(new Kept(kept, closest.SoulQuality))) return null;
+                _fadingSouls.Remove(closest);
+                RemoveIndicator(closest);
+                // Listeners now observe the committed destination and cannot
+                // accidentally cause the harvester to take a different soul.
                 Debug.Log($"[SOUL] Душа {closest.Warrior.DisplayName} собрана! Осталось угасающих: {_fadingSouls.Count}");
                 OnSoulHarvested?.Invoke(closest);
                 return closest;
