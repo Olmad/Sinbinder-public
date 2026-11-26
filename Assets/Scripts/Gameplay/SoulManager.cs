@@ -224,6 +224,9 @@ namespace Sinbinder.Gameplay
                 SoulQuality = Core.SoulQuality.Shock
             };
 
+            // Snapshot only this body before it can acquire postmortem events.
+            fadingSoul.DeathSnapshot.SetPastMemories(
+                AOS.MemoryProcessor.Snapshot(new[] { warrior.Id }), Time.time);
             _fadingSouls.Add(fadingSoul);
 
             // Префаба нет ни одного, и это не повод оставить душу невидимой:
