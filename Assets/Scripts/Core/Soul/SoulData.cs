@@ -95,7 +95,9 @@ namespace Sinbinder.Core
 
         /// <summary>Родные ли две разные души.</summary>
         public static bool Kindred(SoulData a, SoulData b)
-            => a != null && b != null && !ReferenceEquals(a, b) && a.Kin.Length > 0 && a.Kin == b.Kin;
+            => a != null && b != null && !ReferenceEquals(a, b) &&
+               !string.IsNullOrEmpty(a.Id) && !string.IsNullOrEmpty(b.Id) && a.Id != b.Id &&
+               a.Kin.Length > 0 && a.Kin == b.Kin;
         public int Level => _level;
         public MemorySeed Memory => _memory;
         public bool HasMemory => _memory != null && !string.IsNullOrEmpty(_memory.Story);
