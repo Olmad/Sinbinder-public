@@ -103,6 +103,20 @@ namespace Sinbinder.Gameplay
         /// <summary>Как далеко точка от главного пути.</summary>
         public static float OffRoute(Vector3 p) { Nearest(p, out float d); return d; }
 
+        /// <summary>
+        /// Как далеко точка от ЛЮБОЙ тропы сна: главного пути, лесного обхода, полян (0 — на поляне).
+        /// Автор, 26.11: «не могу пройти дальше моста — меня возвращает». Мост остался поднят — путь лесом,
+        /// а сон мерил коридор только от главного пути: лес уходит от него на 30–50 м, и рука тащила назад.
+        /// </summary>
+        public static float OffPaths(Vector3 p)
+        {
+            float best = OffRoute(p);
+            var q = new Vector2(p.x, p.z);
+            foreach (var l in Lanes) best = Mathf.Min(best, SegmentDistance(q, l.A, l.B));
+            foreach (var g in Glades) best = Mathf.Min(best, Mathf.Max(0f, new Vector2(p.x - g.x, p.z - g.z).magnitude - g.y));
+            return best;
+        }
+
         private static float Nearest(Vector3 p, out float distance)
         {
             float best = float.MaxValue, at = 0f, run = 0f;

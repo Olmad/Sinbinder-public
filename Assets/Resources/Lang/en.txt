@@ -16841,3 +16841,11 @@ msgstr "Up, over to the target at height, straight down; reaches 22 m and seeks 
 #: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
 msgid "Дугой на 11 м; свой на линии — навесом над его головой."
 msgstr "An arc to 11 m; an ally in the line — lobbed over his head."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "В руке пустая банка. Возьмите банку с душой — J."
+msgstr "The jar in your hand is empty. Take the jar with the soul — J."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Возьмите банку с душой в руку (J)"
+msgstr "Take the jar with the soul in hand (J)"

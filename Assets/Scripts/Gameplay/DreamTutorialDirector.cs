@@ -193,8 +193,9 @@ namespace Sinbinder.Gameplay
             return DreamRoad.RoutePoint(Mathf.Min(s, AheadLimit() - 1.5f));
         }
 
-        /// <summary>Позади опушки — туда дороги нет.</summary>
-        private static bool Behind(Vector3 p) => p.x < DreamRoad.StarAt.x - 3f;
+        /// <summary>Позади опушки — туда дороги нет. Только у опушки: лесная тропа южнее идёт по x = −124 (26.11),
+        /// и её западная половина считалась «назад».</summary>
+        private static bool Behind(Vector3 p) => p.x < DreamRoad.StarAt.x - 3f && p.z > DreamRoad.StarAt.z - 12f;
 
         private Stage _stage;
         private bool _ready;   // Start поставил сон на дорогу — до того Update молчит
@@ -355,7 +356,7 @@ namespace Sinbinder.Gameplay
             if (dream == null || dream._stage == Stage.Finished) return true;
             if (dream._handBusy) return false;
             if (!Behind(worldPoint) &&
-                (dream._backAttempts < 3 || DreamRoad.OffRoute(worldPoint) <= dream._allowedCorridorHalfWidth)) return true;
+                (dream._backAttempts < 3 || DreamRoad.OffPaths(worldPoint) <= dream._allowedCorridorHalfWidth)) return true;
             dream.BackAttempt();
             return false;
         }
@@ -376,7 +377,7 @@ namespace Sinbinder.Gameplay
                 }
             }
             if (!Behind(futurePoint) &&
-                (dream._backAttempts < 3 || DreamRoad.OffRoute(futurePoint) <= dream._allowedCorridorHalfWidth)) return true;
+                (dream._backAttempts < 3 || DreamRoad.OffPaths(futurePoint) <= dream._allowedCorridorHalfWidth)) return true;
             dream.BackAttempt();
             return false;
         }
@@ -1032,6 +1033,16 @@ namespace Sinbinder.Gameplay
             Set(Stage.Harvest, Loc.N("Подойди к душе и нажми E. Свежая душа сохраняет память."));
         }
 
+        /// <summary>
+        /// Банка в руке Греховода (автор, 26.11: «из банки, которую Греховод держит в руках»), а не первая полная:
+        /// с двумя банками поднималась чужая душа с чужой памятью (аудит AOS-R12-01). −1 — в руке пусто.
+        /// </summary>
+        private static int HeldJar()
+        {
+            int i = Satchel.Selected;
+            return i >= 0 && i < Satchel.Jars && Satchel.At(i).FullJar ? i : -1;
+        }
+
         private int FindJar()
         {
             for (int i = 0; i < Satchel.Jars; i++)
@@ -1041,7 +1052,8 @@ namespace Sinbinder.Gameplay
 
         private void TryRebind()
         {
-            int jar = FindJar();
+            int jar = HeldJar();
+            if (jar < 0 && FindJar() >= 0) { Log(Loc.N("В руке пустая банка. Возьмите банку с душой — J.")); return; }
             var soul = jar >= 0 ? Satchel.At(jar).Soul : _fallbackSoul;
             if (soul == null) { Log(Loc.N("Сначала забери душу в банку.")); return; }
             // A tutorial reanimation is a local, explicit shortcut to Raising.Rise,
@@ -1465,7 +1477,8 @@ namespace Sinbinder.Gameplay
         /// <summary>R у тела павшего: та же жатва и то же поднятие, что у дороги, — в его же тело.</summary>
         private void Reraise()
         {
-            int jar = FindJar();
+            int jar = HeldJar();
+            if (jar < 0 && FindJar() >= 0) { Log(Loc.N("В руке пустая банка. Возьмите банку с душой — J.")); return; }
             if (jar < 0) { Log(Loc.N("Сначала заберите душу в банку — E у тела.")); return; }
             var face = Flat(_hero.transform.position - _lateAt);
             if (face.sqrMagnitude < 0.01f) face = Vector3.forward;
@@ -1770,7 +1783,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Bridge: case Stage.Deciding:
                     return _chaseCourt ? Loc.T("Прикажите догнать убийц (ПКМ по убийце)") : Loc.T("Прикажите опустить мост (ПКМ по рычагу)");
                 case Stage.Battle: return DreamRoad.BridgeRaised ? Loc.T("Обойдите реку лесом — к засаде") : Loc.T("Отбейтесь от убийц");
-                case Stage.Fallen: return FindJar() < 0 ? Loc.T("Заберите душу павшего (E)") : Loc.T("Верните душу в тело (R)");
+                case Stage.Fallen: return FindJar() < 0 ? Loc.T("Заберите душу павшего (E)") : HeldJar() < 0 ? Loc.T("Возьмите банку с душой в руку (J)") : Loc.T("Верните душу в тело (R)");
                 case Stage.Retest: return Loc.T("Тот же приказ — без убийц (ПКМ по рычагу)");
                 case Stage.Whisper: return Loc.T("Шепните греху поднятого (Z)");
                 case Stage.Jars: return Loc.T("Возьмите банку с камня у колонн (E, J, R)");
@@ -1786,7 +1799,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Approach: return Loc.T("ПКМ");
                 case Stage.Harvest: return "E";
                 case Stage.Rebind: return "R";
-                case Stage.Fallen: return FindJar() < 0 ? "E" : "R";
+                case Stage.Fallen: return FindJar() < 0 ? "E" : HeldJar() < 0 ? "J" : "R";
                 case Stage.FirstPerson: return "Tab";
                 case Stage.WarriorMode: return "V";
                 case Stage.DrawWeapon: return "B";
