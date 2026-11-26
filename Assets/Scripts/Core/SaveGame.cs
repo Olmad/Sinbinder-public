@@ -210,6 +210,8 @@ namespace Sinbinder.Core
         // До 23.11 не писалась. В старых сохранениях нет — никто ничего не помнит, как и было.
         public List<Sinbinder.AOS.SavedMemory> AosMemories = new List<Sinbinder.AOS.SavedMemory>();
         public List<Sinbinder.AOS.SavedEmotion> AosEmotions = new List<Sinbinder.AOS.SavedEmotion>();
+        // An explicit empty modern snapshot must not revive legacy member emotions.
+        public bool HasAosEmotions;
 
         // Здоровье Греховода. 0 — старая запись: цел (ExpeditionHealthRules.RestoreFraction).
         public float HeroHealth;
