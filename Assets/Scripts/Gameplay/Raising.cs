@@ -40,6 +40,7 @@ namespace Sinbinder.Gameplay
             var warrior = go.AddComponent<Warrior>();
             // «Перетягивание»: своих отрядов нет — поднятый ничей, но верен поднявшему (BindingDevice).
             warrior.Initialize(soul, shell, relations, false, Lords.Active ? Team.Neutral : Team.Player);
+            AOS.MemoryProcessor.Instance?.InstallRaisedMemories(warrior);
 
             // Душа донесла имя через смерть (SoulData.EarnedTitle) — и в новом
             // теле его носят снова. Первая фраза так и просит: «Зовите снова».
