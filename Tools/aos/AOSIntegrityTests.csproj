@@ -16,6 +16,7 @@
     <Compile Include="RosterSpectraChecks.cs" />
     <Compile Include="SoulHarvestCustodyChecks.cs" />
     <Compile Include="SoulDeathSnapshotChecks.cs" />
+    <Compile Include="SoulPersonIdentityChecks.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/SoulDecay.cs" Link="SoulDecay.cs" />
     <Compile Include="../../Assets/Scripts/Core/Satchel.cs" Link="Satchel.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/SoulQuality.cs" Link="SoulQuality.cs" />
