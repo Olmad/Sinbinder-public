@@ -115,7 +115,8 @@ internal static class SoulPastMemoryChecks
               processor.Contains("warrior.Soul.ClearPastMemories();"),
             "install consumes payload without overwriting existing ledger (source)");
         check(processor.Contains("TargetPersonId = m.TargetPersonId,") &&
-              processor.Contains("TargetPersonId = s.TargetPersonId,") &&
+              processor.Contains("list.Add(s.ToLive(now));") &&
+              Read("Assets/Scripts/AOS Engine/MemoryRecord.cs").Contains("TargetPersonId = TargetPersonId, Emotion = (EmotionType)Emotion,") &&
               processor.Contains("m.MatchesTarget(targetId, personId)") &&
               processor.Contains("return vivid.Select(m => m.ProjectTarget(current)).ToList();"),
             "actual ledger captures and restores stable target and projects it only for current decisions (source)");
