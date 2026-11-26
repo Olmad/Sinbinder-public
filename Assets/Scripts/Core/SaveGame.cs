@@ -57,6 +57,9 @@ namespace Sinbinder.Core
         public bool HasSoulSpectra;
         public float[] SoulSpectra;
         public int SoulLevel;
+        // Absent in legacy saves; do not infer identity or kin from the name.
+        public string SoulId;
+        public string SoulKin;
         public float Loyalty;
         // New saves preserve a living warrior's injuries. Legacy zero = full.
         public float HealthFraction;
