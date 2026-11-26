@@ -53,6 +53,10 @@ namespace Sinbinder.Core
         public int Moral;
         public int Gender;
         public float Intensity;
+        // Explicit presence distinguishes old saves from a captured all-zero vector.
+        public bool HasSoulSpectra;
+        public float[] SoulSpectra;
+        public int SoulLevel;
         public float Loyalty;
         // New saves preserve a living warrior's injuries. Legacy zero = full.
         public float HealthFraction;
