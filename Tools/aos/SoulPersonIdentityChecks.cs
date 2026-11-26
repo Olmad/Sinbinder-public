@@ -34,7 +34,10 @@ internal static class SoulPersonIdentityChecks
         check(saved.Id == harvested.Id && SoulData.SamePerson(saved, first), "custody constructor restores both keys");
         var old = new SoulData("Old", MoralType.Neutral, 1, new float[7], soulId: "legacy-id");
         check(old.PersonId == "legacy-id", "legacy ID seeds identity without guessing by name");
-        check(SoulData.SamePerson(new SoulData(first), first), "same-person copy retains lineage");
+        var copy = new SoulData(first);
+        check(SoulData.SamePerson(copy, first) && copy.Kin == first.Kin &&
+              copy.Id != first.Id && !SoulData.Kindred(first, copy),
+            "same-person copy preserves kin mark but never counts as a separate brother");
 
         Satchel.Forget();
         try
