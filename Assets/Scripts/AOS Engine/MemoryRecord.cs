@@ -1,5 +1,6 @@
 // Перевод: текст через Loc
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Sinbinder.AOS
@@ -11,6 +12,8 @@ namespace Sinbinder.AOS
         public string Owner;
         public string EventType;
         public string TargetID;
+        // Stable identity, if the target was known at the time of the event.
+        public string TargetPersonId;
         public int Emotion;
         public float Importance;
         public float DecayRate;
@@ -28,6 +31,7 @@ namespace Sinbinder.AOS
             {
                 Owner = newOwner ?? Owner, EventType = EventType,
                 TargetID = newOwner != null && TargetID == Owner ? newOwner : TargetID ?? "",
+                TargetPersonId = TargetPersonId,
                 Emotion = Emotion, Importance = Importance, DecayRate = DecayRate,
                 Age = Age + Math.Max(0f, extraAge),
             };
@@ -35,7 +39,7 @@ namespace Sinbinder.AOS
         internal MemoryRecord ToLive(float now)
             => new MemoryRecord
             {
-                EventType = EventType, TargetID = TargetID ?? "", Emotion = (EmotionType)Emotion,
+                EventType = EventType, TargetID = TargetID ?? "", TargetPersonId = TargetPersonId, Emotion = (EmotionType)Emotion,
                 Importance = Importance, DecayRate = DecayRate, CreationTime = now - Age,
             };
     }
@@ -45,10 +49,45 @@ namespace Sinbinder.AOS
     {
         public string EventType;
         public string TargetID;
+        // Stable identity, if the target was known at the time of the event.
+        public string TargetPersonId;
         public EmotionType Emotion;      // Теперь enum
         public float Importance;         // 0..1
         public float DecayRate;          // скорость забывания
         public float CreationTime;       // Time.time в момент создания
+
+        // Match known persons first; never join different known people
+        // merely because a body key happens to coincide.
+        internal bool MatchesTarget(string bodyId, string personId)
+            => !string.IsNullOrEmpty(TargetPersonId) && !string.IsNullOrEmpty(personId)
+                ? TargetPersonId == personId : TargetID == bodyId;
+
+        internal static Dictionary<string, string> UniqueLivingBodies(IEnumerable<KeyValuePair<string, string>> bodies)
+        {
+            var result = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var body in bodies)
+            {
+                if (string.IsNullOrEmpty(body.Key) || string.IsNullOrEmpty(body.Value)) continue;
+                if (!result.TryGetValue(body.Key, out var previous)) result.Add(body.Key, body.Value);
+                else if (previous != body.Value) result[body.Key] = null;
+            }
+            return result;
+        }
+
+        // A projected address is for current AOS decisions only. Original
+        // record and event time stay unchanged for persistence and history.
+        internal MemoryRecord ProjectTarget(IReadOnlyDictionary<string, string> current)
+        {
+            if (string.IsNullOrEmpty(TargetPersonId) || current == null ||
+                !current.TryGetValue(TargetPersonId, out var bodyId))
+                return this;
+            if (bodyId == TargetID) return this;
+            return new MemoryRecord
+            {
+                EventType = EventType, TargetID = bodyId ?? "", TargetPersonId = TargetPersonId,
+                Emotion = Emotion, Importance = Importance, DecayRate = DecayRate, CreationTime = CreationTime,
+            };
+        }
 
         // Для обратной совместимости — вычисляемое свойство
         public float Strength => GetCurrentStrength(Time.time);
