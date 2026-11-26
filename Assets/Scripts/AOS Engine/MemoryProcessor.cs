@@ -55,7 +55,7 @@ namespace Sinbinder.AOS
                 // Память ещё не проснулась — отдаём прочитанное, тем же отбором по владельцам.
                 if (_pending != null)
                     foreach (var s in _pending)
-                        if (s != null && (owners == null || owners.Contains(s.Owner))) list.Add(s);
+                        if (s != null && (owners == null || owners.Contains(s.Owner))) list.Add(s.CopyAtAge(0f));
                 return list;
             }
             float now = Time.time;
@@ -93,37 +93,43 @@ namespace Sinbinder.AOS
             warrior.Soul.ClearPastMemories();
         }
 
-        /// <summary>Загрузка: память заменяется записанной целиком.</summary>
+        /// <summary>Full restore replaces the old party's ledger, including a cold pending load.</summary>
         public static void Restore(List<SavedMemory> saved)
+            => Restore(saved, null, null, true);
+
+        // In-place loading keeps unrelated live NPCs, but removes both
+        // outgoing and incoming participant records. Reload replaces all.
+        internal static void Restore(IEnumerable<SavedMemory> saved,
+            ISet<string> allowed, ISet<string> replace, bool resetAll)
         {
-            var copy = saved != null ? new List<SavedMemory>(saved) : new List<SavedMemory>();
-            if (Instance == null) { _pending = copy; return; }
-            Instance.Install(copy);
+            var copy = new List<SavedMemory>();
+            if (saved != null)
+                foreach (var record in saved)
+                    if (record != null && record.IsValidForTransfer() &&
+                        (allowed == null || allowed.Contains(record.Owner)))
+                        copy.Add(record.CopyAtAge(0f));
+
+            var system = Instance;
+            if (system == null) { _pending = copy; return; }
+            _pending = null;
+            if (resetAll) system._memories.Clear();
+            else if (replace != null)
+                foreach (var id in replace) system._memories.Remove(id);
+            system.Install(copy);
         }
 
         private void Install(List<SavedMemory> saved)
         {
-            // Заменяется память тех, кого знает запись: отряд, выжившие стражи и все, чья память
-            // в ней лежит. Враги, живые сейчас в сцене (загрузка на месте их тел не трогает), помнят
-            // своё дальше — до 23.11 (первая версия) загрузка стирала и их.
-            var replace = new HashSet<string>();
-            foreach (var m in SquadRoster.Members) if (!string.IsNullOrEmpty(m.WarriorId)) replace.Add(m.WarriorId);
-            foreach (var s in Survivors.All) if (s != null && !string.IsNullOrEmpty(s.Id)) replace.Add(s.Id);
-            foreach (var s in saved) if (s != null && !string.IsNullOrEmpty(s.Owner)) replace.Add(s.Owner);
-            foreach (var id in replace) _memories.Remove(id);
             float now = Time.time;
             foreach (var s in saved)
             {
-                if (s == null || string.IsNullOrEmpty(s.Owner) || string.IsNullOrEmpty(s.EventType)) continue;
-                if (!_memories.TryGetValue(s.Owner, out var list)) _memories[s.Owner] = list = new List<MemoryRecord>();
-                list.Add(new MemoryRecord
-                {
-                    EventType = s.EventType, TargetID = s.TargetID ?? "", TargetPersonId = s.TargetPersonId, Emotion = (EmotionType)s.Emotion,
-                    Importance = Mathf.Clamp01(s.Importance), DecayRate = s.DecayRate,
-                    CreationTime = now - Mathf.Max(0f, s.Age),
-                });
+                if (!_memories.TryGetValue(s.Owner, out var list))
+                    _memories[s.Owner] = list = new List<MemoryRecord>();
+                list.Add(s.ToLive(now));
             }
         }
+
+        internal static void ResetBodyIdentities() => _bodyPeople.Clear();
 
         /// <summary>Новая игра — никто ничего не помнит.</summary>
         public static void ForgetAll()
