@@ -272,6 +272,7 @@ namespace Sinbinder.Crypt
             // отменила бы весь смысл площадки: два одинаковых опыта
             // дали бы разные исходы, и игрок научился бы неверному.
             body.Initialize(ShellType.Skeleton, 12, true, Loc.T("Сломанный меч"));
+            body.Foe = true;
 
             // Бюллетень видит добычу через CombatManager, а не через сцену.
             var combat = CombatManager.Instance;

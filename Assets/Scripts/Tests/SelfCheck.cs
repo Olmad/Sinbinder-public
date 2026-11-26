@@ -2396,7 +2396,7 @@ namespace Sinbinder.Tests
         //   раз — «уже сказано/показано», после загрузки может повториться (некритично).
         private static readonly Dictionary<string, string> StateKinds = Kinds(
             // запись: SaveGame / SaveSystem (или PlayerPrefs — помечено)
-            ("запись", "AOS.MemoryProcessor._pending Crypt.CryptUpgrades._brought Crypt.CryptUpgrades._installed " +
+            ("запись", "AOS.MemoryProcessor._pending AOS.EmotionSystem._pending Crypt.CryptUpgrades._brought Crypt.CryptUpgrades._installed " +
                        "Crypt.MissionBoard.ActiveJourneys Gameplay.ExpeditionMemoryLedger.Entries Gameplay.ExpeditionReplayArchive.Entries " +
                        "Gameplay.PersonalExpedition.Progress Gameplay.SquadRoster._members Gameplay.Survivors._all Gameplay.Lesson._given " +
                        "Gameplay.TrophyChest._restoreContents Gameplay.FallenBag.Live Core.Satchel._jars " +

@@ -46,3 +46,22 @@ assert 'public const float AwayLifetime = 60f;' in retention
 assert 'if (!Expired && !OnHomeMap' in retention
 assert 'if (now - _leftAt >= AwayLifetime)' in retention
 print("PASS: corpse items retained on full inventory; death path wired; wallet saves synced")
+
+aos = base / "Assets/Scripts/AOS Engine"
+context = (aos / "CombatDecisionContext.cs").read_text(encoding="utf-8")
+wrapper = (aos / "AOSWarriorWrapper.cs").read_text(encoding="utf-8")
+remains = (base / "Assets/Scripts/Gameplay/Remains.cs").read_text(encoding="utf-8")
+loot_context = context.split("private static List<HarvestableBody> GetNearbyLoot(Warrior self)", 1)[1]
+loot_context = loot_context.split("private static float CalculateDanger", 1)[0]
+loot_action = wrapper.split("private void ExecuteLoot()", 1)[1].split("private void ExecuteSaveAlly()", 1)[0]
+assert "body.CanLoot(self)" in loot_context and "HarvestableBody.LootSearchRadius" in loot_context
+assert "body.CanLoot(_warrior)" in loot_action and "HarvestableBody.LootSearchRadius" in loot_action
+transfer = loot_action.index("closest.GatherLoot(_warrior)")
+empty_result = loot_action.index("if (gold == 0 && equipment == null) return;")
+memory = loot_action.index('"FoundLoot"')
+deed = loot_action.index("DeedType.CollectMostLoot")
+assert transfer < empty_result < memory < deed
+assert "CollectGold(" not in loot_action and "CollectEquipment(" not in loot_action
+assert "MarkCollected(" not in loot_action
+assert "!b.IsCollected && b.Shell != ShellType.Ghost" in remains
+print("PASS: AOS shares loot eligibility and records only an accepted transfer; remains are independent")

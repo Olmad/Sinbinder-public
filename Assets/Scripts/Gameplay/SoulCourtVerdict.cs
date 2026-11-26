@@ -11,6 +11,11 @@ namespace Sinbinder.Gameplay
 
     public static class SoulCourtVerdict
     {
+        // A reaction is not the verdict; never infer disobedience without
+        // an original command. The Court separately explains the facts.
+        public static string DeathReaction(SoulCourtVerdictKind verdict, bool hasCommand)
+            => hasCommand && verdict == SoulCourtVerdictKind.Refused ? "Неповиновение." : null;
+
         public static SoulCourtVerdictKind Classify(
             bool hasCommand, bool actionSatisfiesCommand,
             bool choseObedience, bool hesitated, bool reportedRefusal)

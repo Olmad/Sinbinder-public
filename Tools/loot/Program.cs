@@ -14,6 +14,7 @@ static class LootTests
 
     public static void Main()
     {
+        HarvestableBodyChecks.Run(Check);
         var items = new List<string> { "Sword", "Helmet", "Belt" };
         var capacity = new List<string>();
         int n = FallenBagTransfer.Move(items, x =>
@@ -53,6 +54,6 @@ static class LootTests
               == FallenBagIntent.RespectDead, "pious bystander respects dead");
         Check(FallenBagChoice.Decide(SinType.Wrath, MoralType.Neutral, 0f, false)
               == FallenBagIntent.Leave, "uninvolved soldier leaves bag alone");
-        Console.WriteLine($"PASS {asserts}: physical corpse bag transfer and AOS decisions");
+        Console.WriteLine($"PASS {asserts}: corpse loot, bag transfer and AOS decisions");
     }
 }

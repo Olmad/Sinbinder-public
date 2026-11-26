@@ -315,7 +315,8 @@ namespace Sinbinder.Core
                 new[] { Loc.T("Готов сожрать всё"), Loc.T("Любит поесть"), Loc.T("Ест в меру"), Loc.T("Умерен"), Loc.T("Воздержан") },
                 new[] { Loc.T("Апатичен ко всему"), Loc.T("Ленив"), Loc.T("Работает без огня"), Loc.T("Старателен"), Loc.T("Неутомим") }
             };
-            return descriptions[(int)sin][tier + 2];
+            // Описания идут от сильного греха (+2) к сильной добродетели (−2).
+            return descriptions[(int)sin][2 - tier];
         }
 
         /// <summary>

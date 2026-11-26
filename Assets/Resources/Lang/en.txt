@@ -3280,8 +3280,12 @@ msgid "Оставил себе {0} монет."
 msgstr "Kept {0} coins."
 
 #: Crypt/MissionBoard.cs
-msgid "Общая добыча, вернувшаяся в казну: {0} монет."
-msgstr "Shared loot returned to the treasury: {0} coins."
+msgid "Доля добычи для кошеля Греховода: {0} монет."
+msgstr "Share allocated to the Sinbinder's purse: {0} coins."
+
+#: Crypt/MissionBoard.cs
+msgid "Решение командира: {0}"
+msgstr "Commander's decision: {0}"
 
 #: Crypt/MissionBoard.cs
 msgid "Охрана удержала груз. Отряд отступил без добычи."
@@ -16849,3 +16853,50 @@ msgstr "The jar in your hand is empty. Take the jar with the soul — J."
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Возьмите банку с душой в руку (J)"
 msgstr "Take the jar with the soul in hand (J)"
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Забери душу."
+msgstr "Take the soul."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Прикажи ему."
+msgstr "Give him an order."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Опусти мост."
+msgstr "Lower the bridge."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Неповиновение."
+msgstr "Disobedience."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Выделите воина и отдайте приказ ПКМ по земле. Исполнит ли — решает душа."
+msgstr "Select the warrior and right-click the ground to give an order. Whether it is obeyed is the soul's decision."
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Тело"
+msgstr "Body"
+
+#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+msgid "Воин"
+msgstr "Warrior"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Отдай приказ."
+msgstr "Give the order."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Tab — посмотрите глазами Греховода."
+msgstr "Tab — switch to the Sinbinder's first-person view."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "V — переключитесь с Командира на Воина."
+msgstr "V — switch from Commander to Warrior."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Посох всегда в руке. Впереди у дороги — чучело: подойдите к нему."
+msgstr "Your staff is always in your hand. There is a practice dummy by the road ahead: approach it."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Впереди у дороги — чучело: подойдите к нему."
+msgstr "There is a practice dummy by the road ahead: approach it."

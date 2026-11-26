@@ -48,7 +48,7 @@ namespace Sinbinder.UI
                + "и платят за неё там, куда пришли, а не посреди набега.")]
         [SerializeField] private bool _askOnArrival;
 
-        private bool _sawEnemies;
+        private CombatManager _combat;
         private bool _asked;
 
         /// <summary>
@@ -107,8 +107,8 @@ namespace Sinbinder.UI
                 return;
             }
 
-            if (CombatManager.Instance != null)
-                CombatManager.Instance.OnUnitsChanged += OnUnitsChanged;
+            _combat = CombatManager.Instance;
+            if (_combat != null) _combat.OnBattleResolved += OnBattleResolved;
         }
 
         /// <summary>
@@ -161,22 +161,13 @@ namespace Sinbinder.UI
 
         void OnDestroy()
         {
-            if (CombatManager.Instance != null)
-                CombatManager.Instance.OnUnitsChanged -= OnUnitsChanged;
+            if (_combat != null) _combat.OnBattleResolved -= OnBattleResolved;
         }
 
-        private void OnUnitsChanged()
+        private void OnBattleResolved(BattleResult result)
         {
-            if (_asked || CombatManager.Instance == null) return;
-
-            if (CombatManager.Instance.GetAliveEnemyCount() > 0) { _sawEnemies = true; return; }
-
-            // Спрашиваем только после настоящего боя: сцена без врагов
-            // не повод требовать плату.
-            if (!_sawEnemies) return;
-            if (CombatManager.Instance.GetAlivePlayerCount() == 0) return;
-
-            Open();
+            if (isActiveAndEnabled && !PersonalExpedition.Active && result.Outcome == BattleOutcome.Victory)
+                Open();
         }
 
         public void Open()

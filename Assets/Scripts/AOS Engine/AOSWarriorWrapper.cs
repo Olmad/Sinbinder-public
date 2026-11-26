@@ -162,6 +162,7 @@ namespace Sinbinder.AOS
             if (_goal != null && action == ActionType.Flee && (Escaped() || Time.time - _fleeSince > FleeOut))
             {
                 Debug.Log($"[НАБЕГ] {_warrior.DisplayName} сбежал с поля");
+                CombatManager.Instance?.ReportEnemyRetreat(_self);
                 Destroy(gameObject);
                 return;
             }
@@ -593,48 +594,34 @@ namespace Sinbinder.AOS
         private void ExecuteLoot()
         {
             if (CombatManager.Instance == null) return;
-            var bodies = CombatManager.Instance.BodiesOnField;
             HarvestableBody closest = null;
-            float minDist = float.MaxValue;
-            foreach (var body in bodies)
+            float minDist = HarvestableBody.LootSearchRadius;
+            foreach (var body in CombatManager.Instance.BodiesOnField)
             {
-                if (body == null || body.IsCollected) continue;
+                if (body == null || !body.CanLoot(_warrior)) continue;
                 float dist = Vector3.Distance(transform.position, body.transform.position);
                 if (dist < minDist) { minDist = dist; closest = body; }
             }
-            if (closest != null)
+            if (closest == null) return;
+
+            if (minDist >= 2f)
             {
-                float dist = Vector3.Distance(transform.position, closest.transform.position);
-                if (dist < 2f)
-                {
-                    int gold = closest.CollectGold();
-                    string equip = closest.CollectEquipment();
-                    closest.MarkCollected();
+                GetComponent<UnitMover>()?.CommandMove(closest.transform.position);
+                return;
+            }
 
-                    // «Здесь однажды взял». MemoryModule разбирает эту
-                    // запись и тянет жадного обратно к месту поживы —
-                    // но до 14 сентября строку FoundLoot не писал никто
-                    // и нигде, и жадная половина памяти не наступала
-                    // ни разу (11-MISSING.md §6).
-                    MemoryProcessor.Instance?.CreateMemory(
-                        _warrior, "FoundLoot", "", EmotionType.Joy,
-                        Mathf.Clamp01(0.3f + gold * 0.02f));
+            var (gold, equipment) = closest.GatherLoot(_warrior);
+            if (gold == 0 && equipment == null) return;
 
-                    Debug.Log($"[LOOT] {_warrior.DisplayName} собрал {gold} золота и {equip ?? "ничего"}");
-                    Destroy(closest.gameObject);
+            // «Здесь однажды взял» влияет на следующий выбор в MemoryModule.
+            MemoryProcessor.Instance?.CreateMemory(_warrior, "FoundLoot", "", EmotionType.Joy,
+                Mathf.Clamp01(0.3f + gold * 0.02f));
+            Debug.Log($"[LOOT] {_warrior.DisplayName} собрал {gold} золота и {equipment ?? "ничего"}");
 
-                    // Запись деяния за сбор добычи
-                    if (gold > 0)
-                    {
-                        _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.CollectMostLoot, Importance = gold / 10f });
-                        TitleManager.UpdateTitle(_warrior);
-                    }
-                }
-                else
-                {
-                    var mover = GetComponent<UnitMover>();
-                    if (mover != null) mover.CommandMove(closest.transform.position);
-                }
+            if (gold > 0)
+            {
+                _warrior.Reputation.Deeds.Add(new DeedRecord { Type = DeedType.CollectMostLoot, Importance = gold / 10f });
+                TitleManager.UpdateTitle(_warrior);
             }
         }
 

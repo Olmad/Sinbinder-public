@@ -12,19 +12,103 @@ namespace Sinbinder.AOS
         Calm, Joy, Fear, Anger, Sadness, Disgust, Surprise, Hope
     }
 
+    [System.Serializable]
+    public struct SavedEmotion
+    {
+        public string Owner;
+        public EmotionType Type;
+        public float Intensity;
+    }
+
     public class EmotionSystem : MonoBehaviour
     {
         public static EmotionSystem Instance { get; private set; }
 
-        private Dictionary<string, List<ActiveEmotion>> _emotions = new();
+        private readonly Dictionary<string, List<ActiveEmotion>> _emotions = new();
+        private static List<SavedEmotion> _pending;
 
         [SerializeField] private float _decayInterval = 5f;
 
         void Awake()
         {
-            if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); }
-            else Destroy(gameObject);
+            if (Instance != null) { Destroy(gameObject); return; }
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
             InvokeRepeating(nameof(DecayAllEmotions), _decayInterval, _decayInterval);
+            if (_pending != null)
+            {
+                Install(_pending);
+                _pending = null;
+            }
+        }
+
+        void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+
+        internal static List<SavedEmotion> Snapshot(ICollection<string> owners)
+        {
+            var copy = new List<SavedEmotion>();
+            var system = Instance;
+            if (system == null)
+            {
+                if (_pending != null)
+                    foreach (var emotion in _pending)
+                        if (owners.Contains(emotion.Owner)) copy.Add(emotion);
+                return copy;
+            }
+
+            foreach (var owner in owners)
+                if (system._emotions.TryGetValue(owner, out var active))
+                    foreach (var emotion in active)
+                        copy.Add(new SavedEmotion
+                        {
+                            Owner = owner, Type = emotion.Type, Intensity = emotion.Intensity,
+                        });
+            return copy;
+        }
+
+        internal static void Restore(IEnumerable<SavedEmotion> saved, ISet<string> replace)
+        {
+            var copy = new List<SavedEmotion>();
+            var claimed = new HashSet<(string, EmotionType)>();
+            if (saved != null)
+                foreach (var emotion in saved)
+                {
+                    if (string.IsNullOrEmpty(emotion.Owner) || !replace.Contains(emotion.Owner) ||
+                        !System.Enum.IsDefined(typeof(EmotionType), emotion.Type) ||
+                        float.IsNaN(emotion.Intensity) || float.IsInfinity(emotion.Intensity) ||
+                        emotion.Intensity <= 0f || !claimed.Add((emotion.Owner, emotion.Type)))
+                        continue;
+
+                    copy.Add(new SavedEmotion
+                    {
+                        Owner = emotion.Owner, Type = emotion.Type, Intensity = Mathf.Clamp01(emotion.Intensity),
+                    });
+                }
+
+            var system = Instance;
+            if (system == null) { _pending = copy; return; }
+            foreach (var owner in replace) system._emotions.Remove(owner);
+            system.Install(copy);
+        }
+
+        private void Install(List<SavedEmotion> saved)
+        {
+            foreach (var emotion in saved)
+            {
+                if (!_emotions.TryGetValue(emotion.Owner, out var active))
+                    _emotions[emotion.Owner] = active = new List<ActiveEmotion>();
+                active.Add(new ActiveEmotion { Type = emotion.Type, Intensity = emotion.Intensity });
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        internal static void ForgetAll()
+        {
+            _pending = null;
+            if (Instance != null) Instance._emotions.Clear();
         }
 
         /// <summary>

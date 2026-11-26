@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/server-prototype
+      - "feature/sinbinder-canonical-integration-*"
     paths:
       - "Assets/Scripts/Gameplay/FallenBag.cs"
       - "Assets/Scripts/Gameplay/FallenBagRetention.cs"
@@ -12,6 +13,13 @@ on:
       - "Assets/Scripts/UI/GearPanel.cs"
       - "Assets/Scripts/Gameplay/FallenBagTransfer.cs"
       - "Assets/Scripts/Gameplay/CombatManager.cs"
+      - "Assets/Scripts/Gameplay/HarvestableBody.cs"
+      - "Assets/Scripts/Gameplay/Remains.cs"
+      - "Assets/Scripts/AOS Engine/CombatDecisionContext.cs"
+      - "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs"
+      - "Assets/Scripts/Inventory/PlayerInventory.cs"
+      - "Assets/Scripts/Inventory/InventoryItem.cs"
+      - "Assets/Scripts/Inventory/StorageItem.cs"
       - "Assets/Scripts/Core/SaveSystem.cs"
       - "Assets/Scripts/Gameplay/Warrior.cs"
       - "Assets/Scripts/Gameplay/SquadRoster.cs"
@@ -27,6 +35,13 @@ on:
       - "Assets/Scripts/UI/GearPanel.cs"
       - "Assets/Scripts/Gameplay/FallenBagTransfer.cs"
       - "Assets/Scripts/Gameplay/CombatManager.cs"
+      - "Assets/Scripts/Gameplay/HarvestableBody.cs"
+      - "Assets/Scripts/Gameplay/Remains.cs"
+      - "Assets/Scripts/AOS Engine/CombatDecisionContext.cs"
+      - "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs"
+      - "Assets/Scripts/Inventory/PlayerInventory.cs"
+      - "Assets/Scripts/Inventory/InventoryItem.cs"
+      - "Assets/Scripts/Inventory/StorageItem.cs"
       - "Assets/Scripts/Core/SaveSystem.cs"
       - "Assets/Scripts/Gameplay/Warrior.cs"
       - "Assets/Scripts/Gameplay/SquadRoster.cs"

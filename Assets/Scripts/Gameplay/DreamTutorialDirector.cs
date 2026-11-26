@@ -199,6 +199,47 @@ namespace Sinbinder.Gameplay
 
         private Stage _stage;
         private bool _ready;   // Start поставил сон на дорогу — до того Update молчит
+        private readonly HashSet<Stage> _deathSpoken = new();
+        private string _deathCaption;
+
+        // Only a few important steps belong to Death's voice; controls
+        // remain in Lesson. No praise, prophecy or promise of obedience.
+        private string DeathCue()
+        {
+            switch (_stage)
+            {
+                case Stage.Harvest: return Loc.T("Забери душу.");
+                case Stage.Command:
+                    return _zombie != null && !_zombie.IsDead && _orderedAt < 0f && !OrderedSinceMark()
+                        ? Loc.T("Отдай приказ.") : null;
+                case Stage.Bridge:
+                    return _zombie != null && !_zombie.IsDead && DreamRoad.BridgeRaised && !LeverOrderedSinceMark()
+                        ? Loc.T("Опусти мост.") : null;
+                default: return null;
+            }
+        }
+
+        private string WithDeath(string instruction)
+            => string.IsNullOrEmpty(_deathCaption) ? instruction
+                : Loc.T("Бог Смерти") + ": " + _deathCaption + "\n" + instruction;
+
+        private void SilenceDeathLesson()
+        {
+            if (_deathCaption == null) return;
+            _deathCaption = null;
+            Audio.DeathVoice.QuietLesson();
+        }
+
+        private void UpdateDeathLesson(bool quiet)
+        {
+            string cue = quiet || !_ready ? null : DeathCue();
+            if (cue == null || (_deathCaption != null && _deathCaption != cue))
+                SilenceDeathLesson();
+            if (cue == null || !_deathSpoken.Add(_stage)) return;
+            _deathCaption = cue;
+            Audio.DeathVoice.UtterLesson(cue);
+        }
+
         private SinbinderPlayer _hero;
         private Warrior _wounded, _zombie;
         private readonly List<Warrior> _killers = new List<Warrior>();
@@ -266,11 +307,11 @@ namespace Sinbinder.Gameplay
         private (string key, string words) FirstOrderHint()
         {
             if (!Picked())
-                return (Loc.T("ЛКМ"), Loc.F("Щёлкните по {0} — выделить.", Whom())
-                    + "\n" + Loc.T("Это ваш первый воин."));
+                return (Loc.T("ЛКМ"), WithDeath(Loc.F("Щёлкните по {0} — выделить.", Whom())
+                    + "\n" + Loc.T("Это ваш первый воин.")));
 
-            return (Loc.T("ПКМ"), Loc.T("Правой кнопкой — по земле, чтобы приказать идти.")
-                + "\n" + Loc.T("Приказ отдаёте вы. Исполнит ли — решает душа."));
+            return (Loc.T("ПКМ"), WithDeath(Loc.T("Правой кнопкой — по земле, чтобы приказать идти.")
+                + "\n" + Loc.T("Приказ отдаёте вы. Исполнит ли — решает душа.")));
         }
 
         private string Whom() => _zombie != null ? Grammar.Dative(_zombie.DisplayName, _zombie.Gender) : "";
@@ -303,10 +344,10 @@ namespace Sinbinder.Gameplay
                     if (_zombie == null || _zombie.IsDead) return;
                     shown = Lesson.Guide(_zombie.transform.position,
                         () => !Picked()
-                            ? (Loc.T("ЛКМ"), Grammar.Pick(g, Loc.T("Он за рекой, у рычага моста."), Loc.T("Она за рекой, у рычага моста."))
-                                             + "\n" + Loc.F("Щёлкните по {0} — выделить.", Whom()))
-                            : (Loc.T("ПКМ"), Loc.T("Правой кнопкой — по рычагу: приказ опустить мост.")
-                                  + "\n" + Loc.T("Послушается ли — решит душа. Смотрите.")),
+                            ? (Loc.T("ЛКМ"), WithDeath(Grammar.Pick(g, Loc.T("Он за рекой, у рычага моста."), Loc.T("Она за рекой, у рычага моста."))
+                                             + "\n" + Loc.F("Щёлкните по {0} — выделить.", Whom())))
+                            : (Loc.T("ПКМ"), WithDeath(Loc.T("Правой кнопкой — по рычагу: приказ опустить мост.")
+                                  + "\n" + Loc.T("Послушается ли — решит душа. Смотрите."))),
                         () => _stage != Stage.Bridge || LeverOrderedSinceMark());
                     break;
                 case Stage.Retest:
@@ -415,7 +456,12 @@ namespace Sinbinder.Gameplay
             _woundedAt = DreamRoad.DyingAt;
         }
 
-        private void OnDisable() => Lesson.Unhint(this);
+        private void OnDisable()
+        {
+            SilenceDeathLesson();
+            Lesson.Unhint(this);
+            UI.TaskList.Place(null, null);
+        }
         private void OnDestroy()
         {
             if (Instance != this) return;
@@ -593,7 +639,7 @@ namespace Sinbinder.Gameplay
 
         private void Set(Stage stage, string line)
         {
-            if (stage != _stage) Mark(stage.ToString());
+            if (stage != _stage) { SilenceDeathLesson(); Mark(stage.ToString()); }
             _stage = stage;
             _line = line;
             _nextPrompt = Time.unscaledTime + 15f;
@@ -1075,7 +1121,7 @@ namespace Sinbinder.Gameplay
             _commandWait = 0f;
             _orderedAt = -1f;
             MarkCommand();
-            Set(Stage.Command, Loc.N("Выдели его и отдай приказ ПКМ по земле — он пойдёт."));
+            Set(Stage.Command, Loc.N("Выделите воина и отдайте приказ ПКМ по земле. Исполнит ли — решает душа."));
         }
 
         /// <summary>
@@ -1693,16 +1739,24 @@ namespace Sinbinder.Gameplay
         {
             // Под полосами — кадр, а не урок: плашка спорила бы с репликой.
             bool quiet = _stage == Stage.Finished || _handBusy || SoulCourt.Sitting || UI.TalkView.Shown
+                      || Speaking() || UI.Modal.Any || GamePauseController.Instance?.IsPaused == true
                       || (UI.Letterbox.Instance != null && UI.Letterbox.Instance.Shown);
+            UpdateDeathLesson(quiet);
             // Упёрся в черту шага — задача вспыхивает: сначала это.
             if (_nudgeAt != _nudgeSent) { _nudgeSent = _nudgeAt; UI.TaskList.Nudge(); }
-            PlaceNow();
+            if (quiet) UI.TaskList.Place(null, null); else PlaceNow();
             if (!quiet && _stage == Stage.Return)
             {
                 var prompt = SealPrompt();
                 UI.TaskList.Step(prompt.task);
                 if (prompt.key != null) Lesson.Hint(this, prompt.key, prompt.words);
                 else Lesson.Unhint(this);
+                return;
+            }
+            if (!quiet && RoleRecoveryHint() is { } recovery)
+            {
+                UI.TaskList.Step(recovery.words);
+                Lesson.Hint(this, recovery.key, recovery.words);
                 return;
             }
             if (!quiet) UI.TaskList.Step(TaskTitle());
@@ -1713,8 +1767,19 @@ namespace Sinbinder.Gameplay
                 return;
             }
             string key = quiet || string.IsNullOrEmpty(_line) ? null : KeyNow();
-            if (key != null) Lesson.Hint(this, key, Loc.T(_line));
+            if (key != null) Lesson.Hint(this, key, WithDeath(Loc.T(_line)));
             else Lesson.Unhint(this);
+        }
+
+        private (string key, string words)? RoleRecoveryHint()
+        {
+            if (_stage != Stage.WarriorMode && _stage != Stage.DrawWeapon && _stage != Stage.Practice) return null;
+
+            var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+            if (view == null) return null;
+            if (!view.FirstPersonNow) return ("Tab", Loc.T("Tab — посмотрите глазами Греховода."));
+            if (!view.WarriorModeNow) return ("V", Loc.T("V — переключитесь с Командира на Воина."));
+            return null;
         }
 
         private float _nudgeSent = -10f;
@@ -1729,6 +1794,13 @@ namespace Sinbinder.Gameplay
             switch (_stage)
             {
                 case Stage.Approach: Place(Loc.T("Умирающий"), _woundedAt, 1.2f, 3f); break;
+                case Stage.Harvest: case Stage.Rebind:
+                    Place(Loc.T("Тело"), _woundedAt, 1.2f, 0f); break;
+                case Stage.Command:
+                    if (_zombie != null && !_zombie.IsDead && _orderedAt < 0f)
+                        UI.TaskList.Place(Loc.T("Воин"), _zombie.transform.position + Vector3.up * 2.4f, 0f);
+                    else UI.TaskList.Place(null, null);
+                    break;
                 case Stage.Practice: Place(Loc.T("Чучело"), DreamRoad.DummyAt, 2.0f, 2.4f); break;
                 case Stage.Chase: Place(Loc.T("Мост"), DreamRoad.BridgeWestEnd, 1.4f, 3f); break;
                 case Stage.Bridge: case Stage.Retest:
@@ -1804,6 +1876,7 @@ namespace Sinbinder.Gameplay
                 case Stage.WarriorMode: return "V";
                 case Stage.DrawWeapon: return "B";
                 case Stage.Practice: return Loc.T("ЛКМ");
+                case Stage.Bridge: return Loc.T("ПКМ");
                 case Stage.Whisper: return "Z";
                 case Stage.Jars:
                     if (_jarIndex < 0) return _atShrine ? "E" : null;
