@@ -224,6 +224,21 @@ namespace Sinbinder.Core
             return restored;
         }
 
+        // A historical death snapshot is not another owned or living soul.
+        // Keep its identity and independent mutable data; decay is applied
+        // only later, once, when the fading soul is successfully harvested.
+        internal static SoulData CaptureDeath(SoulData source, string title)
+        {
+            if (source == null) return null;
+            var snapshot = new SoulData(source.Name, source.Moral, source.Level,
+                source.CopySpectra(), MemorySeed.Copy(source.Memory), source.Gender, source.Id);
+            snapshot._sinType = (int)source.Sin;
+            snapshot.SetTrade(source.Trade);
+            snapshot.SetKin(source.Kin);
+            snapshot.Remember(title);
+            return snapshot;
+        }
+
         // ---------- создание ----------
 
         /// <summary>Душа с одним выраженным грехом. Прежняя сигнатура.</summary>
