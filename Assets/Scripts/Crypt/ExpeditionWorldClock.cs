@@ -47,6 +47,19 @@ namespace Sinbinder.Crypt
             _offscreenBoard=proxy.AddComponent<MissionBoard>();
         }
 
+        /// <summary>
+        /// Настоящая доска вылазок этой сцены без карты склепа — полигон (Crypt_Test): там своя доска и место сбора
+        /// отряда, и отряд, посланный оттуда, висел «возвращается», пока игрок не придёт в склеп (автор, 26.11:
+        /// «экспедиции отправляются и не возвращаются… отряд ждал в полигоне»). Служебная доска часов — не в сцене.
+        /// </summary>
+        private MissionBoard SceneBoard()
+        {
+            var scene = SceneManager.GetActiveScene();
+            foreach (var b in Object.FindObjectsByType<MissionBoard>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (b != null && b != _offscreenBoard && b.gameObject.scene == scene) return b;
+            return null;
+        }
+
         private void OnDestroy()
         {
             if (_instance == this) _instance = null;
@@ -68,7 +81,7 @@ namespace Sinbinder.Crypt
             // without reactivating or destroying local scene warriors.
             var activeCrypt = Object.FindFirstObjectByType<CryptMap>();
             MissionBoard deliveryBoard = activeCrypt != null
-                ? CryptMap.Board : null;
+                ? CryptMap.Board : SceneBoard();
             if (deliveryBoard != null &&
                 (deliveryBoard.gameObject.scene != SceneManager.GetActiveScene() ||
                  Gameplay.PersonalExpedition.Active))

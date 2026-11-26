@@ -38,6 +38,29 @@ namespace Sinbinder.EditorTools
         /// <summary>Поход как у прогона демо: обоз первым — там старший сам решает, драться ли.</summary>
         public static string Begin() { _fight = false; return Start(); }
 
+        /// <summary>
+        /// Поход из полигона (Crypt_Test): послать с его доски и ждать там же (автор, 26.11: «отряд ждал в полигоне»).
+        /// Верстак: open Assets/Scenes/Crypt_Test.unity → play → call Sinbinder.EditorTools.ExpeditionProbe.Polygon
+        /// </summary>
+        public static string Polygon()
+        {
+            _fight = false;
+            string r = Start();
+            if (Board() == null) { Finish("НЕ ПРОЙДЕНО: в сцене нет доски вылазок"); return Result; }
+            _step = Step.Send;
+            return r + " (полигон)";
+        }
+
+        /// <summary>Доска склепа, а без склепа — доска этой сцены (полигон).</summary>
+        private static MissionBoard Board()
+        {
+            if (CryptMap.Board != null) return CryptMap.Board;
+            var scene = SceneManager.GetActiveScene();
+            foreach (var b in Object.FindObjectsByType<MissionBoard>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (b != null && b.gameObject.scene == scene) return b;
+            return null;
+        }
+
         private static string Start()
         {
             if (!EditorApplication.isPlaying) return "нужен режим игры (play)";
@@ -85,7 +108,7 @@ namespace Sinbinder.EditorTools
 
                 case Step.Send:
                 {
-                    var board = CryptMap.Board;
+                    var board = Board();
                     foreach (var m in SquadRoster.Members) Before[m.Name] = m;
                     _archiveBefore = ExpeditionReplayArchive.History.Count;
                     _goldBefore = Inventory.PlayerInventory.Instance != null ? Inventory.PlayerInventory.Instance.Gold : -1;
@@ -116,7 +139,7 @@ namespace Sinbinder.EditorTools
 
                 case Step.Journey:
                 {
-                    var board = CryptMap.Board;
+                    var board = Board();
                     if (board == null) { Finish("НЕ ПРОЙДЕНО: доска вылазок пропала посреди похода"); return; }
                     var phases = new StringBuilder();
                     foreach (var j in MissionBoard.Journeys)
