@@ -126,6 +126,7 @@ namespace Sinbinder.Core
                     SoulSpectra = m.SoulSpectra != null ? (float[])m.SoulSpectra.Clone() : null,
                     SoulLevel = m.SoulLevel,
                     SoulId = m.SoulId,
+                    SoulPersonId = m.SoulPersonId,
                     SoulKin = m.SoulKin,
                     Loyalty = m.Loyalty,
                     HealthFraction = m.HealthFraction,
@@ -500,6 +501,7 @@ namespace Sinbinder.Core
                     SoulSpectra = m.HasSoulSpectra ? (float[])m.SoulSpectra.Clone() : null,
                     SoulLevel = m.SoulLevel,
                     SoulId = m.SoulId,
+                    SoulPersonId = m.SoulPersonId,
                     SoulKin = m.SoulKin,
                     Loyalty = m.Loyalty,
                     HealthFraction = m.HealthFraction,
@@ -700,6 +702,7 @@ namespace Sinbinder.Core
             return new SavedSoul
             {
                 Id = soul.Id,
+                PersonId = soul.PersonId,
                 Name = soul.Name,
                 Moral = (int)soul.Moral,
                 Level = soul.Level,
@@ -724,7 +727,7 @@ namespace Sinbinder.Core
 
             var memory = s.HasMemorySeed ? CopyMemorySeed(s.Memory) : null;
             var soul = new SoulData(s.Name, (MoralType)s.Moral, s.Level,
-                                    s.Spectra, memory, (Gender)s.Gender, s.Id);
+                                    s.Spectra, memory, (Gender)s.Gender, s.Id, s.PersonId);
             soul.SetTrade((Trade)s.Trade);
             soul.Remember(s.Title);
             return soul;
