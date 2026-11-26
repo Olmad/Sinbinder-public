@@ -713,6 +713,7 @@ namespace Sinbinder.Core
                 Title = soul.EarnedTitle,
                 HasMemorySeed = soul.Memory != null,
                 Memory = CopyMemorySeed(soul.Memory),
+                PastMemories = soul.PastMemoriesAt(Time.time),
             };
         }
 
@@ -730,6 +731,8 @@ namespace Sinbinder.Core
                                     s.Spectra, memory, (Gender)s.Gender, s.Id, s.PersonId);
             soul.SetTrade((Trade)s.Trade);
             soul.Remember(s.Title);
+            if (SoulDecay.KeepsMemory((SoulQuality)s.Quality))
+                soul.SetPastMemories(s.PastMemories, Time.time);
             return soul;
         }
 
@@ -739,6 +742,7 @@ namespace Sinbinder.Core
             System.Enum.IsDefined(typeof(Gender), soul.Gender) &&
             System.Enum.IsDefined(typeof(Trade), soul.Trade) &&
             !(soul.HasMemorySeed && soul.Memory == null) &&
+            (soul.PastMemories == null || soul.PastMemories.All(m => m != null && m.IsValidForTransfer())) &&
             (soul.Spectra == null || soul.Spectra.All(value => !float.IsNaN(value) && !float.IsInfinity(value)));
 
         private static MemorySeed CopyMemorySeed(MemorySeed memory) =>
