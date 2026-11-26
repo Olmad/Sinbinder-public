@@ -67,6 +67,8 @@ namespace Sinbinder.Gameplay
             /// как умер и как душа попала к нам). Пусто — память по составу лагеря.
             /// </summary>
             public Core.MemorySeed Seed;
+            // True even for an explicitly absent biography; false for legacy roster data.
+            public bool SeedCaptured;
 
             /// <summary>Слава, пришедшая с ним. Не заработанный титул.</summary>
             public bool Legend;
@@ -584,6 +586,8 @@ namespace Sinbinder.Gameplay
             member.Sin = w.Soul.Sin;
             member.Moral = w.Soul.Moral;
             member.Intensity = w.Soul.Get(w.Soul.Sin);
+            member.Seed = MemorySeed.Copy(w.Soul.Memory);
+            member.SeedCaptured = true;
             member.IsAway = false;
             member.Shell = w.Shell;
             member.Title = AOS.TitleManager.TitleOf(w);
