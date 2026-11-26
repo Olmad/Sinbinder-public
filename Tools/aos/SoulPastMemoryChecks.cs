@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Sinbinder.Core;
 using Sinbinder.AOS;
 using UnityEngine;
@@ -11,7 +12,7 @@ internal static class SoulPastMemoryChecks
         var source = new SoulData("Warrior", SinType.Wrath, MoralType.Neutral, 1);
         var snapshot = SoulData.CaptureDeath(source, "");
         var anger = new SavedMemory { Owner = "old-body", EventType = "AllyBetrayedMe",
-            TargetID = "enemy-body", Emotion = (int)EmotionType.Anger, Importance = 0.8f,
+            TargetID = "enemy-body", TargetPersonId = "enemy-person", Emotion = (int)EmotionType.Anger, Importance = 0.8f,
             DecayRate = 0.01f, Age = 10f };
         var self = new SavedMemory { Owner = "old-body", EventType = "SelfEvent",
             TargetID = "old-body", Emotion = (int)EmotionType.Joy, Importance = 0.6f,
@@ -40,6 +41,7 @@ internal static class SoulPastMemoryChecks
                 "late harvest cannot recover forgotten experienced events");
             var records = shock.PastMemoriesAt(130f, "new-body");
             check(records[0].Owner == "new-body" && records[0].TargetID == "enemy-body" &&
+                  records[0].TargetPersonId == "enemy-person" &&
                   records[0].Age == 40f && records[0].Emotion == (int)EmotionType.Anger &&
                   records[1].TargetID == "new-body",
                 "transfer remaps only owner and self target, keeps other targets and age");
@@ -48,12 +50,39 @@ internal static class SoulPastMemoryChecks
                   live.GetCurrentStrength(130f) < 0f &&
                   Math.Abs(live.GetCurrentStrength(130f) - (0.8f * -1.3f / 1.4f)) < 0.0001f,
                 "negative memory preserves original importance, age and signed relationship strength");
+            var current = MemoryRecord.UniqueLivingBodies(new[]
+            {
+                new KeyValuePair<string, string>("enemy-person", "new-enemy-body"),
+                new KeyValuePair<string, string>("other-person", "same-name-body")
+            });
+            var projected = live.ProjectTarget(current);
+            check(projected.TargetID == "new-enemy-body" && projected.TargetPersonId == "enemy-person" &&
+                  live.TargetID == "enemy-body" && projected.CreationTime == live.CreationTime &&
+                  projected.GetCurrentStrength(130f) == live.GetCurrentStrength(130f),
+                "recognize a new body without rewriting historical address or refreshing memory");
+            check(live.MatchesTarget("new-enemy-body", "enemy-person") &&
+                  !live.MatchesTarget("enemy-body", "other-person") &&
+                  !live.MatchesTarget("same-name-body", "other-person"),
+                "repeat event matches known person, never an unrelated identity");
+            var legacy = new MemoryRecord("enemy-body", "Legacy", EmotionType.Anger, 0.8f);
+            check(legacy.ProjectTarget(current).TargetID == "enemy-body" &&
+                  !legacy.MatchesTarget("new-enemy-body", "enemy-person"),
+                "legacy address without known identity is not guessed");
+            var duplicate = MemoryRecord.UniqueLivingBodies(new[]
+            {
+                new KeyValuePair<string, string>("enemy-person", "body-a"),
+                new KeyValuePair<string, string>("enemy-person", "body-b"),
+                new KeyValuePair<string, string>("enemy-person", "body-a"),
+            });
+            check(live.ProjectTarget(duplicate).TargetID == "" && live.TargetID == "enemy-body",
+                "ambiguous active projections cannot select an arbitrary body");
             var saved = shock.PastMemoriesAt(130f);
             var loaded = new SoulData("Warrior", SinType.Wrath, MoralType.Neutral, 1);
             loaded.SetPastMemories(saved, 0f);
             saved[0].TargetID = "mutated save";
             check(loaded.PastMemoriesAt(5f)[0].Age == 45f &&
-                  loaded.PastMemoriesAt(5f)[0].TargetID == "enemy-body",
+                  loaded.PastMemoriesAt(5f)[0].TargetID == "enemy-body" &&
+                  loaded.PastMemoriesAt(5f)[0].TargetPersonId == "enemy-person",
                 "new session clock resumes saved age without aliasing records");
             records[0].Importance = 0f;
             shock.ClearPastMemories();
@@ -85,5 +114,15 @@ internal static class SoulPastMemoryChecks
               processor.Contains("_memories.Add(warrior.Id, saved.Select(record => record.ToLive(Time.time)).ToList());") &&
               processor.Contains("warrior.Soul.ClearPastMemories();"),
             "install consumes payload without overwriting existing ledger (source)");
+        check(processor.Contains("TargetPersonId = m.TargetPersonId,") &&
+              processor.Contains("TargetPersonId = s.TargetPersonId,") &&
+              processor.Contains("m.MatchesTarget(targetId, personId)") &&
+              processor.Contains("return vivid.Select(m => m.ProjectTarget(current)).ToList();"),
+            "actual ledger captures and restores stable target and projects it only for current decisions (source)");
+        check(Read("Assets/Scripts/Gameplay/Warrior.cs").Contains(
+                  "AOS.MemoryProcessor.RegisterBodyIdentity(_id, soul.PersonId);") &&
+              processor.Contains("_bodyPeople.Clear();") &&
+              processor.Contains("else if (known != personId) _bodyPeople[bodyId] = null;"),
+            "identity registration covers pre-combat bodies, rejects conflicting mappings and resets on new game (source)");
     }
 }
