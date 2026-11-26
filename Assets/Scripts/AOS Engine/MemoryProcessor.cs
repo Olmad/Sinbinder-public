@@ -63,6 +63,22 @@ namespace Sinbinder.AOS
             return list;
         }
 
+        // Fresh body only: consume the unbound payload once. No global ledger
+        // restore here, and no name-based target remapping.
+        internal void InstallRaisedMemories(Warrior warrior)
+        {
+            if (warrior == null || warrior.Soul == null || string.IsNullOrEmpty(warrior.Id)) return;
+            var saved = warrior.Soul.PastMemoriesAt(Time.time, warrior.Id);
+            if (saved.Count == 0) return;
+            if (_memories.ContainsKey(warrior.Id))
+            {
+                Debug.LogWarning("[AOS] Cannot install raised memories over an existing body ledger.");
+                return;
+            }
+            _memories.Add(warrior.Id, saved.Select(record => record.ToLive(Time.time)).ToList());
+            warrior.Soul.ClearPastMemories();
+        }
+
         /// <summary>Загрузка: память заменяется записанной целиком.</summary>
         public static void Restore(List<SavedMemory> saved)
         {
