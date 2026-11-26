@@ -97,6 +97,7 @@ namespace UnityEngine
         public static float Min(float a, float b) => Math.Min(a, b);
         public static float Clamp01(float value) => Math.Clamp(value, 0f, 1f);
         public static float Round(float value) => MathF.Round(value);
+        public static float Sign(float value) => value >= 0f ? 1f : -1f;
     }
     internal static class Debug { public static void Log(string message) { } }
     public sealed class GameObject { public string name = ""; }
