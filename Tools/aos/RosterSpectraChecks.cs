@@ -89,7 +89,7 @@ internal static class RosterSpectraChecks
               roster.Contains("member.SoulKin = w.Soul.Kin;") &&
               save.Split(new[] { "SoulId = m.SoulId," }, StringSplitOptions.None).Length == 3 &&
               save.Split(new[] { "SoulKin = m.SoulKin," }, StringSplitOptions.None).Length == 3 &&
-              spawn.Contains("member.SoulId, member.SoulKin);"),
+              spawn.Contains("member.SoulId, member.SoulKin, member.SoulPersonId);"),
             "identity and kin flow through roster capture, save, load and spawn (source)");
         string warrior = Read("Assets/Scripts/Gameplay/Warrior.cs");
         int begin = warrior.IndexOf("internal void RestoreBoundBody(", StringComparison.Ordinal);
