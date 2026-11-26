@@ -19,6 +19,8 @@
     <Compile Include="SoulPersonIdentityChecks.cs" />
     <Compile Include="SoulPastMemoryChecks.cs" />
     <Compile Include="LivePersonalitySaveChecks.cs" />
+    <Compile Include="MemoryRestoreChecks.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/MemoryProcessor.cs" Link="MemoryProcessor.cs" />
     <Compile Include="../../Assets/Scripts/AOS Engine/MemoryRecord.cs" Link="MemoryRecord.cs" />
     <Compile Include="../../Assets/Scripts/Core/Soul/SoulDecay.cs" Link="SoulDecay.cs" />
     <Compile Include="../../Assets/Scripts/Core/Satchel.cs" Link="Satchel.cs" />
