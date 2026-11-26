@@ -278,6 +278,16 @@ namespace Sinbinder.Gameplay
             ApplyShellBody(data);
         }
 
+        // Scene reconstruction of the same already-bound body is not a new
+        // binding ritual. Apply its physical properties without another drift.
+        internal void RestoreBoundBody(Core.SoulData soul, Core.ShellType shell,
+            Core.RelationshipSystem relSystem, bool isCommander, Team team, string warriorId)
+        {
+            var data = Core.ShellLibrary.Get(shell);
+            InitializeCore(soul, shell, relSystem, isCommander, team, warriorId);
+            ApplyShellBody(data);
+        }
+
         /// <summary>
         /// Тело оболочки поверх базовых характеристик. Ассета нет —
         /// остаются значения по умолчанию из <see cref="InitializeCore"/>.
