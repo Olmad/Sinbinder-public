@@ -16,6 +16,8 @@ namespace Sinbinder.Core
         public int Quality;
         public bool HasMemorySeed;
         public MemorySeed Memory;
+        // Experienced events carried by an unbound soul, not the living roster ledger.
+        public List<Sinbinder.AOS.SavedMemory> PastMemories;
 
         /// <summary>
         /// Пол, ремесло и заслуженное при жизни имя.
