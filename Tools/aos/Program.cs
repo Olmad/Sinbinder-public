@@ -57,6 +57,7 @@ internal static class Program
         SoulDeathSnapshotChecks.Run(Check, adviceRoot);
         SoulPersonIdentityChecks.Run(Check, adviceRoot);
         SoulPastMemoryChecks.Run(Check, adviceRoot);
+        LivePersonalitySaveChecks.Run(Check, adviceRoot);
 
         Check(OrderIntegrity.SameKnownTarget("brother-a", "brother-a"), "known rescue target matches");
         Check(!OrderIntegrity.SameKnownTarget("brother-a", "stranger") &&
