@@ -15,6 +15,29 @@ namespace Sinbinder.AOS
         public float Importance;
         public float DecayRate;
         public float Age;
+
+        internal bool IsValidForTransfer()
+            => !string.IsNullOrEmpty(Owner) && !string.IsNullOrEmpty(EventType) &&
+               Enum.IsDefined(typeof(EmotionType), Emotion) &&
+               !float.IsNaN(Importance) && !float.IsInfinity(Importance) && Importance >= 0f && Importance <= 1f &&
+               !float.IsNaN(DecayRate) && !float.IsInfinity(DecayRate) && DecayRate >= 0f &&
+               !float.IsNaN(Age) && !float.IsInfinity(Age) && Age >= 0f;
+
+        internal SavedMemory CopyAtAge(float extraAge, string newOwner = null)
+            => new SavedMemory
+            {
+                Owner = newOwner ?? Owner, EventType = EventType,
+                TargetID = newOwner != null && TargetID == Owner ? newOwner : TargetID ?? "",
+                Emotion = Emotion, Importance = Importance, DecayRate = DecayRate,
+                Age = Age + Math.Max(0f, extraAge),
+            };
+
+        internal MemoryRecord ToLive(float now)
+            => new MemoryRecord
+            {
+                EventType = EventType, TargetID = TargetID ?? "", Emotion = (EmotionType)Emotion,
+                Importance = Importance, DecayRate = DecayRate, CreationTime = now - Age,
+            };
     }
 
     [Serializable]
