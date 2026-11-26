@@ -588,7 +588,8 @@ namespace Sinbinder.Gameplay
             var warrior = go.AddComponent<Warrior>();
             bool alreadyBound = member.SoulSpectra != null;
             var soul = SoulData.FromRoster(member.Name, member.Sin, member.Moral,
-                member.Intensity, member.SoulLevel, member.SoulSpectra, Memory(member), member.Gender);
+                member.Intensity, member.SoulLevel, member.SoulSpectra, Memory(member), member.Gender,
+                member.SoulId, member.SoulKin);
 
             // Ремесло тянет душу на себя — тем же приёмом, каким это
             // делает оболочка (08-FLOOR.md §3.2). Прикладывается один
