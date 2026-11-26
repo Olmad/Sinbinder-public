@@ -99,6 +99,8 @@ namespace Sinbinder.Core
         /// </summary>
         public bool HasSeed;
         public MemorySeed Seed;
+        // Legacy records omit this field. Captured absence must not acquire a camp biography.
+        public bool SeedCaptured;
 
         /// <summary>
         /// Подвиги, уважение и страх (ReputationData) — путь к званию. До 23.11 жили только
