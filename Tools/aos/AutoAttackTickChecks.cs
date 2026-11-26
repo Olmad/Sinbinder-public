@@ -92,6 +92,7 @@ namespace UnityEngine
     internal static class Mathf
     {
         public static float Abs(float value) => Math.Abs(value);
+        public static float Round(float value) => MathF.Round(value);
         public static float Clamp(float value, float min, float max) => Math.Clamp(value, min, max);
         public static int Min(int a, int b) => Math.Min(a, b);
         public static float Min(float a, float b) => Math.Min(a, b);
