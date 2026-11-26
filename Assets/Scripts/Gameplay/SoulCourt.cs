@@ -478,35 +478,35 @@ namespace Sinbinder.Gameplay
         /// Суд «вы — судья» (замысел автора, docs/68): тьма, свет — только над вашим местом,
         /// судьи уже стоят, огни их голосов горят. Игрок сам (W, A, S, D) идёт к месту своего
         /// приказа и встаёт на него — телом понимает, что его приказ — один голос из многих.
-        /// Место — на стороне «за приказ», с краю. Чем тише дошёл приказ (CommandVolume — та же
-        /// глушь, что слышат Уныние и Гордыня), тем дальше оно от середины. Фигура — судейская:
-        /// ряса судей, глаза цвета «за приказ». Сам суд дальше прежний. Только первый суд;
-        /// без шагов 6 с, через 12 с или по пропуску полос (Esc) фигура дойдёт сама.
+        /// С 26.11 место — кафедра Верности (автор: «он должен занимать место верности»): приказ
+        /// владыки звучит в душе её голосом. Фигура — судейская, глаза цвета Верности; у кафедры —
+        /// короткая тьма, и из неё вы уже судья Верности. Сам суд дальше прежний. Только первый суд;
+        /// фигура дойдёт сама лишь по пропуску полос (Esc) или если 20 с не нажата ни одна клавиша хода.
         /// </summary>
+        /// <summary>Куда идёт фигура игрока в первом суде (рука проверок, Editor/CourtHands).</summary>
+        public static Vector3 WalkTarget { get; private set; }
+        /// <summary>Прогон ведёт фигуру клавишами сам (Editor/CourtHands), а не игра за него.</summary>
+        public static bool HandsOn;
+
         private static IEnumerator TakeSeat(SoulCourt host, Dialogue.DialogueCameraController camera, UI.Letterbox box,
-                                            Fader fader, Transform hall, float volume, string court, Vector3 look, Vector3 overview)
+                                            Fader fader, Transform hall, List<Judge> judges, float volume, string court,
+                                            Vector3 look, Vector3 overview)
         {
             Step = "walk";
             TookSeat = "";
-            const float Angle = 168f, Pace = 1.5f;
-            float a = Angle * Mathf.Deg2Rad;
-            Vector3 seat = Hall + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * Mathf.Lerp(3.1f, 2.0f, Mathf.Clamp01(volume));
+            const float Pace = 1.5f;
+            // Место — Верности (автор, 26.11: «Греховод почему-то занимает особое место, а не одного из голосов
+            // (вероятно, он должен занимать место верности)»): приказ владыки звучит в душе её голосом. До 26.11
+            // было своё место с краю; теперь игрок встаёт за кафедру Верности, и дальше суд идёт с ним на ней.
+            var loyal = judges.Find(j => j.Module == "Loyalty") ?? judges[0];
+            Vector3 seat = loyal.Seat;
             Vector3 dir = Flat(seat - Hall);
             var face = Quaternion.LookRotation(-dir);
-            var dark = Lit(new Color(0.11f, 0.07f, 0.045f), 0.35f);
-            var wax = Lit(new Color(0.78f, 0.72f, 0.60f), 0.2f);
-
-            // Место как у судей: помост и спинка; вместо кафедры — свеча приказа у ног.
-            Piece(hall, PrimitiveType.Cube, "Место приказа, помост", seat + Vector3.up * (Dais * 0.5f),
-                  new Vector3(0.84f, Dais, 1.2f), dark).transform.rotation = face;
-            Piece(hall, PrimitiveType.Cube, "Место приказа, спинка", seat + dir * 0.42f + Vector3.up * (Dais + 0.95f),
-                  new Vector3(0.56f, 1.9f, 0.08f), dark).transform.rotation = face;
-            var candle = Candle(hall, seat - dir * 0.3f + Vector3.Cross(Vector3.up, dir) * 0.38f + Vector3.up * Dais, 0.18f,
-                                ForOrderTone, wax, out var flame, 1f);
-            candle.intensity = 0.25f;
-            candle.range = 2.2f;
-            _seatFire = candle;
-            _seatFlame = flame;
+            Vector3 front = InHall(seat - dir * 1.05f);   // перед кафедрой — сюда ведут клавиши
+            WalkTarget = front;
+            // Судья Верности ждёт вас: кресло пусто, пока не дойдёте.
+            Transform judgeBody = loyal.Waist != null && loyal.Waist.childCount > 0 ? loyal.Waist.GetChild(0) : null;
+            if (judgeBody != null) judgeBody.gameObject.SetActive(false);
             var spot = new GameObject("Свет над местом приказа").AddComponent<Light>();
             spot.transform.SetParent(hall, false);
             spot.transform.position = seat + Vector3.up * 4.6f;
@@ -528,16 +528,16 @@ namespace Sinbinder.Gameplay
                                      shader, 0.2f, 0.52f, out _);
                 _seatBeam.SetColor("_BaseColor", new Color(1f, 0.80f, 0.52f, 0.11f));
             }
-            var tag = host.AddTag(seat + Vector3.up * (Dais + 2.15f), Loc.T("Ваш приказ"), ForOrderTone, 0.024f, true);
+            var tag = host.AddTag(seat + Vector3.up * (Dais + 2.55f), Loc.T("Ваш приказ"), ForOrderTone, 0.024f, true);
             Show(tag);
 
-            // Вы — из глубины зала, за спиной подсудимого.
+            // Вы — из глубины зала, за спиной подсудимого. Ряса и глаза — как у судьи Верности: на месте вы им и станете.
             Vector3 start = Hall + new Vector3(-0.9f, 0f, -3.4f);
-            Vector3 heading = Flat(seat - start), right = Vector3.Cross(Vector3.up, heading);
+            Vector3 heading = Flat(front - start), right = Vector3.Cross(Vector3.up, heading);
             var me = new GameObject("Вы").transform;
             me.SetParent(hall, false);
             me.SetPositionAndRotation(start, Quaternion.LookRotation(heading));
-            var body = SinbinderPlayer.Judge(me, ForOrderTone);
+            var body = SinbinderPlayer.Judge(me, Glow(loyal.Module) * (loyal.Abstains ? 0.55f : 1f));
             var anims = body != null ? body.GetComponentsInChildren<Animator>() : new Animator[0];
             foreach (var an in anims) an.updateMode = AnimatorUpdateMode.UnscaledTime;
             string pose = "";
@@ -572,12 +572,16 @@ namespace Sinbinder.Gameplay
             host.StartCoroutine(Line(box, host, court,
                 Loc.T("Ваш приказ — тоже голос в этом суде. Его место — в свете. Займите его: W, A, S, D."), 12f));
 
-            float t0 = Time.unscaledTime, still = Time.unscaledTime;
-            bool led = Application.isBatchMode;   // прогон ведёт фигуру сам
+            // Ведёт игрок (автор, 26.11: «хоть и есть подсказка WASD, никуда пойти нельзя и идёт суд»): до 26.11
+            // игра брала фигуру через 6 с без шагов — пока игрок читал строку и искал свет, фигура уходила сама.
+            // Теперь сама — только по пропуску (Esc) или если за 20 с не нажато ни одной клавиши хода.
+            float t0 = Time.unscaledTime;
+            bool moved = false;
+            bool led = Application.isBatchMode && !HandsOn;   // прогон без руки ведёт фигуру сам
             while (true)
             {
                 float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
-                Vector3 at = me.position, to = seat - at;
+                Vector3 at = me.position, to = front - at;
                 to.y = 0f;
                 if (to.magnitude < 0.3f) break;
                 Vector3 move = Vector3.zero;
@@ -587,8 +591,8 @@ namespace Sinbinder.Gameplay
                     if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Back) || Input.GetKey(KeyCode.DownArrow)) move -= heading;
                     if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Right) || Input.GetKey(KeyCode.RightArrow)) move += right;
                     if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Left) || Input.GetKey(KeyCode.LeftArrow)) move -= right;
-                    if (move.sqrMagnitude > 0f) still = Time.unscaledTime;
-                    if (UI.Letterbox.Skipping || Time.unscaledTime - t0 > 12f || Time.unscaledTime - still > 6f) led = true;
+                    if (move.sqrMagnitude > 0f) moved = true;
+                    if (UI.Letterbox.Skipping || (!moved && Time.unscaledTime - t0 > 20f)) led = true;
                 }
                 if (led) move = to;
                 if (move.sqrMagnitude > 1e-4f)
@@ -604,19 +608,26 @@ namespace Sinbinder.Gameplay
                 yield return null;
             }
 
-            // На месте: шаг на помост — и лицом к подсудимому, как все судьи.
+            // У кафедры: лицом к месту — и короткая тьма. Кафедры стоят плечом к плечу, обойти не по чему;
+            // из тьмы вы уже за кафедрой Верности, лицом к подсудимому, как все судьи.
             Pose(BodyMotion.Idle);
-            Vector3 from = me.position;
             var turn = me.rotation;
-            for (float t = 0f; t < 0.4f; t += Time.unscaledDeltaTime)
+            var toSeat = Quaternion.LookRotation(dir);
+            for (float t = 0f; t < 0.3f; t += Time.unscaledDeltaTime)
             {
-                float k = Mathf.SmoothStep(0f, 1f, t / 0.4f);
-                me.SetPositionAndRotation(Vector3.Lerp(from, seat + Vector3.up * Dais, k), Quaternion.Slerp(turn, face, k));
+                me.rotation = Quaternion.Slerp(turn, toSeat, Mathf.SmoothStep(0f, 1f, t / 0.3f));
                 yield return null;
             }
-            me.SetPositionAndRotation(seat + Vector3.up * Dais, face);
-            candle.intensity = 1.0f;
-            TookSeat = (led ? "довела игра" : "сам") + $" за {Time.unscaledTime - t0:F1} с, громкость приказа {volume:F2}";
+            yield return fader.To(1f, 0.25f);
+            Vector3 last = me.position;
+            Destroy(me.gameObject);
+            if (judgeBody != null) judgeBody.gameObject.SetActive(true);
+            if (loyal.Fire != null) loyal.Fire.intensity = 1.0f;
+            Show(tag, false);
+            follow = last;
+            camera.Crane(Aim(follow), Eye(follow), WideFov, Aim(follow), Eye(follow), WideFov, 999f, 0.1f, 0f, 0f);
+            yield return fader.To(0f, 0.35f);
+            TookSeat = (led ? "довела игра" : "сам") + $" за {Time.unscaledTime - t0:F1} с, место — {loyal.Title}, громкость приказа {volume:F2}";
             Debug.Log($"[СУД] место приказа заняли: {TookSeat}");
 
             // Встали — камера поднимается на общий план, дальше привычный суд.
@@ -792,7 +803,7 @@ namespace Sinbinder.Gameplay
             string court = Loc.T("Суд души");
             _seatFire = null; _seatSpot = null; _seatFlame = null; _seatBeam = null;
             if (!shortly && Preferences.CourtWalk)
-                yield return TakeSeat(host, camera, box, fader, hall.transform, c.CommandVolume, court, look, overview);
+                yield return TakeSeat(host, camera, box, fader, hall.transform, judges, c.CommandVolume, court, look, overview);
             else
             {
                 camera.Crane(Hall + RiseLook, Hall + RiseFrom, RiseFov, look, overview, WideFov,

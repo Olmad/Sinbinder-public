@@ -44,7 +44,7 @@ namespace Sinbinder.Core
         public static event Action Changed;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Rearm() { _loaded = false; _moved = false; Keys.Clear(); Changed = null; _lastIn = _lastOut = null; }
+        private static void Rearm() { _loaded = false; _moved = false; Keys.Clear(); Pretend.Clear(); Changed = null; _lastIn = _lastOut = null; }
 
         private static void Load()
         {
@@ -72,7 +72,10 @@ namespace Sinbinder.Core
         public static KeyCode Key(Act a) { Load(); return Keys.TryGetValue(a, out var k) ? k : KeyCode.None; }
         public static KeyCode Default(Act a) => Defaults.TryGetValue(a, out var k) ? k : KeyCode.None;
         public static bool Down(Act a) => Input.GetKeyDown(Key(a));
-        public static bool Held(Act a) => Input.GetKey(Key(a));
+        public static bool Held(Act a) => Input.GetKey(Key(a)) || Pretend.Contains(a);
+
+        /// <summary>Рука проверок (Editor/CourtHands): «держит» клавиши хода, как игрок. В игре пусто.</summary>
+        public static readonly HashSet<Act> Pretend = new();
 
         /// <summary>
         /// Назначить. Клавиша занята другим действием — они меняются местами: двух действий на одной клавише
