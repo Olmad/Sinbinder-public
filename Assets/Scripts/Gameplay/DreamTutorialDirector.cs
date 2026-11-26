@@ -2065,7 +2065,7 @@ namespace Sinbinder.Gameplay
             var left = _sealOn[(int)DreamRoad.SealKind.BrotherLeft];
             var right = _sealOn[(int)DreamRoad.SealKind.BrotherRight];
             bool pair = left != null && right != null
-                && DreamTutorialChecks.KinPair(left.Soul?.Kin, left.Soul?.Id, right.Soul?.Kin, right.Soul?.Id);
+                && DreamTutorialChecks.KinPair(left.Soul?.Kin, left.Soul?.PersonId, right.Soul?.Kin, right.Soul?.PersonId);
             int glowL = DreamTutorialChecks.KinSeal(left != null, Fits(DreamRoad.SealKind.BrotherLeft, left), pair);
             int glowR = DreamTutorialChecks.KinSeal(right != null, Fits(DreamRoad.SealKind.BrotherRight, right), pair);
             _sealLit[(int)DreamRoad.SealKind.BrotherLeft] = _sealLit[(int)DreamRoad.SealKind.BrotherRight] = pair;
@@ -2080,7 +2080,10 @@ namespace Sinbinder.Gameplay
             }
 
             // Все пять разом — и держатся миг (§5: «короткое одновременное удержание»).
-            bool warriors = true;
+            bool warriors = DreamTutorialChecks.DistinctSealPeople(
+                _sealOn[(int)DreamRoad.SealKind.Wrath]?.Soul?.PersonId,
+                _sealOn[(int)DreamRoad.SealKind.Order]?.Soul?.PersonId,
+                left?.Soul?.PersonId, right?.Soul?.PersonId);
             for (int i = 1; i < _sealLit.Length; i++) warriors &= _sealLit[i];
             if (DreamTutorialChecks.AdvanceSeals(ref _sealHeld, true, warriors, _sealLit[0], Time.deltaTime)) { OpenSeals(); return; }
 
