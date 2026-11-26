@@ -13,6 +13,19 @@ namespace Sinbinder.AOS
 
         private Dictionary<string, List<MemoryRecord>> _memories = new();
 
+        // Body GUIDs are registered at initialization, even before combat
+        // registration. Death callbacks may address a just-unregistered body.
+        private static readonly Dictionary<string, string> _bodyPeople = new();
+        internal static void RegisterBodyIdentity(string bodyId, string personId)
+        {
+            if (string.IsNullOrEmpty(bodyId) || string.IsNullOrEmpty(personId)) return;
+            if (!_bodyPeople.TryGetValue(bodyId, out var known)) _bodyPeople.Add(bodyId, personId);
+            else if (known != personId) _bodyPeople[bodyId] = null; // ambiguous: never guess
+        }
+
+        private static string PersonOf(string bodyId)
+            => !string.IsNullOrEmpty(bodyId) && _bodyPeople.TryGetValue(bodyId, out var person) ? person : null;
+
         [SerializeField] private int _maxRecordsPerWarrior = 50;
         [SerializeField] private float _cleanupInterval = 10f;
 
@@ -55,6 +68,7 @@ namespace Sinbinder.AOS
                     list.Add(new SavedMemory
                     {
                         Owner = kv.Key, EventType = m.EventType, TargetID = m.TargetID ?? "",
+                        TargetPersonId = m.TargetPersonId,
                         Emotion = (int)m.Emotion, Importance = m.Importance, DecayRate = m.DecayRate,
                         Age = Mathf.Max(0f, now - m.CreationTime),
                     });
@@ -104,7 +118,7 @@ namespace Sinbinder.AOS
                 if (!_memories.TryGetValue(s.Owner, out var list)) _memories[s.Owner] = list = new List<MemoryRecord>();
                 list.Add(new MemoryRecord
                 {
-                    EventType = s.EventType, TargetID = s.TargetID ?? "", Emotion = (EmotionType)s.Emotion,
+                    EventType = s.EventType, TargetID = s.TargetID ?? "", TargetPersonId = s.TargetPersonId, Emotion = (EmotionType)s.Emotion,
                     Importance = Mathf.Clamp01(s.Importance), DecayRate = s.DecayRate,
                     CreationTime = now - Mathf.Max(0f, s.Age),
                 });
@@ -115,6 +129,7 @@ namespace Sinbinder.AOS
         public static void ForgetAll()
         {
             _pending = null;
+            _bodyPeople.Clear();
             Instance?._memories.Clear();
         }
 
@@ -127,29 +142,8 @@ namespace Sinbinder.AOS
 
         public void CreateMemory(Warrior warrior, string eventType, string targetId, EmotionType emotion, float importance)
         {
-            if (!_memories.ContainsKey(warrior.Id))
-                _memories[warrior.Id] = new List<MemoryRecord>();
-
-            var existing = _memories[warrior.Id]
-                .FirstOrDefault(m => m.EventType == eventType && m.TargetID == targetId);
-
-            if (existing != null)
-            {
-                existing.Importance = Mathf.Max(existing.Importance, importance);
-                existing.CreationTime = Time.time;
-            }
-            else
-            {
-                _memories[warrior.Id].Add(new MemoryRecord(targetId, eventType, emotion, importance));
-            }
-
-            if (_memories[warrior.Id].Count > _maxRecordsPerWarrior)
-            {
-                _memories[warrior.Id] = _memories[warrior.Id]
-                    .OrderByDescending(m => Mathf.Abs(m.GetCurrentStrength(Time.time)))
-                    .Take(_maxRecordsPerWarrior)
-                    .ToList();
-            }
+            if (warrior == null) return;
+            CreateMemoryById(warrior.Id, eventType, targetId, emotion, importance);
         }
 
         /// <summary>
@@ -169,10 +163,18 @@ namespace Sinbinder.AOS
         private static List<MemoryRecord> Vivid(List<MemoryRecord> all)
         {
             float currentTime = Time.time;
-            return all
+            var vivid = all
                 .Where(m => Mathf.Abs(m.GetCurrentStrength(currentTime)) > 0.05f)
                 .OrderByDescending(m => Mathf.Abs(m.GetCurrentStrength(currentTime)))
                 .ToList();
+            if (!vivid.Any(m => !string.IsNullOrEmpty(m.TargetPersonId)) || CombatManager.Instance == null)
+                return vivid;
+
+            var bodies = CombatManager.Instance.GetAllWarriors()
+                .Where(w => w != null && !w.IsDead && w.gameObject.activeInHierarchy && w.Soul != null)
+                .Select(w => new KeyValuePair<string, string>(w.Soul.PersonId, w.Id));
+            var current = MemoryRecord.UniqueLivingBodies(bodies);
+            return vivid.Select(m => m.ProjectTarget(current)).ToList();
         }
 
         public List<MemoryRecord> GetMemoriesById(string warriorId)
@@ -186,17 +188,20 @@ namespace Sinbinder.AOS
             if (!_memories.ContainsKey(warriorId))
                 _memories[warriorId] = new List<MemoryRecord>();
 
+            string personId = PersonOf(targetId);
             var existing = _memories[warriorId]
-                .FirstOrDefault(m => m.EventType == eventType && m.TargetID == targetId);
+                .FirstOrDefault(m => m.EventType == eventType && m.MatchesTarget(targetId, personId));
 
             if (existing != null)
             {
                 existing.Importance = Mathf.Max(existing.Importance, importance);
                 existing.CreationTime = Time.time;
+                if (string.IsNullOrEmpty(existing.TargetPersonId)) existing.TargetPersonId = personId;
             }
             else
             {
-                _memories[warriorId].Add(new MemoryRecord(targetId, eventType, emotion, importance));
+                _memories[warriorId].Add(new MemoryRecord(targetId, eventType, emotion, importance)
+                    { TargetPersonId = personId });
             }
 
             if (_memories[warriorId].Count > _maxRecordsPerWarrior)
