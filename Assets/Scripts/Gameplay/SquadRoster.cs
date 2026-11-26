@@ -39,6 +39,7 @@ namespace Sinbinder.Gameplay
             public int SoulLevel;
             // Soul identity is distinct from WarriorId (the body's identity).
             public string SoulId;
+            public string SoulPersonId;
             public string SoulKin;
             public float Loyalty;
             // 0 is old save / no recorded wounds; interpreted as full health.
@@ -595,6 +596,7 @@ namespace Sinbinder.Gameplay
             member.SoulSpectra = w.Soul.CopySpectra();
             member.SoulLevel = w.Soul.Level;
             member.SoulId = w.Soul.Id;
+            member.SoulPersonId = w.Soul.PersonId;
             member.SoulKin = w.Soul.Kin;
             member.Seed = MemorySeed.Copy(w.Soul.Memory);
             member.SeedCaptured = true;
