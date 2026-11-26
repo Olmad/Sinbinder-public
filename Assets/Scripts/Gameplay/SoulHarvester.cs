@@ -133,7 +133,7 @@ namespace Sinbinder.Gameplay
             }
 
             Log(Loc.F("Душа собрана: {0}. "
-              + "{1}.", Loc.Name(soul.Warrior.DisplayName), SoulDecay.Describe(soul.SoulQuality)));
+              + "{1}.", Loc.Name(soul.NameAtDeath), SoulDecay.Describe(soul.SoulQuality)));
 
             if (soul.SoulQuality == SoulQuality.Dissolved)
                 Log(Loc.T("От неё осталась одна воля. Такая поднимется зомби."));
