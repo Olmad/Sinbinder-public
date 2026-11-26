@@ -47,15 +47,16 @@ namespace Sinbinder.Gameplay
             var home = gameObject.AddComponent<Residents>();
             home.Configure("village", 6f, 0, 0);
             int m = Mathf.Abs(MapLoader.Match);
-            var centre = Vector3.zero;
+            var centre = new Vector3(0f,MapTerrain.HeightAt(_map,0f,0f),0f);
 
             for (int i = 0; i < _map.Crypts.Count; i++)
             {
-                var c = new Vector3(_map.Crypts[i].X, 0f, _map.Crypts[i].Z);
+                var c = new Vector3(_map.Crypts[i].X, MapTerrain.HeightAt(_map,_map.Crypts[i].X,_map.Crypts[i].Z), _map.Crypts[i].Z);
                 var to = centre - c;
                 to.y = 0f;
                 if (to.sqrMagnitude < 1f) to = Vector3.forward;
                 var at = c + Quaternion.Euler(0f, Turn, 0f) * to.normalized * Mathf.Min(Reach, to.magnitude * 0.6f);
+                at.y = MapTerrain.HeightAt(_map,at.x,at.z);
                 string title = Loc.T(Titles[(m + i) % Titles.Length]);
                 var w = home.Champion(m * 101 + i * 13 + 7, at, 88f, 3, title);
                 if (w == null) continue;

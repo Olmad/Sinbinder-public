@@ -89,6 +89,36 @@ namespace Sinbinder.Core
             public string MaterialId = "Ground048";
         }
 
+        // Optional additions. Old JSON maps remain flat and load without migration.
+        public TerrainSpec Terrain = new TerrainSpec();
+        public List<HeightStamp> HeightStamps = new();
+        public List<Fortification> Fortifications = new();
+
+        [System.Serializable]
+        public class TerrainSpec
+        {
+            public int Resolution = 4; // metres per mesh cell, clamped at runtime
+            public float BaseHeight = 0f;
+        }
+        [System.Serializable]
+        public class HeightStamp
+        {
+            public float X, Z;
+            public float Radius = 40f;
+            public float Height = 5f; // negative => hollow/valley
+        }
+        [System.Serializable]
+        public class Fortification
+        {
+            public string Kind = "fort"; // fort | castle
+            public float X, Z, Yaw;
+            public float HalfSize = 18f;
+            public int Gates = 1; // castle: 3, fort: 1
+            public int Guards = 3;
+            public int Archers = 2;
+        }
+
+
         /// <summary>Склеп игрока с троном: здесь появляется Греховод стороны.</summary>
         [System.Serializable] public class Crypt { public float X, Z, Yaw; }
 
@@ -520,10 +550,70 @@ namespace Sinbinder.Core
             Mathf.Clamp(Mathf.RoundToInt(map.Size / 4f), 32, 128);
 
         // Evaluate only the authored brush field at grid vertices.
+        /// <summary>Есть ли у карты рельеф: мазки, отметки высот (v303) или поднятое основание.</summary>
+        private static bool Sculpted(MapData map)
+            => (map.TerrainStrokes != null && map.TerrainStrokes.Count > 0)
+               || (map.HeightStamps != null && map.HeightStamps.Count > 0)
+               || (map.Terrain != null && Finite(map.Terrain.BaseHeight) && map.Terrain.BaseHeight != 0f);
+
+        // ── Отметки высот (патч v303, был Gameplay.MapTerrain.Height): сглаженные купола, дворы склепов,
+        // мест и фортов выровнены с плавным переходом — двери не висят, старты не на склоне.
+        private static float StampHeight(MapData map, float x, float z)
+        {
+            float y = StampRaw(map, x, z);
+            float blend = 0f, flat = y;
+            if (map.Crypts != null)
+                foreach (var c in map.Crypts)
+                {
+                    if (c == null) continue;
+                    float w = FlattenWeight(x, z, c.X, c.Z, 15f, 38f);
+                    if (w > blend) { blend = w; flat = StampRaw(map, c.X, c.Z); }
+                }
+            if (map.Locations != null)
+                foreach (var l in map.Locations)
+                {
+                    if (l == null) continue;
+                    float r = Mathf.Min(l.Radius * .65f, 18f);
+                    float w = FlattenWeight(x, z, l.X, l.Z, r, r + 18f);
+                    if (w > blend) { blend = w; flat = StampRaw(map, l.X, l.Z); }
+                }
+            if (map.Fortifications != null)
+                foreach (var f in map.Fortifications)
+                {
+                    if (f == null) continue;
+                    float w = FlattenWeight(x, z, f.X, f.Z, f.HalfSize * 1.5f + 1f, f.HalfSize * 1.5f + 13f);
+                    if (w > blend) { blend = w; flat = StampRaw(map, f.X, f.Z); }
+                }
+            return Mathf.Lerp(y, flat, blend);
+        }
+
+        private static float StampRaw(MapData map, float x, float z)
+        {
+            float v = map.Terrain != null && Finite(map.Terrain.BaseHeight) ? map.Terrain.BaseHeight : 0f;
+            if (map.HeightStamps == null) return v;
+            foreach (var s in map.HeightStamps)
+            {
+                if (s == null || !Finite(s.X) || !Finite(s.Z) || !Finite(s.Height) || !Finite(s.Radius) || s.Radius < 1f) continue;
+                float q = ((x - s.X) * (x - s.X) + (z - s.Z) * (z - s.Z)) / (s.Radius * s.Radius);
+                if (q < 1f) { float t = 1f - q; v += s.Height * t * t * (3f - 2f * t); }
+            }
+            return v;
+        }
+
+        private static float FlattenWeight(float x, float z, float cx, float cz, float inner, float outer)
+        {
+            float d = Vector2.Distance(new Vector2(x, z), new Vector2(cx, cz));
+            if (d <= inner) return 1f;
+            if (d >= outer) return 0f;
+            float t = (d - inner) / (outer - inner);
+            return 1f - t * t * (3f - 2f * t);
+        }
+
         private static float RawHeight(MapData map, float x, float z)
         {
-            if (map.TerrainStrokes == null) return 0f;
-            float height = 0f;
+            // Отметки высот патча v303 (холмы, ложбины, ровные дворы склепов и фортов) — основа; мазки — поверх.
+            float height = StampHeight(map, x, z);
+            if (map.TerrainStrokes != null)
             foreach (var stroke in map.TerrainStrokes)
             {
                 float dx = x - stroke.X, dz = z - stroke.Z;
@@ -547,8 +637,7 @@ namespace Sinbinder.Core
         /// </summary>
         public static float HeightAt(MapData map, float x, float z)
         {
-            if (!Valid(map) || map.TerrainStrokes == null ||
-                map.TerrainStrokes.Count == 0) return 0f;
+            if (!Valid(map) || !Sculpted(map)) return 0f;
             int cells = GridCells(map);
             float step = map.Size / cells, half = map.Size * 0.5f;
             float gx = Mathf.Clamp((x + half) / step, 0f, cells);
@@ -569,7 +658,7 @@ namespace Sinbinder.Core
         /// <summary>Real triangular terrain surface for rendering, physics and NavMesh.</summary>
         public static Mesh BuildMesh(MapData map)
         {
-            if (!Valid(map) || ((map.TerrainStrokes == null || map.TerrainStrokes.Count == 0) &&
+            if (!Valid(map) || (!Sculpted(map) &&
                 (map.TerrainPaints == null || map.TerrainPaints.Count == 0))) return null;
             int cells = GridCells(map);
             int stride = cells + 1;

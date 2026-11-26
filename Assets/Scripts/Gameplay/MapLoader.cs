@@ -1,6 +1,7 @@
 // Assets/Scripts/Gameplay/MapLoader.cs
 // Перевод: текст через Loc
 using UnityEngine;
+using Unity.AI.Navigation;
 using Sinbinder.Core;
 
 namespace Sinbinder.Gameplay
@@ -78,6 +79,8 @@ namespace Sinbinder.Gameplay
                 if (logic != null && model != null && !string.IsNullOrEmpty(t.Id))
                     logic.RegisterObject(t.Id, model.transform);
             }
+            // Форты и замки патча v303 — на том же рельефе (MapTerrain.HeightAt).
+            MapFortifications.Build(map, root, false);
 
             // Склеп — пол, стены, дверь на петле и трон (автор, 27.10: «у склепа не хватает стен и
             // возможности открывать дверь и пола»), префабом сборщика (TugSceneBuilder.BuildCrypt).
@@ -257,6 +260,7 @@ namespace Sinbinder.Gameplay
         void OnDestroy()
         {
             if (_terrainMesh != null) Destroy(_terrainMesh);
+            Current = null;
             Lords.Player = null;
             Voice.Enabled = false;
         }

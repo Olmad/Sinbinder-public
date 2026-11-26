@@ -87,7 +87,8 @@ namespace Sinbinder.Gameplay
             if (_kind != "forest")
             {
                 int houses = Mathf.Clamp(_people / (_kind == "field" ? 5 : 3), 2, 7);
-                float ring = _radius + 4.5f;
+                // Fort households remain INSIDE their enclosure; ordinary villages stay outside the hearth.
+                float ring = _kind == "fort" ? Mathf.Min(9f,_radius * .45f) : _radius + 4.5f;
                 float a0 = _seed % 360;
                 for (int i = 0; i < houses; i++)
                 {
@@ -126,6 +127,8 @@ namespace Sinbinder.Gameplay
             var roofP = MapLoader.Prefab("IzbaRoof" + kind);
             if (walls == null || roofP == null) { walls = MapLoader.Prefab("IzbaWalls"); roofP = MapLoader.Prefab("IzbaRoof"); }
             if (walls == null || roofP == null) { Place(root, "Izba", at, face, new Vector3(5.6f, 4f, 4.6f)); return; }
+            if (Lords.Active && MapLoader.Current != null)
+                at.y = MapTerrain.HeightAt(MapLoader.Current,at.x,at.z);
             if (NavMesh.SamplePosition(at, out var hit, 3f, NavMesh.AllAreas)) at.y = hit.position.y;
             var house = new GameObject("Изба");
             house.transform.SetParent(root.transform, false);
@@ -144,6 +147,8 @@ namespace Sinbinder.Gameplay
         {
             var p = MapLoader.Prefab(prop);
             if (p == null) return;
+            if (Lords.Active && MapLoader.Current != null)
+                at.y = MapTerrain.HeightAt(MapLoader.Current,at.x,at.z);
             if (NavMesh.SamplePosition(at, out var hit, 3f, NavMesh.AllAreas)) at.y = hit.position.y;
             var go = Instantiate(p, root.transform);
             go.transform.SetPositionAndRotation(at, facing * p.transform.rotation);
@@ -185,6 +190,8 @@ namespace Sinbinder.Gameplay
             float a = (i * 137.5f + _seed % 360) * Mathf.Deg2Rad;
             float r = _radius * (0.25f + 0.6f * ((i * 0.618f) % 1f));
             var at = transform.position + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
+            if (Lords.Active && MapLoader.Current != null)
+                at.y = MapTerrain.HeightAt(MapLoader.Current,at.x,at.z);
             return NavMesh.SamplePosition(at, out var hit, 4f, NavMesh.AllAreas) ? hit.position : at;
         }
 

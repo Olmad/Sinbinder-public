@@ -698,7 +698,7 @@ namespace Sinbinder.Gameplay
                 foreach (var c in crypts) if (CampFocus.GroundDistance(p, c) < FromCrypt) ok = false;
                 foreach (var l in map.Locations) if (CampFocus.GroundDistance(p, new Vector3(l.X, 0f, l.Z)) < l.Radius + FromVillage) ok = false;
                 foreach (var q in _places) if (CampFocus.GroundDistance(p, q) < Apart) ok = false;
-                if (ok) _places.Add(p);
+                if (ok) _places.Add(new Vector3(p.x,MapTerrain.HeightAt(map,p.x,p.z),p.z));
             }
             _target = Mathf.Min(_places.Count, Mathf.Max(2, map.Players * 2));
             _cursor = Mathf.Abs(MapLoader.Match * 5) % Mathf.Max(1, _places.Count);
