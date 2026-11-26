@@ -226,7 +226,14 @@ namespace Sinbinder.Gameplay
 
             if (Dialogue.DialogueCameraController.Instance != null &&
                 Dialogue.DialogueCameraController.Instance.InDialogue)
-            { LatchMouse(); return; }
+            {
+                LatchMouse();
+                // Разговор с ответами, обмен вещами, окно — мышь нужна игроку и при наезде камеры (автор, 26.11:
+                // «нередко в меню снаряжения/передачи снаряжения пропадает курсор»): из разговора от первого лица
+                // «Покажи снаряжение» открывало обмен, а курсор оставался запертым с первого лица.
+                if (UI.TalkView.Shown || UI.GearPanel.Open || UI.Modal.Any) Release();
+                return;
+            }
             // Экран снаряжения и разговора (GearPanel) — тоже окно: в первом лице
             // курсор оставался запертым, и отдать вещь было нечем (автор, 12.11:
             // «при открытии снаряжения не отображается мышка»).

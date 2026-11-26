@@ -117,6 +117,14 @@ namespace Sinbinder.UI
 
         /// <summary>Место нынешнего шага сна: <paramref name="word"/> над точкой <paramref name="at"/>,
         /// вне кадра — у края со стрелкой; ближе <paramref name="near"/> м — гаснет. null — снять.</summary>
+        /// <summary>Место нынешнего шага — мини-карте (MiniMap): слово и точка; нет места — ложь.</summary>
+        public static bool Placed(out string word, out Vector3 at)
+        {
+            word = _placeWord;
+            at = _placeAt ?? Vector3.zero;
+            return _placeAt.HasValue && !string.IsNullOrEmpty(_placeWord);
+        }
+
         public static void Place(string word, Vector3? at, float near = 2.5f)
         {
             _placeWord = word;

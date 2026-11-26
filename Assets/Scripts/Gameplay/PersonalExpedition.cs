@@ -45,6 +45,8 @@ namespace Sinbinder.Gameplay
         private static readonly Dictionary<string, SavedPersonalExpedition> Progress = new();
 
         public static bool Active => _active != null;
+        /// <summary>Имя места идущей экспедиции — ярлыку мини-карты; нет экспедиции — null.</summary>
+        public static string CurrentTitle => _active != null && !_active._exiting && _active._plan != null ? _active._plan.Title : null;
         internal static PersonalExpedition DialogueVisit => _active != null && !_active._exiting ? _active : null;
 
         /// <summary>Ушёл ли воин на эту вылазку (Греховод — тоже). Не ушёл — его на карте быть не может.</summary>
@@ -259,6 +261,9 @@ namespace Sinbinder.Gameplay
                 new Vector3(0f,0f,plan.EntranceZ),new Color(0.2f,0.8f,0.75f));
             ExpeditionMapBuilder.Mark(visit._mapRoot.transform, "Цель экспедиции",
                 new Vector3(0f,0f,plan.GoalZ),new Color(0.9f,0.65f,0.25f));
+            // Те же знаки — на мини-карте: на большой карте легко потеряться (автор, 26.11).
+            UI.MiniMap.Mark(GoalMark,ExpeditionMapBuilder.Point(plan,0f,plan.GoalZ),new Color(0.95f,0.68f,0.28f),"Цель");
+            UI.MiniMap.Mark(GateMark,ExpeditionMapBuilder.Point(plan,0f,plan.EntranceZ),new Color(0.30f,0.85f,0.80f),"Выход");
             visit._state.Visits++;
 
             // Туман войны — над этой картой, а не над склепом (иначе вся карта «не разведана»:
@@ -724,6 +729,7 @@ namespace Sinbinder.Gameplay
         // отпущенный обоз прощается и уходит по дороге. Окно — то же, что в разговоре с воином (TalkView).
 
         private const float TalkReach=6f, HailReach=18f;
+        private const string GoalMark="expedition:goal", GateMark="expedition:gate";
         private enum Talk { Closed, Open, Answer, Battle, Farewell, Toll }
         private Talk _talk;
         private int _answer=-1, _stamp;
@@ -1042,6 +1048,8 @@ namespace Sinbinder.Gameplay
             if(_exiting) return;
             CloseTalk();
             _exiting=true;
+            UI.MiniMap.Unmark(GoalMark);
+            UI.MiniMap.Unmark(GateMark);
             if (commitResult && _state != null)
                 _state.EnemiesRemaining=EnemiesLeft();
             if (commitResult && _plan != null) SettleSurvivors();
