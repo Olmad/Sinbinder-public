@@ -100,7 +100,7 @@ namespace Sinbinder.Gameplay
                 return;
             }
 
-            var soul = souls.TryHarvestSoul(transform.position);
+            var soul = souls.TryHarvestIntoJar(transform.position, jar);
 
             // Молчим: компонент висит на каждом своём воине, и «слишком
             // далеко» написали бы разом все, кто не дотянулся. Что к душе
@@ -108,14 +108,8 @@ namespace Sinbinder.Gameplay
             if (soul == null) return;
 
             _cooldownTimer = _harvestCooldown;
-            souls.RemoveIndicator(soul);
-
-            // Из общего списка — сразу в банку. Иначе о душе было бы
-            // две правды: она и в суме, и на полке склепа, которая тот же
-            // список и показывает. Полка теперь показывает только то,
-            // что игрок поставил на неё руками.
-            var kept = souls.TakeHarvested(souls.Harvested.Count - 1);
-            if (kept.Soul != null) Core.Satchel.Fill(jar, kept.Soul, kept.Quality);
+            // SoulManager has already committed this exact soul to the jar
+            // and removed its fading entry before announcing the harvest.
 
             // «Перетягивание» (автор, 28.10: «сбор души — анимация и замирание»): присел, замер —
             // в эти полторы секунды сборщик открыт удару. Демо не трогаем: там жатва — урок, а не риск.
