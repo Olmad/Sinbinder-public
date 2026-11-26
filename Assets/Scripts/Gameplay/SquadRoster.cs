@@ -37,6 +37,9 @@ namespace Sinbinder.Gameplay
             // Null is legacy/new unbound data, not a captured neutral soul.
             public float[] SoulSpectra;
             public int SoulLevel;
+            // Soul identity is distinct from WarriorId (the body's identity).
+            public string SoulId;
+            public string SoulKin;
             public float Loyalty;
             // 0 is old save / no recorded wounds; interpreted as full health.
             public float HealthFraction;
@@ -591,6 +594,8 @@ namespace Sinbinder.Gameplay
             member.Intensity = w.Soul.Get(w.Soul.Sin);
             member.SoulSpectra = w.Soul.CopySpectra();
             member.SoulLevel = w.Soul.Level;
+            member.SoulId = w.Soul.Id;
+            member.SoulKin = w.Soul.Kin;
             member.Seed = MemorySeed.Copy(w.Soul.Memory);
             member.SeedCaptured = true;
             member.IsAway = false;
