@@ -8,9 +8,11 @@ using UnityEngine.SceneManagement;
 namespace UnityEngine
 {
     internal sealed class SerializeField : Attribute { }
-    internal sealed class RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType mode) : Attribute
+    internal sealed class RuntimeInitializeOnLoadMethodAttribute : Attribute
     {
-        public RuntimeInitializeLoadType Mode { get; } = mode;
+        // Без первичного конструктора (C# 12): местный Roslyn Unity 6 его не знает (Tools/ci/unity-dotnet.ps1).
+        public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType mode) { Mode = mode; }
+        public RuntimeInitializeLoadType Mode { get; }
     }
     internal enum RuntimeInitializeLoadType { SubsystemRegistration }
 
