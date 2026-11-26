@@ -122,6 +122,9 @@ namespace Sinbinder.Core
                     Moral = (int)m.Moral,
                     Gender = (int)m.Gender,
                     Intensity = m.Intensity,
+                    HasSoulSpectra = m.SoulSpectra != null,
+                    SoulSpectra = m.SoulSpectra != null ? (float[])m.SoulSpectra.Clone() : null,
+                    SoulLevel = m.SoulLevel,
                     Loyalty = m.Loyalty,
                     HealthFraction = m.HealthFraction,
                     UnpaidMissions = m.UnpaidMissions,
@@ -424,7 +427,8 @@ namespace Sinbinder.Core
             // Validate before touching the live game. A damaged or hand-edited
             // save must not leave half a squad, shelf, or wager restored.
             if (save.Squad == null || save.Shelf == null ||
-                save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment))) ||
+                save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment)) ||
+                     (m.HasSoulSpectra && !SoulData.IsValidRosterSpectra(m.SoulSpectra))) ||
                 save.Shelf.Exists(s => !IsValidSoul(s)) ||
                 !SoulCustody.IsValid(save.SoulCustody, save.Shelf))
             {
@@ -491,6 +495,8 @@ namespace Sinbinder.Core
                     Moral = (MoralType)m.Moral,
                     Gender = (Gender)m.Gender,
                     Intensity = m.Intensity,
+                    SoulSpectra = m.HasSoulSpectra ? (float[])m.SoulSpectra.Clone() : null,
+                    SoulLevel = m.SoulLevel,
                     Loyalty = m.Loyalty,
                     HealthFraction = m.HealthFraction,
                     UnpaidMissions = m.UnpaidMissions,
