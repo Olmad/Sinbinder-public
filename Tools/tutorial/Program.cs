@@ -636,7 +636,8 @@ internal static class Program
         int validateSave = saveSource.IndexOf("if (save.Squad == null || save.Shelf == null");
         int firstMutation = saveSource.IndexOf("Gameplay.CardTable.BeforeSaveOrLoad();", saveSource.IndexOf("public static bool Restore(SaveGame save)"));
         Check(validateSave >= 0 && firstMutation > validateSave &&
-              saveSource.Contains("save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment)))") &&
+              saveSource.Contains("save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment))") &&
+              saveSource.Contains("(m.HasSoulSpectra && !SoulData.IsValidRosterSpectra(m.SoulSpectra)))") &&
               saveSource.Contains("save.Shelf.Exists(s => !IsValidSoul(s))") &&
               saveSource.Contains("!SoulCustody.IsValid(save.SoulCustody, save.Shelf)"),
               "corrupt squad, equipment and soul ownership rejected before Restore changes live state");
