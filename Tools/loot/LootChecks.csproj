@@ -9,8 +9,14 @@
 </PropertyGroup>
 <ItemGroup>
 <Compile Include="Program.cs"/>
+<Compile Include="HarvestableBodyChecks.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/FallenBagTransfer.cs" Link="FallenBagTransfer.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/FallenBagChoice.cs" Link="FallenBagChoice.cs"/>
+<Compile Include="../../Assets/Scripts/Gameplay/HarvestableBody.cs" Link="HarvestableBody.cs"/>
+<Compile Include="../../Assets/Scripts/Inventory/InventoryItem.cs" Link="InventoryItem.cs"/>
+<Compile Include="../../Assets/Scripts/Inventory/PlayerInventory.cs" Link="PlayerInventory.cs"/>
+<Compile Include="../../Assets/Scripts/Inventory/StorageItem.cs" Link="StorageItem.cs"/>
+<Compile Include="../../Assets/Scripts/Core/Soul/ShellType.cs" Link="ShellType.cs"/>
 <Compile Include="../../Assets/Scripts/Core/Soul/SinType.cs" Link="SinType.cs"/>
 <Compile Include="../../Assets/Scripts/Core/Soul/MoralType.cs" Link="MoralType.cs"/>
 </ItemGroup>

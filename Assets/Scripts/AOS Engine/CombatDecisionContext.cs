@@ -228,8 +228,8 @@ namespace Sinbinder.AOS
 
             foreach (var body in CombatManager.Instance.BodiesOnField)
             {
-                if (body == null || body.IsCollected) continue;
-                if (Vector3.Distance(self.transform.position, body.transform.position) < 8f)
+                if (body == null || !body.CanLoot(self)) continue;
+                if (Vector3.Distance(self.transform.position, body.transform.position) < HarvestableBody.LootSearchRadius)
                     result.Add(body);
             }
             return result;
