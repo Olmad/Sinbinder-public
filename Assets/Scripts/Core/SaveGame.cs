@@ -8,6 +8,7 @@ namespace Sinbinder.Core
     public class SavedSoul
     {
         public string Id;
+        public string PersonId;
         public string Name;
         public int Moral;
         public int Level;
@@ -59,6 +60,7 @@ namespace Sinbinder.Core
         public int SoulLevel;
         // Absent in legacy saves; do not infer identity or kin from the name.
         public string SoulId;
+        public string SoulPersonId;
         public string SoulKin;
         public float Loyalty;
         // New saves preserve a living warrior's injuries. Legacy zero = full.
