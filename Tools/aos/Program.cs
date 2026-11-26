@@ -50,7 +50,7 @@ internal static class Program
         Check(Sinbinder.Core.Loc.T(Sinbinder.Gameplay.OrderAdvice.Next(null, null)) ==
               "Try changing the circumstances or choosing another warrior.",
             "unknown decisive factor gets neutral advice");
-        Sinbinder.Core.Loc.Use("ru", null);
+        SoulDescriptionChecks.Run(Check, adviceCatalog);
 
         Check(OrderIntegrity.SameKnownTarget("brother-a", "brother-a"), "known rescue target matches");
         Check(!OrderIntegrity.SameKnownTarget("brother-a", "stranger") &&
