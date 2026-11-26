@@ -129,7 +129,10 @@ namespace Sinbinder.Core
             // ушло вместе со всем остальным. Отдельного правила заводить
             // не стали, чтобы у «успей» не было двух разных цен.
             if (KeepsMemory(quality))
+            {
                 taken.Remember(source.EarnedTitle);
+                taken.SetPastMemories(source.PastMemoriesAt(Time.time), Time.time);
+            }
 
             return taken;
         }
