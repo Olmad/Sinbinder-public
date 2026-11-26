@@ -53,6 +53,7 @@ internal static class Program
         SoulDescriptionChecks.Run(Check, adviceCatalog);
         RosterBiographyChecks.Run(Check, adviceRoot);
         RosterSpectraChecks.Run(Check, adviceRoot);
+        SoulHarvestCustodyChecks.Run(Check, adviceRoot);
 
         Check(OrderIntegrity.SameKnownTarget("brother-a", "brother-a"), "known rescue target matches");
         Check(!OrderIntegrity.SameKnownTarget("brother-a", "stranger") &&
