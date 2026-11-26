@@ -195,6 +195,32 @@ namespace Sinbinder.Core
                 _spectra[_sinType] = Mathf.Clamp(_sinIntensity, -100f, 100f);
         }
 
+        // A roster snapshot represents a soul that is already bound. It must
+        // have every signed spectrum, including an intentionally all-zero array.
+        public static bool IsValidRosterSpectra(float[] spectra)
+        {
+            if (spectra == null || spectra.Length != SpectrumCount) return false;
+            foreach (float value in spectra)
+                if (float.IsNaN(value) || float.IsInfinity(value) || value < -100f || value > 100f)
+                    return false;
+            return true;
+        }
+
+        public static SoulData FromRoster(string name, SinType legacySin, MoralType moral,
+            float legacyIntensity, int capturedLevel, float[] capturedSpectra,
+            MemorySeed memory, Gender gender)
+        {
+            // Missing vector means a legacy or not-yet-spawned roster entry.
+            if (capturedSpectra == null)
+                return new SoulData(name, legacySin, moral, 1, legacyIntensity, memory, gender);
+            if (!IsValidRosterSpectra(capturedSpectra))
+                throw new System.ArgumentException("Invalid roster spectra", nameof(capturedSpectra));
+            var restored = new SoulData(name, moral, capturedLevel, capturedSpectra, memory, gender);
+            // Retain the legacy dominant label for a fully neutral soul.
+            restored._sinType = (int)legacySin;
+            return restored;
+        }
+
         // ---------- создание ----------
 
         /// <summary>Душа с одним выраженным грехом. Прежняя сигнатура.</summary>
