@@ -497,6 +497,7 @@ namespace Sinbinder.Gameplay
             Core.Satchel.Forget();
             _hero = SinbinderPlayer.Spawn(_start);
             if (_hero == null) { enabled = false; yield break; }
+            HeroGlow(_hero);
             // Начало сна — ближе (16.11): с 22 м при угле 55° Греховод был точкой, и первый кадр
             // игры читался чёрным полем (кадр «сон — начало»). 32° — дорога во всю ширину и он сам
             // на ней; колесо отдаляет до прежних 55 (RTS_Camera держит предел по кадру сцены).
@@ -1089,6 +1090,22 @@ namespace Sinbinder.Gameplay
             return i >= 0 && i < Satchel.Jars && Satchel.At(i).FullJar ? i : -1;
         }
 
+        /// <summary>
+        /// Холодный отсвет над Греховодом — только во сне. Кадры прохода лесом (26.11): ночной лес почти чёрный,
+        /// Греховода видно лишь по кольцу выделения. Свет мягкий и без теней: силуэт читается, ночь остаётся ночью.
+        /// </summary>
+        private static void HeroGlow(SinbinderPlayer hero)
+        {
+            var go = new GameObject("Отсвет Греховода");
+            go.transform.SetParent(hero.transform, false);
+            go.transform.localPosition = new Vector3(0f, 2.6f, -0.4f);
+            var l = go.AddComponent<Light>();
+            l.type = LightType.Point;
+            l.color = new Color(0.62f, 0.74f, 1f);
+            l.range = 8.5f;
+            l.intensity = 3.2f;
+            l.shadows = LightShadows.None;
+        }
         private int FindJar()
         {
             for (int i = 0; i < Satchel.Jars; i++)

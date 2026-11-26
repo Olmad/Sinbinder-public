@@ -20,7 +20,7 @@ namespace Sinbinder.EditorTools
     {
         private const string Shots = "D:/Claude/сон-рука";
         private static int _clicks, _refused, _oldRefused, _shots, _pulledBack;
-        private static float _bestProgress, _lastProgress, _nextClick, _nextShot, _started;
+        private static float _bestProgress, _lastProgress, _nextClick, _nextShot, _nextPan, _started;
         private static Vector3 _target;
         private static bool _running;
         private static readonly StringBuilder Trace = new StringBuilder();
@@ -78,6 +78,13 @@ namespace Sinbinder.EditorTools
             _lastProgress = s;
             _bestProgress = Mathf.Max(_bestProgress, s);
 
+            // Как игрок: обзор за Греховодом (кадры 26.11 без этого теряли его в тёмном лесу).
+            if (now >= _nextPan)
+            {
+                _nextPan = now + 1f;
+                var cam = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
+                if (cam != null) cam.Overlook(hero.transform.position);
+            }
             if (now >= _nextShot)
             {
                 _nextShot = now + 4f;

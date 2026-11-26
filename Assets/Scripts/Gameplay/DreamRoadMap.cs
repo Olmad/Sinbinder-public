@@ -1,4 +1,4 @@
-﻿// Assets/Scripts/Gameplay/DreamRoadMap.cs
+// Assets/Scripts/Gameplay/DreamRoadMap.cs
 // Перевод: строк нет
 using System.Collections.Generic;
 using UnityEngine;
@@ -503,6 +503,34 @@ namespace Sinbinder.Gameplay
             Piece(root, PrimitiveType.Sphere, "Мешок", CampAt + new Vector3(4.4f, 0.3f, 1.2f), new Vector3(0.6f, 0.6f, 0.55f),
                   Lit(new Color(0.32f, 0.26f, 0.18f), 0.05f));
 
+            // ── блуждающие огни лесной тропы (26.11): лес был чёрным, обход поднятого моста не читался глазом.
+            // Холодные, у края тропы, через 14 м — путь видно и без стрелки; ночь остаётся ночью.
+            var wisp = Glowing(new Color(0.55f, 0.82f, 1f), 1.3f);
+            float since = 0f;
+            for (int i = 0; i + 1 < ForestTrail.Length; i++)
+            {
+                var a = new Vector3(ForestTrail[i].x, 0f, ForestTrail[i].y);
+                var b = new Vector3(ForestTrail[i + 1].x, 0f, ForestTrail[i + 1].y);
+                float len = Flat(b - a).magnitude;
+                var side = Vector3.Cross(Vector3.up, (b - a).normalized);
+                for (float s = 14f - since; s < len; s += 14f)
+                {
+                    int n = Mathf.RoundToInt(s);
+                    var at = Vector3.Lerp(a, b, s / len) + side * ((n & 1) == 0 ? 2.3f : -2.3f) + Vector3.up * R(1.2f, 1.7f);
+                    Piece(root, PrimitiveType.Sphere, "Блуждающий огонь", at, Vector3.one * 0.2f, wisp, false);
+                    var go = new GameObject("Свет огня тропы");
+                    go.transform.SetParent(root, false);
+                    go.transform.position = at;
+                    var l = go.AddComponent<Light>();
+                    l.type = LightType.Point;
+                    l.color = new Color(0.55f, 0.82f, 1f);
+                    l.range = 7f;
+                    l.intensity = 2.4f;
+                    l.shadows = LightShadows.None;
+                    since = len - s;
+                }
+                since = Mathf.Repeat(since, 14f);
+            }
             // ── засада: валуны на краях поляны — за ними прячутся ──
             foreach (var (dx, dz, sc) in new[] { (-4.6f, 2.4f, 2.2f), (-4.1f, -3.3f, 1.8f), (4.3f, -0.8f, 2.0f) })
             {
