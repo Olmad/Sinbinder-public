@@ -7,6 +7,9 @@ on:
       - "feature/sinbinder-canonical-integration-*"
     paths:
       - "Assets/Scripts/AOS Engine/OrderIntegrity.cs"
+      - "Assets/Scripts/AOS Engine/MemoryRecord.cs"
+      - "Assets/Scripts/AOS Engine/MemoryProcessor.cs"
+      - "Assets/Scripts/Gameplay/Raising.cs"
       - "Assets/Scripts/AOS Engine/AOSEventHub.cs"
       - "Assets/Scripts/AOS Engine/AutoAttackAOS.cs"
       - "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs"
@@ -33,6 +36,9 @@ on:
   pull_request:
     paths:
       - "Assets/Scripts/AOS Engine/OrderIntegrity.cs"
+      - "Assets/Scripts/AOS Engine/MemoryRecord.cs"
+      - "Assets/Scripts/AOS Engine/MemoryProcessor.cs"
+      - "Assets/Scripts/Gameplay/Raising.cs"
       - "Assets/Scripts/AOS Engine/AOSEventHub.cs"
       - "Assets/Scripts/AOS Engine/AutoAttackAOS.cs"
       - "Assets/Scripts/AOS Engine/AOSWarriorWrapper.cs"
