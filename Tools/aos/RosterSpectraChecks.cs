@@ -21,6 +21,32 @@ internal static class RosterSpectraChecks
             -100f, 4, captured, null, Gender.Male);
         check(repeat.CopySpectra().AsSpan().SequenceEqual(values),
             "repeat reconstruction starts from exact saved vector");
+        // Distinguish body reconstruction from a genuinely new soul.
+        original.SetKin("pair-a");
+        var sameSoul = SoulData.FromRoster(original.Name, original.Sin, original.Moral,
+            original.SinIntensity, original.Level, captured, null, original.Gender, original.Id, original.Kin);
+        var anotherBody = SoulData.FromRoster(original.Name, original.Sin, original.Moral,
+            original.SinIntensity, original.Level, captured, null, original.Gender, original.Id, original.Kin);
+        check(sameSoul.Id == original.Id && anotherBody.Id == original.Id &&
+              !ReferenceEquals(sameSoul, original) && !ReferenceEquals(sameSoul, anotherBody),
+            "separate reconstructed objects retain the captured soul identity");
+        check(sameSoul.Kin == "pair-a" && anotherBody.Kin == "pair-a",
+            "captured kin survives body reconstruction");
+        var unrelated = SoulData.FromRoster(original.Name, original.Sin, original.Moral,
+            original.SinIntensity, original.Level, captured, null, original.Gender, "unrelated-id", "");
+        check(unrelated.Id != sameSoul.Id && !SoulData.Kindred(unrelated, sameSoul),
+            "same-name souls do not acquire identity or kin from one another");
+        var brother = SoulData.FromRoster("Brother", SinType.Wrath, MoralType.Neutral,
+            0f, 1, new float[7], null, Gender.Male, "brother-id", "pair-a");
+        check(brother.Id != sameSoul.Id && SoulData.Kindred(brother, sameSoul),
+            "two distinct captured souls retain their real kin link");
+        var legacyA = SoulData.FromRoster("Same name", SinType.Greed, MoralType.Neutral,
+            5f, 0, null, null, Gender.Male);
+        var legacyB = SoulData.FromRoster("Same name", SinType.Greed, MoralType.Neutral,
+            5f, 0, null, null, Gender.Male);
+        check(!string.IsNullOrEmpty(legacyA.Id) && legacyA.Id != legacyB.Id &&
+              legacyA.Kin.Length == 0 && legacyB.Kin.Length == 0,
+            "legacy missing identity creates distinct souls without guessed kin");
         var neutral = SoulData.FromRoster("Neutral", SinType.Wrath, MoralType.Neutral,
             88f, 1, new float[7], null, Gender.Male);
         check(neutral.CopySpectra().AsSpan().SequenceEqual(new float[7]) && neutral.Sin == SinType.Wrath,
@@ -57,6 +83,12 @@ internal static class RosterSpectraChecks
               spawn.Contains("if (alreadyBound)\n                warrior.RestoreBoundBody(") &&
               spawn.Contains("else\n                warrior.Initialize(soul, member.Shell,"),
             "captured and initial spawn routes use different bias paths (source)");
+        check(roster.Contains("member.SoulId = w.Soul.Id;") &&
+              roster.Contains("member.SoulKin = w.Soul.Kin;") &&
+              save.Split(new[] { "SoulId = m.SoulId," }, StringSplitOptions.None).Length == 3 &&
+              save.Split(new[] { "SoulKin = m.SoulKin," }, StringSplitOptions.None).Length == 3 &&
+              spawn.Contains("member.SoulId, member.SoulKin);"),
+            "identity and kin flow through roster capture, save, load and spawn (source)");
         string warrior = Read("Assets/Scripts/Gameplay/Warrior.cs");
         int begin = warrior.IndexOf("internal void RestoreBoundBody(", StringComparison.Ordinal);
         int end = begin >= 0 ? warrior.IndexOf("/// <summary>", begin, StringComparison.Ordinal) : -1;
