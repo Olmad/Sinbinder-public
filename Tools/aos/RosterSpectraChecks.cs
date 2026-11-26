@@ -32,6 +32,8 @@ internal static class RosterSpectraChecks
             "separate reconstructed objects retain the captured soul identity");
         check(sameSoul.Kin == "pair-a" && anotherBody.Kin == "pair-a",
             "captured kin survives body reconstruction");
+        check(!SoulData.Kindred(sameSoul, anotherBody),
+            "two objects of the same soul cannot count as two relatives");
         var unrelated = SoulData.FromRoster(original.Name, original.Sin, original.Moral,
             original.SinIntensity, original.Level, captured, null, original.Gender, "unrelated-id", "");
         check(unrelated.Id != sameSoul.Id && !SoulData.Kindred(unrelated, sameSoul),
