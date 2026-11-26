@@ -318,6 +318,7 @@ namespace Sinbinder.Gameplay
         {
             _id = string.IsNullOrEmpty(warriorId) ? System.Guid.NewGuid().ToString() : warriorId;
             _soul = soul;
+            AOS.MemoryProcessor.RegisterBodyIdentity(_id, soul.PersonId);
             _shell = shell;
             _virtue = new Core.VirtueSystem(soul);
             _relationships = relSystem;
