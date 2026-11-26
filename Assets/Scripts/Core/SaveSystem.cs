@@ -161,6 +161,7 @@ namespace Sinbinder.Core
             foreach (var s in save.Survivors) if (!string.IsNullOrEmpty(s.Id)) owners.Add(s.Id);
             save.AosMemories = Sinbinder.AOS.MemoryProcessor.Snapshot(owners);
             save.AosEmotions = Sinbinder.AOS.EmotionSystem.Snapshot(owners);
+            save.HasAosEmotions = true;
 
             var hero = Gameplay.SinbinderPlayer.Exists ? Gameplay.SinbinderPlayer.Instance : null;
             if (hero != null && !hero.IsDead)
@@ -256,6 +257,9 @@ namespace Sinbinder.Core
                 if (scene.name == CryptMap.SceneName && restored.OpensCryptSandbox)
                     CryptMap.Open();
                 RestoreSouls(restored, scene);
+                // Discard late callbacks from the outgoing scene before checkpointing.
+                RestoreMemories(restored, null, null, resetAll: true);
+                Sinbinder.AOS.EmotionSystem.ForgetAll();
                 RestoreEmotions(restored, arrival.Value.EmotionOwners);
             }
 
@@ -475,6 +479,11 @@ namespace Sinbinder.Core
 
             Gameplay.CardTable.BeforeSaveOrLoad();
             var previousEmotionOwners = keepScene ? EmotionOwners() : null;
+            if (!keepScene)
+            {
+                Sinbinder.AOS.EmotionSystem.ForgetAll();
+                Sinbinder.AOS.MemoryProcessor.ResetBodyIdentities();
+            }
             var emotionOwnerIds = keepScene ? new Dictionary<string, string>() : null;
 
             // В той же доле тела остаются на месте, включая ещё не
@@ -574,7 +583,7 @@ namespace Sinbinder.Core
             Gameplay.Sorties.Restore(save.Sorties);
             Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays);
             Gameplay.ExpeditionMemoryLedger.Restore(save.ExpeditionMemories);
-            Sinbinder.AOS.MemoryProcessor.Restore(save.AosMemories);
+            RestoreMemories(save, previousEmotionOwners, emotionOwnerIds, resetAll: !keepScene);
             if (keepScene) RestoreEmotions(save, previousEmotionOwners, emotionOwnerIds);
             // Смена сцены: прежний Греховод ещё здесь — здоровье ждёт нового (SinbinderPlayer.Update).
             HeroHealthOnArrival = save.HeroHealth;
@@ -603,6 +612,27 @@ namespace Sinbinder.Core
             return owners;
         }
 
+        private static void RestoreMemories(SaveGame save, HashSet<string> previousOwners,
+            IReadOnlyDictionary<string, string> ownerIds, bool resetAll)
+        {
+            var owners = EmotionOwners();
+            var replace = new HashSet<string>(owners);
+            if (previousOwners != null) replace.UnionWith(previousOwners);
+            var records = new List<Sinbinder.AOS.SavedMemory>();
+            if (save.AosMemories != null)
+                foreach (var saved in save.AosMemories)
+                {
+                    if (saved == null || !saved.IsValidForTransfer()) continue;
+                    string owner = saved.Owner;
+                    if (ownerIds != null && ownerIds.TryGetValue(owner, out var liveId)) owner = liveId;
+                    if (string.IsNullOrEmpty(owner) || !owners.Contains(owner)) continue;
+                    // Copy the event; never modify the save object or remap
+                    // an unidentified target based on a name.
+                    records.Add(saved.CopyAtAge(0f, owner));
+                }
+            Sinbinder.AOS.MemoryProcessor.Restore(records, owners, replace, resetAll);
+        }
+
         private static void RestoreEmotions(SaveGame save, HashSet<string> previousOwners = null,
             IReadOnlyDictionary<string, string> ownerIds = null)
         {
@@ -624,9 +654,10 @@ namespace Sinbinder.Core
 
         private static IEnumerable<Sinbinder.AOS.SavedEmotion> StoredEmotions(SaveGame save)
         {
-            if (save.AosEmotions?.Count > 0)
+            if (save.HasAosEmotions || save.AosEmotions?.Count > 0)
             {
-                foreach (var emotion in save.AosEmotions) yield return emotion;
+                if (save.AosEmotions != null)
+                    foreach (var emotion in save.AosEmotions) yield return emotion;
                 yield break;
             }
 
