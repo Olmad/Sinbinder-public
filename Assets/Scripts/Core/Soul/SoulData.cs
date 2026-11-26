@@ -208,14 +208,15 @@ namespace Sinbinder.Core
 
         public static SoulData FromRoster(string name, SinType legacySin, MoralType moral,
             float legacyIntensity, int capturedLevel, float[] capturedSpectra,
-            MemorySeed memory, Gender gender)
+            MemorySeed memory, Gender gender, string capturedSoulId = null, string capturedKin = null)
         {
             // Missing vector means a legacy or not-yet-spawned roster entry.
             if (capturedSpectra == null)
                 return new SoulData(name, legacySin, moral, 1, legacyIntensity, memory, gender);
             if (!IsValidRosterSpectra(capturedSpectra))
                 throw new System.ArgumentException("Invalid roster spectra", nameof(capturedSpectra));
-            var restored = new SoulData(name, moral, capturedLevel, capturedSpectra, memory, gender);
+            var restored = new SoulData(name, moral, capturedLevel, capturedSpectra, memory, gender, capturedSoulId);
+            restored.SetKin(capturedKin);
             // Retain the legacy dominant label for a fully neutral soul.
             restored._sinType = (int)legacySin;
             return restored;
