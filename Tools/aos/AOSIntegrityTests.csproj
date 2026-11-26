@@ -13,6 +13,7 @@
     <Compile Include="EmotionSaveChecks.cs" />
     <Compile Include="SoulDescriptionChecks.cs" />
     <Compile Include="RosterBiographyChecks.cs" />
+    <Compile Include="RosterSpectraChecks.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/OrderAdvice.cs" Link="OrderAdvice.cs" />
     <Compile Include="../../Assets/Scripts/Core/Loc.cs" Link="Loc.cs" />
     <Compile Include="../../Assets/Scripts/Core/Grammar.cs" Link="Grammar.cs" />
