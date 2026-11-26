@@ -111,6 +111,8 @@ namespace Sinbinder.AOS
             context.CommandLeavesFight = command.IsSet && command.LeadsAwayFromFight;
             context.CommandIsFallBack = command.Kind == CommandKind.FallBack;
             context.CommandVolume = command.IsSet ? 1f - command.Muffle : 1f;
+            context.CommandRepeated = command.IsSet && warrior.CommandRepeats > 0;
+            context.CommandNagged = context.CommandRepeated && warrior.CommandRepeatGap < Warrior.NagWindow;
             // Чей приказ и насколько воин верен именно ему (54-TUG.md); −1 — Греховод один, как в демо.
             context.CommandLord = command.Lord;
             context.LordLoyalty = command.IsSet
@@ -156,6 +158,13 @@ namespace Sinbinder.AOS
 
             // Последний живой: рядом не осталось своих на ногах.
             context.LastAlive = allies.Count == 0 && !warrior.IsDead;
+
+            // Своего рядом только что ранили (особенность «Мстит за своих», перк «Скорбящий отец»).
+            // До 26.11 поле не заполнял никто, и перк не срабатывал ни разу.
+            foreach (var a in allies)
+                if (a != null && a != warrior && a.TryGetComponent<Damageable>(out var body)
+                    && Time.time - body.LastHitAt < Traits.AllyHurtWindow)
+                { context.AllyDamagedRecently = true; break; }
 
             // Искушает то, что воин несёт сам. Раньше сюда шёл общий мешок
             // Греховода, и «дать золочёный клинок жадному» соблазняло им

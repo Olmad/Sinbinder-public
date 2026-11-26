@@ -267,7 +267,11 @@ namespace Sinbinder.AOS
                 decision.Decisive = first;
                 decision.DecisiveAlso = second;
             }
+            // Третий круг — особенность (Traits, 26.11): она отличает этого человека от другого
+            // с тем же грехом, и если отказ держится на ней, назвать грех было бы неправдой.
             if (decision.Decisive == Counterfactual.Factor.None)
+                decision.DecisiveTrait = PerkResolver.DecisiveTrait(warrior, name => WouldObey(warrior, context, name));
+            if (decision.Decisive == Counterfactual.Factor.None && decision.DecisiveTrait == null)
                 decision.DecisiveVoice = Counterfactual.DecisiveVoice(
                     Counterfactual.Voices(warrior != null && warrior.Soul != null ? warrior.Soul.Sin : (SinType?)null),
                     id => WouldObey(warrior, context, id));
@@ -404,7 +408,8 @@ namespace Sinbinder.AOS
             TemptationResolver.Apply(scores, context, AOSConfig.Load().TemptationScale);
 
             // Сюжетные перки: врождённая история воина правит очки.
-            PerkResolver.ApplyPerks(scores, warrior, context, Perks);
+            // silenced — голос души или особенность: их имена не совпадают («Greed» и «Свободный»).
+            PerkResolver.ApplyPerks(scores, warrior, context, Perks, silenced);
 
             // Установка отряда: седьмой рычаг игрока. Меняет склонность
             // всех сразу, но не отменяет характер — поправка складывается

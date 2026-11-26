@@ -72,5 +72,11 @@ namespace Sinbinder.AOS
         /// когда ни одна причина положения не решает). Null — всё разом.
         /// </summary>
         public string DecisiveVoice;
+
+        /// <summary>
+        /// Особенность души (<see cref="Traits"/>), без которой приказ был бы исполнен: третий круг,
+        /// между причинами положения и голосами. Null — не решала ни одна (26.11).
+        /// </summary>
+        public string DecisiveTrait;
     }
 }

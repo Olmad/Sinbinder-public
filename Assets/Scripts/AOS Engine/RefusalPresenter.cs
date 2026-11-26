@@ -220,6 +220,13 @@ namespace Sinbinder.AOS
                 case Counterfactual.Factor.Murderer:     return Loc.T("Это они меня убили!");
             }
 
+            // Решила особенность — её реплика.
+            if (d.Weighed && !string.IsNullOrEmpty(d.DecisiveTrait))
+            {
+                string says = Traits.Says(d.DecisiveTrait);
+                if (!string.IsNullOrEmpty(says)) return says;
+            }
+
             // Не взвешено: долг и даль игрок исправит сам — их и называем.
             if (c != null && c.UnpaidMissions > 0 && d.TopModule == "Greed") return Loc.T("Сначала заплатите.");
 

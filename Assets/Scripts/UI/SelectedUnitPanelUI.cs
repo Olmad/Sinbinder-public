@@ -410,6 +410,11 @@ namespace Sinbinder.UI
             // Примета — под именем: почему так зовут (28-ORDERS, 26.10; Gameplay/Signature).
             // Есть — тело уходит в строку здоровья; нет — как прежде.
             string named = Signature.Why(who);
+            // Особенности — первыми, перед приметой: это правила, по которым он решает не как все
+            // (AOS.Traits, 26.11). Имена — словом; что делает каждая — в карточке души.
+            string traits = TraitNames(who);
+            if (!string.IsNullOrEmpty(traits))
+                named = string.IsNullOrEmpty(named) ? traits : traits + ". " + named;
             // Родня — по знаку души (SoulData.Kin), не по прозвищу: братья у печатей сна (№69 §17.1).
             string kin = KinLine(who);
             string craft = string.IsNullOrEmpty(named) ? ShellLine(who) : named;
@@ -511,13 +516,21 @@ namespace Sinbinder.UI
                 return;
             }
 
-            string module = Speaker(decision);
-            var sin = SinOf(module);
+            // Решила особенность — заголовком она, а не голос: строка ниже — её слова (Traits, 26.11).
+            if (decision.Weighed && !string.IsNullOrEmpty(decision.DecisiveTrait))
+                Voice(null, Loc.F("Особенность: {0}", AOS.Traits.Title(decision.DecisiveTrait, who.Gender)),
+                      PhraseGenerator.Reason(who, context, decision),
+                      Bone, decision.Hesitated ? 30 : 34);
+            else
+            {
+                string module = Speaker(decision);
+                var sin = SinOf(module);
 
-            Voice(sin.HasValue ? SinPalette.Of(sin.Value) : (Color?)null,
-                  Loc.F("{0} {1}", VoiceName(module, soul), Loudness(decision)),
-                  PhraseGenerator.Reason(who, context, decision),
-                  Bone, decision.Hesitated ? 30 : 34);
+                Voice(sin.HasValue ? SinPalette.Of(sin.Value) : (Color?)null,
+                      Loc.F("{0} {1}", VoiceName(module, soul), Loudness(decision)),
+                      PhraseGenerator.Reason(who, context, decision),
+                      Bone, decision.Hesitated ? 30 : 34);
+            }
 
             if (!ordered)
             {
@@ -571,6 +584,17 @@ namespace Sinbinder.UI
         /// Ниже нуля — добродетель, своим именем: щедрость — это жадность
         /// со знаком минус, а не отсутствие жадности.
         /// </summary>
+        /// <summary>«Глуховат, Не бросит своих» — особенности души по именам.</summary>
+        private static string TraitNames(Warrior who)
+        {
+            var perks = who?.Soul?.Memory?.NarrativePerks;
+            if (perks == null) return "";
+            var names = new System.Collections.Generic.List<string>();
+            foreach (var p in perks)
+                if (AOS.Traits.Find(p.PerkName) != null) names.Add(AOS.Traits.Title(p.PerkName, who.Gender));
+            return string.Join(", ", names);
+        }
+
         private static string SinsLine(SoulData soul)
         {
             SoulJarGlow.Read(soul, out var loudest, out var next, out _, out _);

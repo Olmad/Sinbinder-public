@@ -145,6 +145,15 @@ public bool LastAlive;
         /// </summary>
         public float CommandVolume = 1f;
 
+        /// <summary>
+        /// Тот же приказ повторён: тот же вид, та же точка, недавно (Warrior.CommandRepeats).
+        /// Рычаг для особенности «Свободный» — с первого раза не слышит (Traits, 26.11).
+        /// </summary>
+        public bool CommandRepeated;
+
+        /// <summary>Тот же приказ снова через считаные секунды — окрик, щелчки подряд («Не терпит окрика»).</summary>
+        public bool CommandNagged;
+
         /// <summary>Чей приказ (54-TUG.md): имя Греховода; пусто — Греховод один, как в демо.</summary>
         public string CommandLord;
 

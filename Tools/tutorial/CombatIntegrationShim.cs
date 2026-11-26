@@ -16,6 +16,9 @@ namespace UnityEngine
     }
     internal enum RuntimeInitializeLoadType { SubsystemRegistration }
 
+    // Damageable remembers when it was last hit (allies "just wounded", 26.11).
+    internal static class Time { public static float time; }
+
     public class Object
     {
         public static void DontDestroyOnLoad(Object target) { }

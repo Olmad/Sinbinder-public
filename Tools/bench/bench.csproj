@@ -69,6 +69,7 @@
          целиком — а узнаётся это только при следующем замере. -->
     <Compile Include="../../Assets/Scripts/Core/Soul/Trade.cs" />
     <Compile Include="../../Assets/Scripts/Core/WarriorGenerator.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/Traits.cs" />
     <Compile Include="../../Assets/Scripts/Core/DreamGuards.cs" />
     <!-- MemoryModule с d61ecc9e читает их — без них стенд не собирался (25.11). -->
     <Compile Include="../../Assets/Scripts/Gameplay/ExpeditionMemoryVote.cs" />

@@ -40,9 +40,17 @@ namespace Sinbinder.UI
             => decision.Weighed && decision.Decisive != Counterfactual.Factor.None
                 && decision.DecisiveAlso != Counterfactual.Factor.None;
 
+        /// <summary>Решила особенность и у неё есть свой рычаг (Traits.Advice) — он; иначе null.</summary>
+        private static string TraitLever(Decision decision)
+            => decision.Weighed && decision.Decisive == Counterfactual.Factor.None
+               && !string.IsNullOrEmpty(decision.DecisiveTrait)
+                ? Traits.AdviceFor(decision.DecisiveTrait) : null;
+
         public static string Next(Decision decision, DecisionContext context)
         {
             if (!NeedsHelp(decision, context)) return "";
+            var lever = TraitLever(decision);
+            if (lever != null) return lever;
             if (HasPair(decision))
                 return OrderAdvice.NextPair(decision.Decisive.ToString(),
                     decision.DecisiveAlso.ToString(), Loc.T);
@@ -52,6 +60,8 @@ namespace Sinbinder.UI
         public static string NextShort(Decision decision, DecisionContext context)
         {
             if (!NeedsHelp(decision, context)) return "";
+            var lever = TraitLever(decision);
+            if (lever != null) return lever;
             if (HasPair(decision)) return Loc.T(OrderAdvice.PairShort);
             return Loc.T(OrderAdvice.Short(Factor(decision, context), Voice(decision)));
         }

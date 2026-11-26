@@ -111,6 +111,9 @@ static class Bench
     /// </summary>
     static bool _skillsOnBallot = false;
 
+    /// <summary>Множитель силы особенностей — только для подбора в TraitsCheck.</summary>
+    static float _traitScale = 1f;
+
     static Dictionary<ActionType, float> Candidates(DecisionContext c, Soul soul = null)
     {
         var s = new Dictionary<ActionType, float> { { ActionType.Idle, 0f } };
@@ -137,7 +140,7 @@ static class Bench
     }
 
     static Outcome Vote(List<IPersonalityModule> modules, Warrior w, DecisionContext c,
-                        AOSConfig cfg, SquadStrategy strategy)
+                        AOSConfig cfg, SquadStrategy strategy, List<NarrativePerk> traits = null)
     {
         var soul = Soul.FromWarrior(w);
         var scores = Candidates(c, soul);
@@ -154,6 +157,14 @@ static class Bench
             }
 
         TemptationResolver.Apply(scores, c, cfg.TemptationScale);
+
+        // Особенности — тем же местом, что в резолвере: после снаряжения, до установки отряда.
+        // Масштаб — только для подбора силы (TraitsCheck); при единице — ровно Traits.Apply игры.
+        if (traits != null && _traitScale == 1f) Traits.Apply(scores, traits, c);
+        else if (traits != null)
+            foreach (var p in traits)
+                foreach (var v in Traits.Find(p.PerkName)?.Votes ?? Array.Empty<TraitVote>())
+                    if (scores.ContainsKey(v.Action) && v.When(c)) scores[v.Action] += v.Bonus * _traitScale;
 
         if (cfg.StrategyScale > 0f)
             foreach (var mod in StrategyDatabase.GetModifiers(strategy))
@@ -3820,6 +3831,304 @@ static class Bench
     /// Мёртвая зона — участок, где ни один шаг ничего не меняет. Её видно
     /// сразу: там, где голос упёрся в потолок, шкала перестаёт быть шкалой.
     /// </summary>
+    /// <summary>
+    /// Особенности (AOS.Traits, 26.11). Автор: генератор выдавал «пустых» воинов — с одним грехом, —
+    /// «что абсолютно противоречит AOS и идее игры». Три вопроса: есть ли пустые (на карте «Перетягивания»
+    /// жителей больше, чем примет); меняет ли каждая особенность решение (иначе это декоративное обещание,
+    /// 69-PLAN Э1.07); у каждого ли греха и добродетели есть свои.
+    /// </summary>
+    static void TraitsCheck(AOSConfig cfg)
+    {
+        Console.WriteLine("\n=== ОСОБЕННОСТИ: пустых нет, каждая меняет решение ===");
+        int bad = 0;
+        void Check(bool ok, string what) { if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); } }
+
+        // 1. Карта, где людей больше, чем примет: 8 очагов по 12 жителей, все происхождения.
+        int people = 0, noTrait = 0, noLines = 0, noNick = 0, two = 0;
+        var seen = new Dictionary<string, int>();
+        for (int map = 0; map < 20; map++)
+        {
+            var present = new List<string>();
+            for (int i = 0; i < 96; i++)
+            {
+                var k = WarriorGenerator.Make(map * 1000 + i, (SoulOrigin)(i % 4), present);
+                present.Add(k.Name);
+                people++;
+                var mine = k.Seed?.NarrativePerks?.FindAll(p => Traits.Find(p.PerkName) != null) ?? new List<NarrativePerk>();
+                if (mine.Count == 0) noTrait++;
+                if (mine.Count >= 2) two++;
+                if (string.IsNullOrEmpty(k.Why)) noLines++;
+                if (string.IsNullOrEmpty(k.Nickname)) noNick++;
+                foreach (var p in mine) seen[p.PerkName] = seen.GetValueOrDefault(p.PerkName) + 1;
+            }
+        }
+        Console.WriteLine($"  людей {people}: без особенностей {noTrait}, с двумя {two * 100f / people:F0}%, "
+                        + $"без строк привычки {noLines}, без прозвища {noNick * 100f / people:F0}% (прозвища кончаются — это можно)");
+        Check(noTrait == 0, $"пустые воины: {noTrait} без единой особенности");
+        Check(noLines == 0, $"воины без строк привычки: {noLines}");
+        foreach (var t in Traits.All)
+            Check(seen.ContainsKey(t.Name), $"особенность «{t.Name}» генератор не выдаёт никому");
+
+        // 2. Каждая особенность меняет решение: одни и те же души и положения — с ней и без неё.
+        var modules = Modules();
+        var r = new Random(4242);
+        // Сколько людей носит каждую: одна на всех — снова однообразие, только другое.
+        Console.WriteLine("\n  раздача (из " + people + "): " + string.Join(", ",
+            seen.OrderByDescending(x => x.Value).Select(x => $"{x.Key} {x.Value * 100f / people:F0}%")));
+        int top = seen.Count > 0 ? seen.Values.Max() : 0;
+        Check(top * 100f / people <= 20f, $"одна особенность у {top * 100f / people:F0}% людей — больше пятой части");
+
+        // Могла ли особенность здесь что-то решить: её положение, и она тянет к действию, которое пока
+        // не победило, или отталкивает от победившего. Где душа и так поступает по особенности, мерить
+        // нечего — там она ничего не меняет и не должна.
+        bool Matters(Trait t, DecisionContext c, ActionType before)
+        {
+            var cand = Candidates(c);
+            return t.Votes.Any(v => v.When(c) && cand.ContainsKey(v.Action)
+                                    && (v.Bonus > 0f ? before != v.Action : before == v.Action));
+        }
+
+        // Положение для особенности: обычное случайное, плюс признаки, которых MakeContext не ставит.
+        (Warrior w, DecisionContext c, bool crypt) Situation(Random rnd)
+        {
+            var w = new Warrior { Soul = MakeSoul(rnd, "В"), Loyalty = (float)(rnd.NextDouble() * 100) };
+            var c = MakeContext(rnd, w, rnd.NextDouble() < 0.5);
+            c.EnemyIsHunter = c.NearbyEnemies > 0 && rnd.NextDouble() < 0.3;
+            c.EnemyIsUndead = c.NearbyEnemies > 0 && rnd.NextDouble() < 0.3;
+            c.AllyDamagedRecently = c.NearbyAllies > 0 && rnd.NextDouble() < 0.3;
+            c.LastAlive = c.NearbyAllies == 0 && c.NearbyEnemies > 0;
+            if (c.HasCommand)
+            {
+                c.CommandVolume = (float)(0.3 + rnd.NextDouble() * 0.7);
+                if (rnd.NextDouble() < 0.3) c.CommandType = rnd.NextDouble() < 0.5 ? "Hold" : "Defend";
+                c.CommandLeavesFight = c.IsEngaged && rnd.NextDouble() < 0.4;
+                c.CommandRepeated = rnd.NextDouble() < 0.3;
+                c.CommandNagged = c.CommandRepeated && rnd.NextDouble() < 0.4;
+            }
+            w.UnpaidMissions = c.UnpaidMissions;
+            return (w, c, rnd.NextDouble() < 0.3);
+        }
+
+        // Подбор силы: как часто особенность меняет поступок в своём положении при силе ×k.
+        if (Environment.GetEnvironmentVariable("SINBINDER_TRAIT_TUNE") == "1")
+        {
+            Console.WriteLine($"\n  подбор силы — «там меняет» при ×1 / ×1,5 / ×2 / ×3 / ×4");
+            foreach (var t in Traits.All)
+            {
+                var one = new List<NarrativePerk> { new NarrativePerk { PerkName = t.Name } };
+                var row = new List<string>();
+                foreach (float k in new[] { 1f, 1.5f, 2f, 3f, 4f })
+                {
+                    var rt = new Random(4242);
+                    int fired = 0, changed = 0;
+                    _traitScale = k;
+                    for (int i = 0; i < 1500; i++)
+                    {
+                        var (w, c, crypt) = Situation(rt);
+                        Traits.PlaceHas = tag => crypt && tag == "Crypt";
+                        var before = Vote(modules, w, c, cfg, SquadStrategy.Balanced).Action;
+                        if (!Matters(t, c, before)) continue;
+                        fired++;
+                        if (before != Vote(modules, w, c, cfg, SquadStrategy.Balanced, one).Action) changed++;
+                    }
+                    row.Add($"{changed * 100f / Math.Max(fired, 1),3:F0}%");
+                }
+                _traitScale = 1f;
+                Console.WriteLine($"  {t.Name,-20} {string.Join("  ", row)}");
+            }
+            Traits.PlaceHas = null;
+        }
+
+        Console.WriteLine($"\n  {"особенность",-20} {"срабатывает",12} {"там меняет",11}  куда");
+        foreach (var t in Traits.All)
+        {
+            int changed = 0, n = 0, fired = 0;
+            var towards = new Dictionary<ActionType, int>();
+            var one = new List<NarrativePerk> { new NarrativePerk { PerkName = t.Name } };
+            for (int i = 0; i < 1500; i++)
+            {
+                var (w, c, crypt) = Situation(r);
+                Traits.PlaceHas = tag => crypt && tag == "Crypt";
+
+                n++;
+                var plain = Vote(modules, w, c, cfg, SquadStrategy.Balanced);
+                if (!Matters(t, c, plain.Action)) continue;   // не его положение — или душа и так поступает по нему
+                fired++;
+                var with = Vote(modules, w, c, cfg, SquadStrategy.Balanced, one);
+                if (plain.Action != with.Action)
+                {
+                    changed++;
+                    towards[with.Action] = towards.GetValueOrDefault(with.Action) + 1;
+                }
+            }
+            Traits.PlaceHas = null;
+            string where = string.Join(", ", towards.OrderByDescending(x => x.Value).Take(2)
+                                                    .Select(x => $"{x.Key} {x.Value * 100f / Math.Max(changed, 1):F0}%"));
+            float there = changed * 100f / Math.Max(fired, 1);
+            Console.WriteLine($"  {t.Name,-20} {fired * 100f / n,11:F0}% {there,10:F0}%  {where}");
+            Check(changed > 0, $"«{t.Name}» не меняет ни одного решения — декоративная");
+            // В своём положении особенность обязана быть заметна игроку, но не отменять душу.
+            // «Своё положение» — где особенность может что-то решить (Matters), а не просто где её условие верно.
+            Check(there >= 25f, $"«{t.Name}» в своём положении меняет {there:F0}% решений — игрок её не заметит");
+            Check(there <= 75f, $"«{t.Name}» в своём положении меняет {there:F0}% — это уже не душа, а правило");
+        }
+
+        // 3. Симметрия: у каждого греха и каждой добродетели — не меньше двух своих.
+        Console.WriteLine();
+        foreach (SinType sin in Enum.GetValues(typeof(SinType)))
+            foreach (bool virtue in new[] { false, true })
+            {
+                var s = new TraitSoul { Sin = sin, Second = sin == SinType.Greed ? SinType.Pride : SinType.Greed,
+                                        Virtue = virtue, Moral = virtue ? MoralType.Pious : MoralType.Neutral,
+                                        Trade = Trade.Hunter, Shell = ShellType.Ghost };
+                int fits = Traits.Fitting(s).Count;
+                string label = (virtue ? "добродетель " : "") + sin;
+                if (fits < 2) Check(false, $"{label}: подходит особенностей {fits} — меньше двух");
+            }
+
+        // 4. Двое одного греха — решают ли теперь по-разному.
+        int pairs = 0, differPlain = 0, differWith = 0;
+        var rr = new Random(77);
+        for (int i = 0; i < 400; i++)
+        {
+            var a = WarriorGenerator.Make(5000 + i * 2, SoulOrigin.Pact, new List<string>());
+            var b = WarriorGenerator.Make(5001 + i * 2, SoulOrigin.Pact, new List<string>());
+            if (a.Sin != b.Sin) continue;
+            pairs++;
+            var spectra = new float[7]; spectra[(int)a.Sin] = 60f;
+            var wa = new Warrior { Soul = new SoulData("А", MoralType.Neutral, 1, spectra), Loyalty = 60f };
+            var wb = new Warrior { Soul = new SoulData("Б", MoralType.Neutral, 1, (float[])spectra.Clone()), Loyalty = 60f };
+            for (int j = 0; j < 20; j++)
+            {
+                var c = MakeContext(rr, wa, rr.NextDouble() < 0.5);
+                c.EnemyIsHunter = c.NearbyEnemies > 0 && rr.NextDouble() < 0.3;
+                c.AllyDamagedRecently = c.NearbyAllies > 0 && rr.NextDouble() < 0.3;
+                if (Vote(modules, wa, c, cfg, SquadStrategy.Balanced).Action != Vote(modules, wb, c, cfg, SquadStrategy.Balanced).Action) differPlain++;
+                if (Vote(modules, wa, c, cfg, SquadStrategy.Balanced, a.Seed.NarrativePerks).Action
+                    != Vote(modules, wb, c, cfg, SquadStrategy.Balanced, b.Seed.NarrativePerks).Action) differWith++;
+            }
+        }
+        Console.WriteLine($"  двое одного греха с одной силой, {pairs} пар × 20 положений: решают по-разному "
+                        + $"{differPlain * 100f / Math.Max(pairs * 20, 1):F1}% без особенностей → {differWith * 100f / Math.Max(pairs * 20, 1):F1}% с ними");
+        Check(differWith > differPlain, "особенности не делают одногрешных разными");
+
+        // 5. Честное объяснение (69-PLAN, требование 2): отказ, который держится на особенности, называет её —
+        //    тем же порядком, что BehaviourResolver.Weigh: причины положения, пара, особенность, голос.
+        //    Слова причины — из PhraseGenerator игры.
+        var none = new List<NarrativePerk>();
+        var probe = new Dictionary<ActionType, float> { { ActionType.ObeyCommand, 0f }, { ActionType.Idle, 0f } };
+        var probeCtx = new DecisionContext { HasCommand = true, CommandVolume = 1f };
+        Traits.Apply(probe, new List<NarrativePerk> { new NarrativePerk { PerkName = "Клятва" } }, probeCtx, "Клятва");
+        Check(probe[ActionType.ObeyCommand] == 0f, "приглушённая особенность всё равно голосует (Traits.Apply, muted)");
+
+        int balks = 0, byTrait = 0, wasVoice = 0, wrongWords = 0, fake = 0;
+        var namedBy = new Dictionary<string, int>();
+        var rh = new Random(9090);
+        for (int i = 0; i < 12000; i++)
+        {
+            var (w, c, crypt) = Situation(rh);
+            if (!c.HasCommand) continue;
+            Traits.PlaceHas = tag => crypt && tag == "Crypt";
+            var t = Traits.All[rh.Next(Traits.All.Length)];
+            var mine = new List<NarrativePerk> { new NarrativePerk { PerkName = t.Name } };
+
+            bool ObeysWith(DecisionContext x, List<NarrativePerk> perks)
+            {
+                var v = Vote(modules, w, x, cfg, SquadStrategy.Balanced, perks);
+                return !v.Hesitated && x.SatisfiedBy(v.Action);
+            }
+
+            var o = Vote(modules, w, c, cfg, SquadStrategy.Balanced, mine);
+            if (!o.Hesitated && c.SatisfiedBy(o.Action)) continue;
+            balks++;
+
+            var d = new Decision { Action = o.Action, TopModule = o.Module, TopContender = o.Leader,
+                                   Hesitated = o.Hesitated, RefusedCommand = !o.Hesitated, Weighed = true };
+            d.Decisive = Counterfactual.Decisive(c, x => ObeysWith(x, mine));
+            if (d.Decisive == Counterfactual.Factor.None
+                && Counterfactual.DecisivePair(c, x => ObeysWith(x, mine), out var f1, out var f2))
+            { d.Decisive = f1; d.DecisiveAlso = f2; }
+            if (d.Decisive != Counterfactual.Factor.None) continue;
+
+            d.DecisiveTrait = Traits.Decisive(new MemorySeed { NarrativePerks = mine },
+                                              name => ObeysWith(c, mine.FindAll(p => p.PerkName != name)));
+            if (d.DecisiveTrait == null) continue;
+
+            byTrait++;
+            namedBy[d.DecisiveTrait] = namedBy.GetValueOrDefault(d.DecisiveTrait) + 1;
+            // Названа — значит, без неё он послушался бы, а с ней нет.
+            if (!ObeysWith(c, none) || ObeysWith(c, mine)) fake++;
+            // Прежде здесь назывался бы голос души.
+            if (Counterfactual.DecisiveVoice(Counterfactual.Voices(w.Soul.Sin),
+                    id => { var v = Vote(modules.Where(m => m.ModuleID != id).ToList(), w, c, cfg, SquadStrategy.Balanced, mine);
+                            return !v.Hesitated && c.SatisfiedBy(v.Action); }) != null) wasVoice++;
+            string reason = PhraseGenerator.Reason(w, c, d);
+            if (!reason.Contains(Traits.Reason(d.DecisiveTrait).Split(' ')[0])) wrongWords++;
+        }
+        Traits.PlaceHas = null;
+        Console.WriteLine($"\n  объяснение: неисполненных приказов {balks}, решила особенность {byTrait} "
+                        + $"({byTrait * 100f / Math.Max(balks, 1):F0}%); прежде в {wasVoice} из них назывался голос души");
+        Console.WriteLine("  названы: " + string.Join(", ", namedBy.OrderByDescending(x => x.Value).Select(x => $"{x.Key} {x.Value}")));
+        Check(byTrait > 0, "особенность не названа ни разу — объяснение её не видит");
+        Check(fake == 0, $"названа особенность, без которой исход тот же: {fake}");
+        Check(wrongWords == 0, $"причина звучит не словами особенности: {wrongWords}");
+
+        // 6. Спокойное положение: голоса там дают по 2–3 очка, и плоская прибавка особенности решает всё.
+        //    Сон 26.11: брату со «Свободным» (приказ −20 всегда) мирный приказ не доходил никогда — печать
+        //    не горела. Требование: у каждой особенности есть рычаг игрока (повтор/не повтор, подойти,
+        //    передышка), при котором слушаются не хуже, чем без неё.
+        Console.WriteLine($"\n  спокойно, мирный приказ: {"особенность",-20} {"сразу",7} {"с рычагом",10}  (без неё — сразу)");
+        var levers = new (bool repeat, float volume, bool rested, string name)[]
+        {
+            (false, 1f, false, "как есть"), (true, 1f, false, "повтор"), (false, 1f, true, "передышка"),
+            (true, 1f, true, "повтор+передышка"),
+        };
+        var calmSouls = new List<(Warrior w, DecisionContext c)>();
+        var rc = new Random(5151);
+        while (calmSouls.Count < 400)
+        {
+            var (w, c, _) = Situation(rc);
+            c.NearbyEnemies = 0; c.EnemiesInSight = 0; c.DangerLevel = 0f; c.AllyInDanger = false; c.NearbyLoot = 0;
+            c.IsEngaged = false; c.EngagedWith = 0; c.Surrounded = false; c.LastAlive = false; c.TargetBackExposed = false;
+            c.EnemyIsHunter = false; c.EnemyIsUndead = false; c.AllyDamagedRecently = false; c.KnownMurdererInSight = false;
+            c.Provoked = false; c.HasCommand = true; c.CommandType = "Move"; c.CommandLeavesFight = false;
+            c.CommandIntoFight = false; c.CommandIsPatrol = false; c.CommandIsFallBack = false;
+            c.CommandVolume = 1f; c.UnpaidMissions = 0; c.PocketGold = 0; w.UnpaidMissions = 0;
+            calmSouls.Add((w, c));
+        }
+        float Rate(List<NarrativePerk> perks, (bool repeat, float volume, bool rested, string name) l)
+        {
+            int ok = 0;
+            foreach (var (w, c0) in calmSouls)
+            {
+                var c = c0.Copy();
+                // Щелчков подряд игрок может не делать — окрик не рычаг, а ошибка (CommandNagged = false).
+                c.CommandRepeated = l.repeat; c.CommandNagged = false; c.CommandVolume = l.volume;
+                if (l.rested) { c.Fatigue = 0f; c.IsExhausted = false; }
+                var v = Vote(modules, w, c, cfg, SquadStrategy.Balanced, perks);
+                if (!v.Hesitated && c.SatisfiedBy(v.Action)) ok++;
+            }
+            return ok * 100f / calmSouls.Count;
+        }
+        float plainRate = Rate(none, levers[0]);
+        foreach (var t in Traits.All)
+        {
+            var one = new List<NarrativePerk> { new NarrativePerk { PerkName = t.Name } };
+            float first = Rate(one, levers[0]);
+            float best = float.MinValue; string how = "";
+            foreach (var l in levers)
+            {
+                float gap = Rate(one, l) - Rate(none, l);
+                if (gap > best) { best = gap; how = l.name; }
+            }
+            Console.WriteLine($"  {"",26}{t.Name,-20} {first,6:F0}% {best,+9:+0;-0;0}п.п. ({how})");
+            Check(best >= -5f, $"«{t.Name}»: в спокойном положении нет рычага — слушается на {-best:F0} п.п. хуже при любом");
+        }
+        Console.WriteLine($"  {"",26}{"(без особенностей)",-20} {plainRate,6:F0}%");
+
+        Console.WriteLine(bad == 0 ? "  Особенности: чисто." : $"  Особенности: провалов {bad}.");
+    }
+
     static void SensitivityCheck(AOSConfig cfg)
     {
         Console.WriteLine("\n=== ЧУВСТВИТЕЛЬНОСТЬ: значит ли одна единица ===");
@@ -5618,6 +5927,7 @@ static class Bench
         FearSweep(cfg);
         MoralityCheck(cfg);
         SensitivityCheck(cfg);
+        TraitsCheck(cfg);
         DisobeyDragSweep(cfg);
         SkillsCheck(cfg);
         ShellsCheck();

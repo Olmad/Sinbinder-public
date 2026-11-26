@@ -297,7 +297,8 @@ namespace Sinbinder.UI
             {
                 var d = new AOS.Decision { RefusedCommand = true };
                 Value.Weigh(w, ctx, ref d);
-                if (d.Decisive == AOS.Counterfactual.Factor.None && string.IsNullOrEmpty(d.DecisiveVoice)) return "";
+                if (d.Decisive == AOS.Counterfactual.Factor.None && string.IsNullOrEmpty(d.DecisiveVoice)
+                    && string.IsNullOrEmpty(d.DecisiveTrait)) return "";
                 return AOS.PhraseGenerator.Reason(w, ctx, d);
             }
         }

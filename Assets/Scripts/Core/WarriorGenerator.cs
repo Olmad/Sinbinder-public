@@ -50,9 +50,9 @@ namespace Sinbinder.Core
     /// одинаковый номер — один и тот же человек, на любой машине.
     ///
     /// <b>Чего здесь нет — нарочно.</b> Женщин (правило <c>unique_women</c>) и легенд:
-    /// легенды, как и женщины, — лица, а не порода (§4). Особенностей (§10) — пока:
-    /// у них ещё нет рычагов в движке, а строка, которой не отвечает поведение,
-    /// учит игрока не верить строкам (§0, п. 3).
+    /// легенды, как и женщины, — лица, а не порода (§4). Особенности (§10) — с 26.11 есть
+    /// (<see cref="AOS.Traits"/>): у каждой рычаг в решении, иначе строка учила бы игрока
+    /// не верить строкам (§0, п. 3).
     /// </summary>
     public static class WarriorGenerator
     {
@@ -347,6 +347,16 @@ namespace Sinbinder.Core
                 if (m.Fits(k) && !Taken(present, m.Nick)) fits.Add(m);
             Mark mark = fits.Count > 0 ? fits[chain.Next(fits.Count)] : null;
 
+            // Прозвища разобраны (в «Перетягивании» жителей на карте больше, чем примет) — привычка
+            // и строки остаются, без прозвища. Раньше выходил человек с одним грехом (автор, 26.11).
+            bool spare = false;
+            if (mark == null)
+            {
+                var any = new List<Mark>();
+                foreach (var m in Marks) if (m.Fits(k)) any.Add(m);
+                if (any.Count > 0) { mark = any[chain.Next(any.Count)]; spare = true; }
+            }
+
             // 5. Имя — из пула; занятые пропускаем. Имена внутри игры — ключами
             // на русском, как у девяти лагеря; на экран их выводит Loc.Name.
             int start = chain.Next(Names.Length);
@@ -359,7 +369,7 @@ namespace Sinbinder.Core
 
             if (mark != null)
             {
-                k.Nickname = mark.Nick;
+                if (!spare) k.Nickname = mark.Nick;
                 k.Why = Loc.T(mark.Why);
                 k.First = Loc.T(mark.First);
                 k.Death = Loc.T(mark.Death);
@@ -367,6 +377,10 @@ namespace Sinbinder.Core
 
             // 6. История — как умер и как душа попала к нам (§11).
             k.Seed = Story(k, ref chain, place, present);
+
+            // 7. Особенности — одна-две, каждая меняет решение в бою (AOS.Traits; автор, 26.11:
+            // «пустые» воины «абсолютно противоречат AOS и идее игры»).
+            AOS.Traits.Write(k.Seed, AOS.Traits.Pick(AOS.TraitSoul.Of(k), number * 31 + (int)origin));
             return k;
         }
 

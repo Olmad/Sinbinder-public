@@ -139,7 +139,8 @@ namespace Sinbinder.AOS
     public static class PerkResolver
     {
         public static void ApplyPerks(Dictionary<ActionType,float> scores,
-            Warrior warrior,DecisionContext context,PerkDatabase db) {}
+            Warrior warrior,DecisionContext context,PerkDatabase db,string mutedTrait=null) {}
+        public static string DecisiveTrait(Warrior warrior,Func<string,bool> obeysWithout)=>null;
     }
     public static class TemptationResolver
     {

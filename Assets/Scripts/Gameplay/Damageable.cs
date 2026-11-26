@@ -65,6 +65,9 @@ namespace Sinbinder.Gameplay
         /// <summary>Ниже этой доли здоровья удар пугает (<see cref="AOS.EmotionType.Fear"/>).</summary>
         public const float FrightShare = 1f / 3f;
 
+        /// <summary>Когда последний раз ранен (Time.time) — «своего только что ранили» у соседей.</summary>
+        public float LastHitAt { get; private set; } = -999f;
+
         public void TakeDamage(float damage, GameObject attacker)
         {
             ApplyDamage(damage, attacker, allowGuardInterception: true);
@@ -158,6 +161,7 @@ namespace Sinbinder.Gameplay
             if (damage <= 0f || float.IsNaN(damage) || float.IsInfinity(damage)) return;
 
             _hp -= damage;
+            LastHitAt = Time.time;
 
             // Испуг — чувство, а не только голос (26.11, полировка AOS). Таблица весов эмоций
             // (EmotionSystem.GetEmotionWeight) обещала: испуганный слушает Страх в полтора раза громче,

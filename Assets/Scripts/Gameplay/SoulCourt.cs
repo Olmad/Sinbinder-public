@@ -1727,6 +1727,12 @@ namespace Sinbinder.Gameplay
                 return Loc.F("Решило одно: {0}. Не будь этого — {1}.", because, obeyed);
             }
 
+            // Особенность — не судья за столом, а правило души; без неё приговор был бы другим.
+            if (d.Weighed && !string.IsNullOrEmpty(d.DecisiveTrait))
+                return Loc.F("Решила его особенность — «{0}»: {1}. Без неё {2}.",
+                    Traits.Title(d.DecisiveTrait, w.Gender),
+                    Grammar.For(w.Gender, Traits.Reason(d.DecisiveTrait)), obeyed);
+
             if (d.Weighed && !string.IsNullOrEmpty(d.DecisiveVoice))
                 return Loc.F("Решил один голос — {0}. Без него {1}.",
                     Lower(UI.SelectedUnitPanelUI.VoiceName(d.DecisiveVoice, w.Soul)), obeyed);

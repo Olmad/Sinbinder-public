@@ -197,6 +197,18 @@ namespace Sinbinder.Gameplay
 
         public bool HasCommand => _command.IsSet;
 
+        /// <summary>Сколько раз подряд повторён тот же приказ (0 — первый раз). Читает DecisionContext.CommandRepeated.</summary>
+        public int CommandRepeats { get; private set; }
+        /// <summary>Через сколько секунд после того же приказа отдан этот; MaxValue — не повтор.</summary>
+        public float CommandRepeatGap { get; private set; } = float.MaxValue;
+        /// <summary>Повтор — тот же приказ в пределах 30 с; окрик — снова меньше чем через 4 с (щелчки подряд).</summary>
+        public const float RepeatWindow = 30f, NagWindow = 4f;
+        private const float RepeatRadius = 4f;
+        private CommandKind _lastOrderKind;
+        private Vector3 _lastOrderPoint;
+        private GameObject _lastOrderTarget;
+        private float _lastOrderAt = -1f;
+
         /// <param name="muffle">Насколько приглушён голос Греховода
         /// (<see cref="Voice.MuffleFor"/>). Сценарные приказы — провожатый,
         /// прогон демо — звучат в полную силу: это не голос игрока.</param>
@@ -207,6 +219,17 @@ namespace Sinbinder.Gameplay
             // Every newly issued order needs its own identity for AOS
             // memories and cancellation of delayed decisions.
             unchecked { CommandRevision++; }
+
+            // Повтор: тот же вид, та же точка (или цель), недавно. Помнится отдельно от _command —
+            // отказавшийся мог уже сбросить приказ, а игрок повторяет именно его.
+            float since = _lastOrderAt > 0f ? Time.time - _lastOrderAt : float.MaxValue;
+            bool again = since < RepeatWindow && kind == _lastOrderKind
+                         && (target != null ? target == _lastOrderTarget
+                                            : Vector3.Distance(point, _lastOrderPoint) < RepeatRadius);
+            CommandRepeats = again ? CommandRepeats + 1 : 0;
+            CommandRepeatGap = again ? since : float.MaxValue;
+            _lastOrderKind = kind; _lastOrderPoint = point; _lastOrderTarget = target; _lastOrderAt = Time.time;
+
             _command = new PendingCommand
             {
                 Kind = kind,
@@ -303,6 +326,17 @@ namespace Sinbinder.Gameplay
                 agent.speed = shell.movementSpeed;
         }
 
+        /// <summary>Номер по имени — тот же человек получает те же особенности на любой машине.</summary>
+        private static int Stamp(string name)
+        {
+            unchecked
+            {
+                int h = (int)2166136261u;
+                foreach (char c in name ?? "") h = (h ^ c) * 16777619;
+                return h & 0x7fffffff;
+            }
+        }
+
         private void InitializeCore(Core.SoulData soul, Core.ShellType shell, Core.RelationshipSystem relSystem,
             bool isCommander, Team team, string warriorId = null)
         {
@@ -316,6 +350,15 @@ namespace Sinbinder.Gameplay
 
             _maxHP = 20f + soul.Level * 10f;
             _hp = _maxHP;
+
+            // Пустых не бывает (автор, 26.11): кто родился не через генератор — «Перетягивание»,
+            // волны охотников, гарнизоны, стенд, — получает особенности здесь, по имени, без жребия.
+            // Греховод — не воин отряда: у него нет голосования.
+            if (!(this is SinbinderPlayer) && !AOS.Traits.Any(soul.Memory))
+            {
+                if (soul.Memory == null) soul.GiveMemory(new Core.MemorySeed());
+                AOS.Traits.Write(soul.Memory, AOS.Traits.Pick(AOS.TraitSoul.Of(soul, shell), Stamp(soul.Name)));
+            }
 
             // Без оболочки — как было в бою у всех: удар 5, защиты нет.
             // Оболочка перепишет оба числа (ApplyShellBody).

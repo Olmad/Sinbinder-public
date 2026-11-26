@@ -98,6 +98,9 @@ namespace Sinbinder.Core
             => a != null && b != null && !ReferenceEquals(a, b) && a.Kin.Length > 0 && a.Kin == b.Kin;
         public int Level => _level;
         public MemorySeed Memory => _memory;
+
+        /// <summary>Дать память душе, у которой её нет (особенностям нужно место, <see cref="AOS.Traits"/>).</summary>
+        public void GiveMemory(MemorySeed seed) { if (_memory == null) _memory = seed; }
         public bool HasMemory => _memory != null && !string.IsNullOrEmpty(_memory.Story);
 
         // ---------- спектры ----------

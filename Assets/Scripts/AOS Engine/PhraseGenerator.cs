@@ -113,7 +113,8 @@ namespace Sinbinder.AOS
         /// <summary>Взвешено «от противного» и причина нашлась — причиной или голосом.</summary>
         private static bool Caused(Decision decision)
             => decision.Weighed
-            && (decision.Decisive != Counterfactual.Factor.None || !string.IsNullOrEmpty(decision.DecisiveVoice));
+            && (decision.Decisive != Counterfactual.Factor.None || !string.IsNullOrEmpty(decision.DecisiveVoice)
+                || !string.IsNullOrEmpty(decision.DecisiveTrait));
 
         /// <summary>
         /// Голая причина, без имени и без действия: «их слишком много».
@@ -162,6 +163,10 @@ namespace Sinbinder.AOS
                     ? main
                     : Loc.F("{0}, и {1}", main, Counterfactual.Phrase(decision.DecisiveAlso, context, sin, gender));
             }
+
+            // Третий круг: решила особенность души (Traits) — её словами, не грехом.
+            if (weighed && !string.IsNullOrEmpty(decision.DecisiveTrait))
+                return Traits.Reason(decision.DecisiveTrait);
 
             // Голос Греховода: отказ приказу, пришедшему издали. Причина —
             // та, которую игрок может исправить ногами (docs/31-VOICE.md).

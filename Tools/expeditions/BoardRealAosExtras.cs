@@ -110,11 +110,12 @@ namespace Sinbinder.AOS
         public static int OffscreenVoteChecks;
         public static int LiveSceneVoteChecks;
         public static void ApplyPerks(Dictionary<ActionType,float> scores,
-            Warrior warrior,DecisionContext context,PerkDatabase db)
+            Warrior warrior,DecisionContext context,PerkDatabase db,string mutedTrait=null)
         {
             if(Core.LocationManager.HasTag("Crypt")) LiveSceneVoteChecks++;
             else OffscreenVoteChecks++;
         }
+        public static string DecisiveTrait(Warrior warrior,Func<string,bool> obeysWithout)=>null;
     }
     public static class TemptationResolver
     {

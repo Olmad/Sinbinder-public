@@ -9,9 +9,23 @@ namespace Sinbinder.AOS
 {
     public static class PerkResolver
     {
-        public static void ApplyPerks(Dictionary<ActionType, float> scores, Warrior warrior, DecisionContext context, PerkDatabase database)
+        /// <summary>
+        /// Третий круг «от противного» (BehaviourResolver.Weigh): особенность, без которой приказ
+        /// был бы исполнен. <paramref name="obeysWithout"/> — пересчёт с приглушённой особенностью.
+        /// </summary>
+        public static string DecisiveTrait(Warrior warrior, System.Func<string, bool> obeysWithout)
+            => Traits.Decisive(warrior?.Soul?.Memory, obeysWithout);
+
+        public static void ApplyPerks(Dictionary<ActionType, float> scores, Warrior warrior, DecisionContext context,
+                                      PerkDatabase database, string mutedTrait = null)
         {
-            if (database == null || warrior.Soul.Memory == null) return;
+            // Особенности (Traits, 26.11) — из кода, а не из ассета: база перков теряла действия
+            // при сохранении (ActionType? Unity не пишет), и в игре не работал ни один перк.
+            if (warrior?.Soul?.Memory == null) return;
+            Traits.PlaceHas ??= LocationManager.HasTag;
+            Traits.Apply(scores, warrior.Soul.Memory.NarrativePerks, context, mutedTrait);
+
+            if (database == null) return;
             if (warrior.Soul.Memory.NarrativePerks == null) return;
 
             foreach (var activePerk in warrior.Soul.Memory.NarrativePerks)
