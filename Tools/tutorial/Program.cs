@@ -436,8 +436,12 @@ internal static class Program
               courtSource.Contains("The original vote and original cause are authoritative.") &&
               courtSource.Contains("if (originalVotes == null && !d.Weighed &&"),
             "no extra court prompt in the dream; recorded votes are never reweighed");
-        Check(preferencesSource.Contains("CourtChoiceMade => PlayerPrefs.GetInt(CourtChoiceKey, 0) != 0") &&
-              preferencesSource.Contains("PlayerPrefs.SetInt(CourtChoiceKey, 1);") &&
+        // Both pre-storage-migration and Prefs-backed branches must use
+        // the same backend for reading and recording the consent.
+        bool courtChoiceBackend = new[] { "PlayerPrefs", "Sinbinder.Core.Prefs" }.Any(backend =>
+            preferencesSource.Contains("CourtChoiceMade => " + backend + ".GetInt(CourtChoiceKey, 0) != 0") &&
+            preferencesSource.Contains(backend + ".SetInt(CourtChoiceKey, 1);"));
+        Check(courtChoiceBackend &&
               preferencesSource.Contains("public static void SetAutomaticCourt(bool enabled)") &&
               preferencesSource.Contains("ToggleCourt() => SetAutomaticCourt(!Court)"),
             "choice persists and the pause-menu toggle is the same preference");
