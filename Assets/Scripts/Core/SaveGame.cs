@@ -38,6 +38,8 @@ namespace Sinbinder.Core
         public int Gender;
         public int Trade;
         public string Title;
+        // Missing in legacy saves: no known kinship, not an inferred relative.
+        public string Kin;
     }
 
     /// <summary>Запись отряда, как она ложится в файл.</summary>
