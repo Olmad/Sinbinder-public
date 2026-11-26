@@ -115,7 +115,7 @@ namespace Sinbinder.Core
             }
 
             var taken = new SoulData(source.Name, source.Moral, source.Level,
-                                     spectra, memory, source.Gender);
+                                     spectra, memory, source.Gender, personId: source.PersonId);
 
             // Пол и ремесло жатва теряла: конструктор их не берёт, пол
             // по умолчанию мужской, ремесло — никакое. Поднятая заново
