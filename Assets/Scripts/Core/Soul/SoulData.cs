@@ -1,5 +1,7 @@
 // Перевод: текст через Loc
 using UnityEngine;
+using System.Collections.Generic;
+using Sinbinder.AOS;
 
 namespace Sinbinder.Core
 {
@@ -109,6 +111,37 @@ namespace Sinbinder.Core
         public int Level => _level;
         public MemorySeed Memory => _memory;
         public bool HasMemory => _memory != null && !string.IsNullOrEmpty(_memory.Story);
+
+        // Unbound soul carries its own experienced events, separately from
+        // the innate biography. Ages are anchored to the current game clock.
+        // This payload is not a second active ledger.
+        private List<SavedMemory> _pastMemories;
+        private float _pastMemoryClock;
+
+        internal void SetPastMemories(IEnumerable<SavedMemory> records, float now)
+        {
+            _pastMemories = new List<SavedMemory>();
+            _pastMemoryClock = now;
+            if (records == null) return;
+            foreach (var record in records)
+                if (record != null && record.IsValidForTransfer())
+                    _pastMemories.Add(record.CopyAtAge(0f));
+        }
+
+        internal List<SavedMemory> PastMemoriesAt(float now, string newOwner = null)
+        {
+            var result = new List<SavedMemory>();
+            if (_pastMemories == null) return result;
+            float elapsed = System.Math.Max(0f, now - _pastMemoryClock);
+            foreach (var record in _pastMemories)
+            {
+                var copy = record.CopyAtAge(elapsed, newOwner);
+                if (copy.IsValidForTransfer()) result.Add(copy);
+            }
+            return result;
+        }
+
+        internal void ClearPastMemories() => _pastMemories = null;
 
         // ---------- спектры ----------
 
