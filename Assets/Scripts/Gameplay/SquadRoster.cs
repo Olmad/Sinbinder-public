@@ -34,6 +34,9 @@ namespace Sinbinder.Gameplay
             public MoralType Moral;
             public Gender Gender;
             public float Intensity;
+            // Null is legacy/new unbound data, not a captured neutral soul.
+            public float[] SoulSpectra;
+            public int SoulLevel;
             public float Loyalty;
             // 0 is old save / no recorded wounds; interpreted as full health.
             public float HealthFraction;
@@ -586,6 +589,8 @@ namespace Sinbinder.Gameplay
             member.Sin = w.Soul.Sin;
             member.Moral = w.Soul.Moral;
             member.Intensity = w.Soul.Get(w.Soul.Sin);
+            member.SoulSpectra = w.Soul.CopySpectra();
+            member.SoulLevel = w.Soul.Level;
             member.Seed = MemorySeed.Copy(w.Soul.Memory);
             member.SeedCaptured = true;
             member.IsAway = false;
