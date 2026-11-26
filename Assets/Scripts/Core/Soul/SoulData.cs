@@ -280,6 +280,28 @@ namespace Sinbinder.Core
             return snapshot;
         }
 
+        // Restore the same bound instance, not a new shell or person.
+        // Other AOS modules may retain references to this object.
+        internal bool MatchesBoundIdentity(string soulId, string personId)
+            => !string.IsNullOrEmpty(soulId) && Id == soulId &&
+               PersonId == (string.IsNullOrEmpty(personId) ? soulId : personId);
+
+        internal bool RestoreBoundPersonality(SoulData saved, bool restoreSeed)
+        {
+            if (saved == null || !MatchesBoundIdentity(saved.Id, saved.PersonId) ||
+                !IsValidRosterSpectra(saved._spectra)) return false;
+            _spectra = saved.CopySpectra();
+            _sinType = (int)saved.Sin;
+            _sinIntensity = saved.SinIntensity;
+            _moralType = saved._moralType;
+            _gender = saved._gender;
+            _level = saved._level;
+            _trade = saved._trade;
+            _kin = saved.Kin;
+            if (restoreSeed) _memory = MemorySeed.Copy(saved.Memory);
+            return true;
+        }
+
         // ---------- создание ----------
 
         /// <summary>Душа с одним выраженным грехом. Прежняя сигнатура.</summary>
