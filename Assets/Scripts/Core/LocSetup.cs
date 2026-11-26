@@ -36,7 +36,7 @@ namespace Sinbinder.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Load()
         {
-            string code = PlayerPrefs.GetString(Key, Default());
+            string code = Sinbinder.Core.Prefs.GetString(Key, Default());
             Apply(code, remember: false);
         }
 
@@ -93,8 +93,8 @@ namespace Sinbinder.Core
             }
 
             if (!remember) return;
-            PlayerPrefs.SetString(Key, code);
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetString(Key, code);
+            Sinbinder.Core.Prefs.Save();
         }
     }
 }

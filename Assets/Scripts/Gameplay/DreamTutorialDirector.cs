@@ -433,8 +433,8 @@ namespace Sinbinder.Gameplay
             // может выглядеть скриптово»; «разные души повышают заметность AOS
             // при переигровке»). Без жребия: по счёту снов на этом ПК.
             // Неизменен только факт сцены — эти двое его убили.
-            int dreams = PlayerPrefs.GetInt(DreamsKey, 0);
-            PlayerPrefs.SetInt(DreamsKey, dreams + 1);
+            int dreams = Sinbinder.Core.Prefs.GetInt(DreamsKey, 0);
+            Sinbinder.Core.Prefs.SetInt(DreamsKey, dreams + 1);
             _tutorialSeed = 4242 + dreams * 7919;
             _dreamNo = dreams + 1;
             RefusalResult = null;
@@ -672,7 +672,7 @@ namespace Sinbinder.Gameplay
             {
                 var lines = new List<string> { $"Сон №{_dreamNo}, {System.DateTime.Now:dd.MM.yyyy HH:mm}" };
                 lines.AddRange(_timeline);
-                System.IO.File.WriteAllLines(System.IO.Path.Combine(Application.persistentDataPath, "dream-timeline.txt"), lines);
+                System.IO.File.WriteAllLines(System.IO.Path.Combine(Core.DataFolder.Root, "dream-timeline.txt"), lines);
             }
             catch (System.Exception e) { Debug.LogWarning("[СОН T] хронометраж не записан: " + e.Message); }
         }

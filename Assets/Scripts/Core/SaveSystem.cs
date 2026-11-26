@@ -45,7 +45,7 @@ namespace Sinbinder.Core
         public static readonly string Bound = Loc.N("с обязательством");   // имя файла; показ — Loc.T
 
         private static string Folder =>
-            Path.Combine(Application.persistentDataPath, "saves");
+            Path.Combine(DataFolder.Root, "saves");   // редактор — на D у Claude, сборка — на ПК (DataFolder)
 
         /// <summary>Путь к гнезду по имени.</summary>
         public static string PathOf(string slot)

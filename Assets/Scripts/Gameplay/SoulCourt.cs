@@ -69,7 +69,7 @@ namespace Sinbinder.Gameplay
         /// себя целиком (компас, весы, тринадцать судей); после него суды по делу идут
         /// коротко: приказ, голоса, вердикт. Иначе загрузка записи снова учила бы три минуты.
         /// </summary>
-        public static bool Seen => Completed > 0 || PlayerPrefs.GetInt(SeenKey, 0) != 0;
+        public static bool Seen => Completed > 0 || Sinbinder.Core.Prefs.GetInt(SeenKey, 0) != 0;
 
         /// <summary>Какие голоса уже решали суд на глазах у игрока: новый — интереснее.</summary>
         private static readonly HashSet<string> Decided = new();
@@ -1017,7 +1017,7 @@ namespace Sinbinder.Gameplay
 
             // 6. Назад, в мир.
             Step = "exit";
-            if (!shortly) { PlayerPrefs.SetInt(SeenKey, 1); PlayerPrefs.Save(); }
+            if (!shortly) { Sinbinder.Core.Prefs.SetInt(SeenKey, 1); Sinbinder.Core.Prefs.Save(); }
             Audio.DeathVoice.Quiet();
             if (Audio.Music.Current == Audio.Track.Court) Audio.Music.Play(before, 2.5f);
             yield return fader.To(1f, 0.6f);

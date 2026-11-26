@@ -154,11 +154,11 @@ namespace Sinbinder.Dev
         private void Save(int slot)
         {
             var t = _cam.transform;
-            PlayerPrefs.SetString(Key + slot, string.Join(";", new[]
+            Sinbinder.Core.Prefs.SetString(Key + slot, string.Join(";", new[]
             {
                 t.position.x, t.position.y, t.position.z, t.rotation.x, t.rotation.y, t.rotation.z, t.rotation.w, _cam.fieldOfView,
             }.Select3()));
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.Save();
             _helpUntil = Time.unscaledTime + 2f;
             _note = Loc.F("Камера {0} запомнена", slot);
         }
@@ -166,7 +166,7 @@ namespace Sinbinder.Dev
         private bool Load(int slot, out Vector3 pos, out Quaternion rot, out float fov)
         {
             pos = default; rot = Quaternion.identity; fov = 60f;
-            var s = PlayerPrefs.GetString(Key + slot, "");
+            var s = Sinbinder.Core.Prefs.GetString(Key + slot, "");
             var p = s.Split(';');
             if (p.Length != 8) return false;
             var f = new float[8];

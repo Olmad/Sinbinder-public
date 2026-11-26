@@ -218,6 +218,7 @@ namespace UnityEngine
         public static float Cos(float a) => MathF.Cos(a);
         public static float Sin(float a) => MathF.Sin(a);
         public static float Sqrt(float a) => MathF.Sqrt(a);
+        public static float Lerp(float a,float b,float t) => a+(b-a)*MathF.Max(0f,MathF.Min(1f,t));   // MapData v303 (StampHeight)
         public static float Round(float a) => MathF.Round(a);
         public static int RoundToInt(float a) => (int)MathF.Round(a);
         public static float Clamp(float v,float min,float max)=> MathF.Max(min,MathF.Min(max,v));

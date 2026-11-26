@@ -127,8 +127,8 @@ namespace Sinbinder.Gameplay
             // Подлокации с жителями — ничьими (Residents). Каждая партия — новые люди (автор, 28.10:
             // «каждый воин должен генерироваться по новой каждую игру»): номер партии растёт с каждой
             // игрой и входит в формулу — без жребия, и в сетевой партии хозяин передаст его всем.
-            Match = PlayerPrefs.GetInt(MatchKey, 0) + 1;
-            PlayerPrefs.SetInt(MatchKey, Match);
+            Match = Sinbinder.Core.Prefs.GetInt(MatchKey, 0) + 1;
+            Sinbinder.Core.Prefs.SetInt(MatchKey, Match);
             // «-tugMatch 7» — номер партии задан (замер «стиль против стиля» на одних и тех же людях;
             // в сети его так же передаст хозяин).
             var given = System.Environment.GetCommandLineArgs();

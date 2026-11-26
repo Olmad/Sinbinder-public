@@ -68,8 +68,8 @@ namespace Sinbinder.Core
 
             // Отсутствие сохранённого выбора — событие, а не ноль: берём
             // то, что выставлено в сцене, а не молчаливую нулевую ступень.
-            if (_remember && PlayerPrefs.HasKey(Key))
-                wanted = (Clarity)PlayerPrefs.GetInt(Key, (int)_level);
+            if (_remember && Sinbinder.Core.Prefs.HasKey(Key))
+                wanted = (Clarity)Sinbinder.Core.Prefs.GetInt(Key, (int)_level);
 
             var got = Transparency.Set(wanted);
 
@@ -78,10 +78,10 @@ namespace Sinbinder.Core
             // загрузкой. Сам набор восстанавливаем всегда, а включаем
             // только если игрок на нём и остановился: «набор есть»
             // и «смотрим набор» — разные вещи.
-            if (_remember && PlayerPrefs.GetInt(CustomKey, -1) >= 0)
+            if (_remember && Sinbinder.Core.Prefs.GetInt(CustomKey, -1) >= 0)
             {
-                Transparency.SetCustom((Detail)PlayerPrefs.GetInt(CustomKey, 0));
-                if (PlayerPrefs.GetInt(CustomOnKey, 0) == 0) Transparency.Set(got);
+                Transparency.SetCustom((Detail)Sinbinder.Core.Prefs.GetInt(CustomKey, 0));
+                if (Sinbinder.Core.Prefs.GetInt(CustomOnKey, 0) == 0) Transparency.Set(got);
             }
 
             if (got != wanted)
@@ -100,9 +100,9 @@ namespace Sinbinder.Core
 
             if (_remember)
             {
-                PlayerPrefs.SetInt(Key, (int)got);
-                PlayerPrefs.SetInt(CustomOnKey, 0);
-                PlayerPrefs.Save();
+                Sinbinder.Core.Prefs.SetInt(Key, (int)got);
+                Sinbinder.Core.Prefs.SetInt(CustomOnKey, 0);
+                Sinbinder.Core.Prefs.Save();
             }
 
             return got;
@@ -119,9 +119,9 @@ namespace Sinbinder.Core
 
             if (_remember)
             {
-                PlayerPrefs.SetInt(CustomKey, (int)got);
-                PlayerPrefs.SetInt(CustomOnKey, 1);
-                PlayerPrefs.Save();
+                Sinbinder.Core.Prefs.SetInt(CustomKey, (int)got);
+                Sinbinder.Core.Prefs.SetInt(CustomOnKey, 1);
+                Sinbinder.Core.Prefs.Save();
             }
 
             return got;
@@ -134,8 +134,8 @@ namespace Sinbinder.Core
 
             if (_remember)
             {
-                PlayerPrefs.SetInt(CustomOnKey, 1);
-                PlayerPrefs.Save();
+                Sinbinder.Core.Prefs.SetInt(CustomOnKey, 1);
+                Sinbinder.Core.Prefs.Save();
             }
 
             return true;

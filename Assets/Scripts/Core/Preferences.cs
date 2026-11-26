@@ -41,7 +41,7 @@ namespace Sinbinder.Core
         public static bool Court { get; private set; } = true;
 
         /// <summary>The player has already made the one-time tutorial choice.</summary>
-        public static bool CourtChoiceMade => PlayerPrefs.GetInt(CourtChoiceKey, 0) != 0;
+        public static bool CourtChoiceMade => Sinbinder.Core.Prefs.GetInt(CourtChoiceKey, 0) != 0;
 
         private const string CourtWalkKey = "sinbinder.court.walk";
 
@@ -95,19 +95,19 @@ namespace Sinbinder.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Load()
         {
-            SensitivityScale = PlayerPrefs.GetFloat(SensitivityKey, 1f);
-            MusicScale = PlayerPrefs.GetFloat(MusicKey, 1f);
-            Court = Application.isBatchMode || PlayerPrefs.GetInt(CourtKey, 1) != 0;
-            CourtWalk = PlayerPrefs.GetInt(CourtWalkKey, 1) != 0;
+            SensitivityScale = Sinbinder.Core.Prefs.GetFloat(SensitivityKey, 1f);
+            MusicScale = Sinbinder.Core.Prefs.GetFloat(MusicKey, 1f);
+            Court = Application.isBatchMode || Sinbinder.Core.Prefs.GetInt(CourtKey, 1) != 0;
+            CourtWalk = Sinbinder.Core.Prefs.GetInt(CourtWalkKey, 1) != 0;
 
-            LightGraphics = PlayerPrefs.HasKey(GraphicsKey)
-                ? PlayerPrefs.GetInt(GraphicsKey, 0) != 0
+            LightGraphics = Sinbinder.Core.Prefs.HasKey(GraphicsKey)
+                ? Sinbinder.Core.Prefs.GetInt(GraphicsKey, 0) != 0
                 : Integrated();
 
             // Отсутствие выбора — событие, а не ноль: не трогаем полный
             // экран вовсе, пока игрок не сказал своего.
-            if (PlayerPrefs.HasKey(FullscreenKey))
-                Screen.fullScreen = PlayerPrefs.GetInt(FullscreenKey, 1) != 0;
+            if (Sinbinder.Core.Prefs.HasKey(FullscreenKey))
+                Screen.fullScreen = Sinbinder.Core.Prefs.GetInt(FullscreenKey, 1) != 0;
         }
 
         /// <summary>
@@ -136,8 +136,8 @@ namespace Sinbinder.Core
             else
                 Screen.SetResolution(display.width * 3 / 4, display.height * 3 / 4, FullScreenMode.Windowed);
 
-            PlayerPrefs.SetInt(FullscreenKey, full ? 1 : 0);
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetInt(FullscreenKey, full ? 1 : 0);
+            Sinbinder.Core.Prefs.Save();
         }
 
         public static string SensitivityName()
@@ -162,8 +162,8 @@ namespace Sinbinder.Core
                 if (Mathf.Approximately(Steps[i].Scale, SensitivityScale)) { at = i; break; }
 
             SensitivityScale = Steps[(at + 1) % Steps.Length].Scale;
-            PlayerPrefs.SetFloat(SensitivityKey, SensitivityScale);
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetFloat(SensitivityKey, SensitivityScale);
+            Sinbinder.Core.Prefs.Save();
         }
 
         public static string MusicName()
@@ -182,8 +182,8 @@ namespace Sinbinder.Core
                 if (Mathf.Approximately(MusicSteps[i].Scale, MusicScale)) { at = i; break; }
 
             MusicScale = MusicSteps[(at + 1) % MusicSteps.Length].Scale;
-            PlayerPrefs.SetFloat(MusicKey, MusicScale);
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetFloat(MusicKey, MusicScale);
+            Sinbinder.Core.Prefs.Save();
         }
 
         public static string CourtName() => Court ? Loc.T("по делу") : Loc.T("нет");
@@ -191,9 +191,9 @@ namespace Sinbinder.Core
         public static void SetAutomaticCourt(bool enabled)
         {
             Court = enabled;
-            PlayerPrefs.SetInt(CourtKey, enabled ? 1 : 0);
-            PlayerPrefs.SetInt(CourtChoiceKey, 1);
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetInt(CourtKey, enabled ? 1 : 0);
+            Sinbinder.Core.Prefs.SetInt(CourtChoiceKey, 1);
+            Sinbinder.Core.Prefs.Save();
         }
 
         public static void ToggleCourt() => SetAutomaticCourt(!Court);
@@ -203,8 +203,8 @@ namespace Sinbinder.Core
         public static void ToggleCourtWalk()
         {
             CourtWalk = !CourtWalk;
-            PlayerPrefs.SetInt(CourtWalkKey, CourtWalk ? 1 : 0);
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetInt(CourtWalkKey, CourtWalk ? 1 : 0);
+            Sinbinder.Core.Prefs.Save();
         }
 
         /// <summary>Набор графики — с 21 октября по пунктам (<see cref="GraphicsOptions"/>).</summary>
@@ -215,8 +215,8 @@ namespace Sinbinder.Core
         {
             GraphicsOptions.CyclePreset();
             LightGraphics = GraphicsOptions.IsLight;
-            PlayerPrefs.SetInt(GraphicsKey, LightGraphics ? 1 : 0);
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetInt(GraphicsKey, LightGraphics ? 1 : 0);
+            Sinbinder.Core.Prefs.Save();
         }
 
         /// <summary>

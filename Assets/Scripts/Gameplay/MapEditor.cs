@@ -141,7 +141,7 @@ namespace Sinbinder.Gameplay
         private float _nextDraftAt;
         private bool _draftWriteFailed;
 
-        private static string DraftRoot => Path.Combine(Application.persistentDataPath, "WorldForgeDrafts");
+        private static string DraftRoot => Path.Combine(Sinbinder.Core.DataFolder.Root, "WorldForgeDrafts");
         private string _savedSnapshot;
         private const float InspectorWidth = 300f;
         private const float ToolbarHeight = 44f;

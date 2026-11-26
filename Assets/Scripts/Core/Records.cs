@@ -72,7 +72,7 @@ namespace Sinbinder.Core
             {
                 if (_have != null) return _have;
                 _have = new HashSet<string>();
-                foreach (var id in PlayerPrefs.GetString(Key, "").Split(','))
+                foreach (var id in Sinbinder.Core.Prefs.GetString(Key, "").Split(','))
                     if (!string.IsNullOrEmpty(id)) _have.Add(id);
                 return _have;
             }
@@ -146,15 +146,15 @@ namespace Sinbinder.Core
             foreach (var r in All)
                 if (r.How == Way.Hidden && Have.Remove(r.Id)) changed = true;
             if (!changed) return;
-            PlayerPrefs.SetString(Key, string.Join(",", Have));
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetString(Key, string.Join(",", Have));
+            Sinbinder.Core.Prefs.Save();
         }
 
         public static bool Open(Record r)
         {
             if (r == null || !Have.Add(r.Id)) return false;
-            PlayerPrefs.SetString(Key, string.Join(",", Have));
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetString(Key, string.Join(",", Have));
+            Sinbinder.Core.Prefs.Save();
             Opened?.Invoke(r);
             return true;
         }

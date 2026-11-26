@@ -28,7 +28,7 @@ namespace Sinbinder.Core
         /// Чёткость. С 26.10 — и пиксельная (автор: «добавить пикселизацию — это бы
         /// позволило запустить игру даже на картошке»): мир в половине и в трети
         /// разрешения, растянут без сглаживания — крупным пикселем; интерфейс чёткий.
-        /// Дописано в конец: число лежит в PlayerPrefs.
+        /// Дописано в конец: число лежит в Sinbinder.Core.Prefs.
         /// </summary>
         public enum Sharpness { Full, High, Medium, Pixel, BigPixel }
 
@@ -103,24 +103,24 @@ namespace Sinbinder.Core
             // Луна — своя, не из набора: читается до раннего выхода ниже.
             // По умолчанию — низкий, пока кадр не уложен в 60 (автор, 26.10: «у нас и сейчас
             // огромные проблемы с производительностью»); выше — сам, в паузе.
-            Moon = (MoonLevel)PlayerPrefs.GetInt(Key + "moon", (int)MoonLevel.Low);
-            Adapt = PlayerPrefs.GetInt(Key + "adapt", 1) != 0;
+            Moon = (MoonLevel)Sinbinder.Core.Prefs.GetInt(Key + "moon", (int)MoonLevel.Low);
+            Adapt = Sinbinder.Core.Prefs.GetInt(Key + "adapt", 1) != 0;
 
-            if (!PlayerPrefs.HasKey(Key + "shadows"))
+            if (!Sinbinder.Core.Prefs.HasKey(Key + "shadows"))
             {
-                bool light = PlayerPrefs.HasKey("sinbinder.graphics.light")
-                    ? PlayerPrefs.GetInt("sinbinder.graphics.light", 0) != 0
+                bool light = Sinbinder.Core.Prefs.HasKey("sinbinder.graphics.light")
+                    ? Sinbinder.Core.Prefs.GetInt("sinbinder.graphics.light", 0) != 0
                     : Preferences.Integrated();
                 if (light) Light(); else Full();
                 return;
             }
 
-            Shadows = (ShadowMode)PlayerPrefs.GetInt(Key + "shadows", (int)ShadowMode.Soft);
-            Occlusion = PlayerPrefs.GetInt(Key + "ao", 1) != 0;
-            Antialias = (Smoothing)PlayerPrefs.GetInt(Key + "aa", (int)Smoothing.Sharp);
-            Detail = (Sharpness)PlayerPrefs.GetInt(Key + "scale", (int)Sharpness.Full);
-            Grain = PlayerPrefs.GetInt(Key + "grain", 1) != 0;
-            Frames = (FrameCap)PlayerPrefs.GetInt(Key + "fps", (int)FrameCap.Sixty);
+            Shadows = (ShadowMode)Sinbinder.Core.Prefs.GetInt(Key + "shadows", (int)ShadowMode.Soft);
+            Occlusion = Sinbinder.Core.Prefs.GetInt(Key + "ao", 1) != 0;
+            Antialias = (Smoothing)Sinbinder.Core.Prefs.GetInt(Key + "aa", (int)Smoothing.Sharp);
+            Detail = (Sharpness)Sinbinder.Core.Prefs.GetInt(Key + "scale", (int)Sharpness.Full);
+            Grain = Sinbinder.Core.Prefs.GetInt(Key + "grain", 1) != 0;
+            Frames = (FrameCap)Sinbinder.Core.Prefs.GetInt(Key + "fps", (int)FrameCap.Sixty);
         }
 
         // ---------------------------------------------------------- наборы
@@ -209,15 +209,15 @@ namespace Sinbinder.Core
 
         private static void Save()
         {
-            PlayerPrefs.SetInt(Key + "shadows", (int)Shadows);
-            PlayerPrefs.SetInt(Key + "ao", Occlusion ? 1 : 0);
-            PlayerPrefs.SetInt(Key + "aa", (int)Antialias);
-            PlayerPrefs.SetInt(Key + "scale", (int)Detail);
-            PlayerPrefs.SetInt(Key + "grain", Grain ? 1 : 0);
-            PlayerPrefs.SetInt(Key + "fps", (int)Frames);
-            PlayerPrefs.SetInt(Key + "moon", (int)Moon);
-            PlayerPrefs.SetInt(Key + "adapt", Adapt ? 1 : 0);
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetInt(Key + "shadows", (int)Shadows);
+            Sinbinder.Core.Prefs.SetInt(Key + "ao", Occlusion ? 1 : 0);
+            Sinbinder.Core.Prefs.SetInt(Key + "aa", (int)Antialias);
+            Sinbinder.Core.Prefs.SetInt(Key + "scale", (int)Detail);
+            Sinbinder.Core.Prefs.SetInt(Key + "grain", Grain ? 1 : 0);
+            Sinbinder.Core.Prefs.SetInt(Key + "fps", (int)Frames);
+            Sinbinder.Core.Prefs.SetInt(Key + "moon", (int)Moon);
+            Sinbinder.Core.Prefs.SetInt(Key + "adapt", Adapt ? 1 : 0);
+            Sinbinder.Core.Prefs.Save();
             FrameBudget.Apply();
         }
 

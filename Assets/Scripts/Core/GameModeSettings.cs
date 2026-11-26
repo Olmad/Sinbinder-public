@@ -37,8 +37,8 @@ namespace Sinbinder.Core
 
         void Awake()
         {
-            bool wanted = _remember && PlayerPrefs.HasKey(Key)
-                        ? PlayerPrefs.GetInt(Key) != 0
+            bool wanted = _remember && Sinbinder.Core.Prefs.HasKey(Key)
+                        ? Sinbinder.Core.Prefs.GetInt(Key) != 0
                         : _commitment;
 
             Commitment.Set(wanted);
@@ -57,8 +57,8 @@ namespace Sinbinder.Core
 
             if (!_remember) return;
 
-            PlayerPrefs.SetInt(Key, commitment ? 1 : 0);
-            PlayerPrefs.Save();
+            Sinbinder.Core.Prefs.SetInt(Key, commitment ? 1 : 0);
+            Sinbinder.Core.Prefs.Save();
         }
     }
 }

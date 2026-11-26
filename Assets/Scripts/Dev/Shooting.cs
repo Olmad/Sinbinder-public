@@ -258,7 +258,7 @@ namespace Sinbinder.Dev
                 t.rotation.x.ToString(c), t.rotation.y.ToString(c), t.rotation.z.ToString(c),
                 t.rotation.w.ToString(c), _camera.fieldOfView.ToString(c));
 
-            try { PlayerPrefs.SetString(SlotKey(i), value); PlayerPrefs.Save(); }
+            try { Sinbinder.Core.Prefs.SetString(SlotKey(i), value); Sinbinder.Core.Prefs.Save(); }
             catch (System.Exception e) { Debug.LogWarning("[СЪЁМКА] Точку не записать: " + e.Message); }
 
             Debug.Log($"[СЪЁМКА] Камера {i} запомнена.");
@@ -267,7 +267,7 @@ namespace Sinbinder.Dev
         private void Recall(int i, bool smooth)
         {
             string value;
-            try { value = PlayerPrefs.GetString(SlotKey(i), ""); }
+            try { value = Sinbinder.Core.Prefs.GetString(SlotKey(i), ""); }
             catch { value = ""; }
 
             var parts = value.Split(';');

@@ -67,7 +67,7 @@ namespace Sinbinder.UI
             if (_instance == null) return;
             _instance._open = !_instance._open;
             _instance._peekUntil = 0f;
-            try { PlayerPrefs.SetInt(_instance.PrefKey, _instance._open ? 1 : 0); } catch { }
+            try { Sinbinder.Core.Prefs.SetInt(_instance.PrefKey, _instance._open ? 1 : 0); } catch { }
         }
 
         private Canvas _canvas;
@@ -155,7 +155,7 @@ namespace Sinbinder.UI
             {
                 _openFor = key;
                 int saved = -1;
-                try { saved = PlayerPrefs.GetInt(key, -1); } catch { }
+                try { saved = Sinbinder.Core.Prefs.GetInt(key, -1); } catch { }
                 _open = saved < 0 ? Large() : saved == 1;
                 _slide = _open ? 1f : 0f;
                 _title.text = Place();

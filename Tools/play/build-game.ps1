@@ -134,12 +134,36 @@ foreach ($file in $sourceFiles) {
 # Only mark a build accepted after Unity, robocopy and output validation.
 [System.IO.File]::WriteAllText($buildMarker, [DateTime]::UtcNow.ToString('o'))
 Copy-Item -LiteralPath $buildMarker -Destination (Join-Path $dest '.sinbinder-author-build.txt') -Force
+# «Играть.cmd» (автор, 26.11: «на рабочем ПК ничего не должно сохраняться»). Записи и настройки игра на рабочем
+# ПК сама пишет на флешку (Core/DataFolder: рабочие ПК — в <диск>\Claude\рабочие-пк.txt). Но движок Unity пишет
+# свой журнал (Player.log) в папку ПК и служебные ключи (размер окна и т. п.) в реестр. Этот запуск на рабочем
+# ПК кладёт журнал на флешку, ждёт выхода из игры и стирает за движком реестр и папку. На других ПК — обычный
+# запуск: там записи игры лежат как раз в этой папке и реестре.
+$launcher = @'
+@echo off
+chcp 65001 >nul
+set "LIST=%~d0\Claude\рабочие-пк.txt"
+set "WORK="
+if exist "%LIST%" findstr /i /b /c:"%COMPUTERNAME%" "%LIST%" >nul && set "WORK=1"
+if not defined WORK (
+  start "" "%~dp0Sinbinder.exe"
+  exit /b
+)
+set "LOGDIR=%~d0\Claude\Сохранения Sinbinder\сборка"
+if not exist "%LOGDIR%" mkdir "%LOGDIR%"
+"%~dp0Sinbinder.exe" -logFile "%LOGDIR%\Player.log"
+reg delete "HKCU\Software\DefaultCompany\Sinbinder" /f >nul 2>&1
+rmdir /s /q "%USERPROFILE%\AppData\LocalLow\DefaultCompany\Sinbinder" >nul 2>&1
+rmdir "%USERPROFILE%\AppData\LocalLow\DefaultCompany" >nul 2>&1
+'@
+[System.IO.File]::WriteAllText((Join-Path $dest 'Играть.cmd'), $launcher.Replace("`r`n", "`n").Replace("`n", "`r`n"), (New-Object System.Text.UTF8Encoding($false)))
 $size = [int]((Get-ChildItem $dest -Recurse | Measure-Object Length -Sum).Sum / 1MB)
 $took = [math]::Round(((Get-Date) - $start).TotalMinutes, 1)
 
 Write-Host ''
 Write-Host "Готово за $took мин, $size МБ." -ForegroundColor Green
 Write-Host "Игра: $dest\Sinbinder.exe"
+Write-Host "На рабочем ПК запускай «Играть.cmd» — тогда и журнал Unity пишется на флешку, а не на ПК."
 Write-Host ''
 Start-Process explorer.exe $dest
 Read-Host 'Нажми Enter, чтобы закрыть'
