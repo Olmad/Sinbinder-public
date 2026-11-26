@@ -27,6 +27,10 @@ namespace Sinbinder.Gameplay
         public int ClearedAt = -1;
         /// <summary>0 — свои хозяева места; 1 — дозор Ордена занял разграбленную часовню.</summary>
         public int Occupant;
+        /// <summary>История обоза (CaravanStories): выбирается при первом приходе, -1 — ещё не выбрана.</summary>
+        public int Story = -1;
+        /// <summary>Обоз отдал долю без боя — и уехал с остальным.</summary>
+        public bool Tolled;
     }
 
     public sealed class PersonalExpedition : MonoBehaviour
@@ -88,7 +92,8 @@ namespace Sinbinder.Gameplay
                   CaravanAssaulted=state.CaravanAssaulted,
                   SecretTaken=state.SecretTaken,
                   Visits=state.Visits,
-                  LeftAt=state.LeftAt, ClearedAt=state.ClearedAt, Occupant=state.Occupant });
+                  LeftAt=state.LeftAt, ClearedAt=state.ClearedAt, Occupant=state.Occupant,
+                  Story=state.Story, Tolled=state.Tolled });
             return list;
         }
 
@@ -213,6 +218,9 @@ namespace Sinbinder.Gameplay
                visit._state.EnemiesRemaining<mission.Guards &&
                !visit._state.CaravanPassed && !visit._state.CargoTaken)
                 visit._state.CaravanAssaulted=true;
+            // Своя история у каждого обоза — на эту игру (CaravanStories); в сохранении — та же.
+            if(plan.Kind==ExpeditionMapKind.SaltRoad && visit._state.Story<0)
+                visit._state.Story=UnityEngine.Random.Range(0,CaravanStories.Count);
 
             // Место не обновляется само (Survivors.OnReturn): та же ночь — те же раны;
             // разграбленную часовню через три похода занимает дозор Ордена — и журнал говорит почему.
@@ -317,8 +325,16 @@ namespace Sinbinder.Gameplay
                 bool tonight=state.LeftAt>=0 && Sorties.Count<=state.LeftAt;
                 lines.Add(tonight ? Loc.T("Вы ушли отсюда этой ночью: стража не успела залечить раны.")
                                   : Loc.T("Вы здесь уже были; с тех пор прошло время."));
-                if(state.CargoTaken && !state.CaravanPassed) lines.Add(Loc.T("Обоз разграблен — охрана ушла на дорогу."));
-                else if(state.CaravanPassed) lines.Add(Loc.T("Обоз вы пропустили с миром."));
+                // Последствие разговора у обоза — словами его истории (CaravanStories, черновик).
+                var story=plan.Kind==ExpeditionMapKind.SaltRoad && state.Story>=0 ? CaravanStories.Get(state.Story) : null;
+                if(state.CargoTaken && !state.CaravanPassed)
+                {
+                    if(story!=null) lines.Add(Loc.T(story.CardAttack));
+                    lines.Add(Loc.T("Обоз разграблен — охрана ушла на дорогу."));
+                }
+                else if(state.CaravanPassed)
+                    lines.Add(story==null ? Loc.T("Обоз вы пропустили с миром.")
+                        : Loc.T(state.Tolled && !string.IsNullOrEmpty(story.CardToll) ? story.CardToll : story.CardPass));
                 if(state.SecretTaken) lines.Add(Loc.T("Тайник взят."));
             }
             if(known.Exists(s => s.Reason=="order"))
@@ -340,7 +356,7 @@ namespace Sinbinder.Gameplay
         private SavedPersonalExpedition _state;
         private readonly List<Traveller> _travellers=new();
         private readonly List<Warrior> _guards=new();
-        private bool _exiting, _returnTactical, _caravanChoiceOpen;
+        private bool _exiting, _returnTactical;
         private string _notice="";
         private float _noticeUntil;
         private Night _night;
@@ -510,9 +526,20 @@ namespace Sinbinder.Gameplay
             if(_exiting || _plan==null) return;
             if(_combat==null && CombatManager.Instance!=null)
             { _combat=CombatManager.Instance; _combat.OnAnyDeath+=OnDeath; }
+            if(_talk!=Talk.Closed) { TalkKeys(); return; }
             if(Time.time<_nextLook) return;
             _nextLook=Time.time+0.5f;
             var hero=SinbinderPlayer.Exists ? SinbinderPlayer.Instance : null;
+            // Старший охраны окликает Греховода сам и выходит навстречу: разговор начинается с него.
+            var captain=Captain();
+            if(!_hailed && captain!=null && hero!=null && Dist(captain.transform.position,hero.transform.position)<HailReach)
+            {
+                _hailed=true;
+                string hail=Loc.T(Story.Hail);
+                UI.SpeechBubbles.Say(captain,hail,5f);
+                UnityEngine.Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F("{0}: «{1}»",Loc.Name(captain.DisplayName),hail));
+                captain.IssueCommand(CommandKind.Move,Vector3.MoveTowards(hero.transform.position,captain.transform.position,3f));
+            }
             foreach(var g in _guards)
             {
                 if(g==null || g.IsDead || !_met.TryGetValue(g,out var rec)) continue;
@@ -663,7 +690,6 @@ namespace Sinbinder.Gameplay
         }
 
         private Vector3 Gate => ExpeditionMapBuilder.Point(_plan,0f,_plan.EntranceZ);
-        private Vector3 CaravanDecisionPoint => ExpeditionMapBuilder.Point(_plan,0f,_plan.EntranceZ+19f);
         private Vector3 Objective => ExpeditionMapBuilder.Point(_plan,0f,_plan.GoalZ);
         private static float Dist(Vector3 a,Vector3 b)
         { a.y=0f; b.y=0f; return Vector3.Distance(a,b); }
@@ -682,45 +708,201 @@ namespace Sinbinder.Gameplay
             if (Dist(SinbinderPlayer.Where,expedition.Gate)<4f)
                 offer(Gaze.Miss(expedition.Gate+Vector3.up*1.4f,1.5f),
                     Loc.T("F — вернуться в склеп"), expedition.Exit);
-            if (expedition._plan.Kind==ExpeditionMapKind.SaltRoad &&
-                !expedition._state.CaravanPassed &&
-                !expedition._state.CargoTaken &&
-                !expedition._state.CaravanAssaulted &&
-                Dist(SinbinderPlayer.Where,expedition.CaravanDecisionPoint)<6f)
-                offer(Gaze.Miss(expedition.CaravanDecisionPoint+Vector3.up*1.4f,1.5f),
-                    Loc.T("F — решить судьбу обоза"),expedition.OpenCaravanChoice);
+            // Судьбу обоза решают в разговоре со старшим охраны, а не у столба на дороге (автор, 26.11).
+            var captain=expedition.Captain();
+            if (captain!=null && Dist(SinbinderPlayer.Where,captain.transform.position)<TalkReach)
+                offer(Gaze.Miss(captain.transform),
+                    Loc.F("F — говорить: {0}",Loc.Name(captain.DisplayName)),expedition.OpenCaravanChoice);
             if (Dist(SinbinderPlayer.Where,expedition.Objective)<4f)
                 offer(Gaze.Miss(expedition.Objective+Vector3.up*1.4f,1.5f),
                     Loc.T("F — исследовать цель"), expedition.CollectObjective);
         }
 
-        private void OpenCaravanChoice()
+        // ── Разговор у обоза (CaravanStories): выбор — в разговоре, как в «Ведьмаке 3» ──
+        // Автор, 26.11: «бой начинается с ничего, а отпускание безмолвное». Теперь старший охраны окликает
+        // Греховода, рассказывает, чьё серебро, отвечает на расспросы; бой начинается его репликой,
+        // отпущенный обоз прощается и уходит по дороге. Окно — то же, что в разговоре с воином (TalkView).
+
+        private const float TalkReach=6f, HailReach=18f;
+        private enum Talk { Closed, Open, Answer, Battle, Farewell, Toll }
+        private Talk _talk;
+        private int _answer=-1, _stamp;
+        private readonly HashSet<int> _asked=new();
+        private readonly List<UI.TalkView.Option> _options=new();
+        private Warrior _speaker;
+        private bool _framed, _hailed;
+
+        private CaravanStory Story => CaravanStories.Get(_state!=null ? _state.Story : 0);
+
+        /// <summary>Старший охраны нетронутого обоза — первый живой мирный страж.</summary>
+        private Warrior Captain()
         {
-            if (_exiting || _state.CaravanPassed || _state.CargoTaken ||
-                _state.CaravanAssaulted) return;
-            _caravanChoiceOpen=true;
+            if(_plan==null || _plan.Kind!=ExpeditionMapKind.SaltRoad || _state==null ||
+               _state.CaravanPassed || _state.CargoTaken || _state.CaravanAssaulted) return null;
+            foreach(var g in _guards) if(g!=null && !g.IsDead && g.Team==Team.Neutral) return g;
+            return null;
         }
 
-        private void ChooseCaravan(bool attack)
+        private int TollCoins() => Mathf.Max(1,Mathf.RoundToInt(MissionCatalog.Coin(_mission.Prize)*Story.TollShare));
+
+        private void OpenCaravanChoice()
         {
-            if (!_caravanChoiceOpen || _exiting || _state.CaravanPassed ||
-                _state.CargoTaken) return;
-            _caravanChoiceOpen=false;
-            if (attack)
+            var captain=Captain();
+            if (_exiting || captain==null || _talk!=Talk.Closed) return;
+            _speaker=captain;
+            _hailed=true;
+            _talk=Talk.Open;
+            _answer=-1;
+            var pause=Core.GamePauseController.Instance;
+            if(pause!=null && !pause.IsPaused) { pause.Pause(); _stamp=pause.Stamp; }
+            // Наезд на лицо — как в разговоре с воином (GearPanel.OpenMenu).
+            var cam=Dialogue.DialogueCameraController.Instance;
+            if(cam!=null && !cam.InDialogue)
+            {
+                cam.SaveCameraPosition();
+                cam.StartCoroutine(cam.FocusConversation(captain.transform,
+                    SinbinderPlayer.Exists ? SinbinderPlayer.Instance.transform : null, menu:true));
+                _framed=true;
+            }
+            ShowTalk();
+        }
+
+        private void AddOption(string text,string sub,System.Action act)
+            => _options.Add(new UI.TalkView.Option{Text=Loc.F("{0} · {1}",_options.Count+1,text),Sub=sub,Act=act});
+
+        private void ShowTalk()
+        {
+            var s=Story;
+            string line;
+            _options.Clear();
+            switch(_talk)
+            {
+                case Talk.Battle: line=s.AttackLine; AddOption(Loc.T("К бою"),null,EndTalk); break;
+                case Talk.Farewell: line=s.PassLine; AddOption(Loc.T("Уйти"),null,EndTalk); break;
+                case Talk.Toll: line=s.TollLine; AddOption(Loc.T("Взять долю и уйти"),null,EndTalk); break;
+                default:
+                    line=_talk==Talk.Answer && _answer>=0 && _answer<s.Questions.Length ? s.Questions[_answer].Answer : s.Opening;
+                    for(int i=0;i<s.Questions.Length;i++)
+                        if(!_asked.Contains(i)) { int q=i; AddOption(Loc.T(s.Questions[i].Ask),null,()=>Ask(q)); }
+                    if(!string.IsNullOrEmpty(s.TollAsk))
+                        AddOption(Loc.T(s.TollAsk),Loc.F("{0} без боя, остальное уедет",Grammar.Coins(TollCoins())),()=>Decide(Talk.Toll));
+                    AddOption(Loc.T(s.AttackAsk),Loc.T("бой с охраной — серебро ваше, если победите"),()=>Decide(Talk.Battle));
+                    AddOption(Loc.T(s.PassAsk),Loc.T("обоз уедет, добычи не будет"),()=>Decide(Talk.Farewell));
+                    _options.Add(new UI.TalkView.Option{Text=Loc.T("Esc · Пока не решать"),Act=CloseTalk});
+                    break;
+            }
+            string speaker=_speaker!=null ? Loc.Name(_speaker.DisplayName) : "";
+            string said=Loc.T(line);
+            UI.TalkView.Show(speaker,said,_options,Loc.T("Обоз · старший охраны"),_speaker);
+            UnityEngine.Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(Loc.F("{0}: «{1}»",speaker,said));
+        }
+
+        private void Ask(int question)
+        {
+            if(_talk!=Talk.Open && _talk!=Talk.Answer) return;
+            _asked.Add(question);
+            _answer=question;
+            _talk=Talk.Answer;
+            ShowTalk();
+        }
+
+        /// <summary>Решение сказано — старший отвечает; последствие наступает, когда разговор закрыт.</summary>
+        private void Decide(Talk outcome)
+        {
+            if(_talk!=Talk.Open && _talk!=Talk.Answer) return;
+            _talk=outcome;
+            ShowTalk();
+        }
+
+        private void EndTalk()
+        {
+            var outcome=_talk;
+            var captain=_speaker;
+            CloseTalk();
+            if(_exiting) return;
+            if(outcome==Talk.Battle)
             {
                 ProvokeCaravan();
-                Announce(Loc.T("Греховод приказал напасть. Охрана защищает обоз настоящим боем."));
-                return;
+                if(captain!=null && !captain.IsDead) UI.SpeechBubbles.Say(captain,Loc.T(Story.AttackLine),4f);
+                Announce(Loc.T("Охрана обоза защищает груз настоящим боем."));
             }
-            // LetThemPass is a real irreversible outcome, not a victory
-            // with invisible guards or an award of cargo on next visit.
+            else if(outcome==Talk.Farewell) LetCaravanGo(0);
+            else if(outcome==Talk.Toll) LetCaravanGo(TollCoins());
+        }
+
+        /// <summary>Закрыть разговор без решения (или после него): камера и пауза — как были.</summary>
+        private void CloseTalk()
+        {
+            if(_talk==Talk.Closed) return;
+            _talk=Talk.Closed;
+            UI.TalkView.Hide();
+            if(_framed)
+            {
+                _framed=false;
+                var cam=Dialogue.DialogueCameraController.Instance;
+                if(cam!=null) cam.StartCoroutine(cam.RestoreCamera());
+            }
+            var pause=Core.GamePauseController.Instance;
+            if(pause!=null && pause.IsPaused && pause.Stamp==_stamp) pause.Resume();
+        }
+
+        /// <summary>
+        /// Обоз уезжает — настоящий и необратимый исход: охрана уходит по дороге у всех на глазах,
+        /// серебра здесь больше нет. С долей — она в кошеле Греховода.
+        /// </summary>
+        private void LetCaravanGo(int coins)
+        {
+            if(_state.CaravanPassed || _state.CargoTaken) return;
             _state.CaravanPassed=true;
             _state.CargoTaken=true;
+            _state.Tolled=coins>0;
             _state.EnemiesRemaining=0;
+            var away=ExpeditionMapBuilder.Point(_plan,0f,_plan.Depth*0.5f-4f);
             foreach (var guard in _guards)
-                if (guard!=null) UnityEngine.Object.Destroy(guard.gameObject);
+            {
+                if (guard==null) continue;
+                if (!guard.IsDead) guard.IssueCommand(CommandKind.Move,away+new Vector3(UnityEngine.Random.Range(-3f,3f),0f,0f));
+                UnityEngine.Object.Destroy(guard.gameObject,12f);
+            }
             _guards.Clear();
-            Announce(Loc.T("Греховод пропустил обоз. Возчики увезли серебро; добычи не будет."));
+            if(coins>0)
+            {
+                var purse=Inventory.PlayerInventory.Instance;
+                if(purse!=null) purse.AddGold(coins);
+                Announce(Loc.F("Обоз отдал долю — {0} — и ушёл по дороге.",Grammar.Coins(coins)));
+            }
+            else Announce(Loc.T("Обоз ушёл по дороге. Добычи не будет."));
+        }
+
+        /// <summary>Проверке: что сейчас в разговоре у обоза — состояние, реплика старшего, ответы.</summary>
+        public static string TalkNow
+        {
+            get
+            {
+                if(_active==null) return "нет экспедиции";
+                var labels=new List<string>();
+                foreach(var o in _active._options) labels.Add(o.Text);
+                return $"{_active._talk}: {(_active._speaker!=null ? _active._speaker.DisplayName : "—")} | {string.Join(" / ",labels)}";
+            }
+        }
+
+        /// <summary>Проверке: ответ под номером — то же, что цифра или щелчок игрока.</summary>
+        public static bool TalkSay(int option)
+        {
+            if(_active==null || _active._talk==Talk.Closed || option<1 || option>_active._options.Count) return false;
+            var act=_active._options[option-1].Act;
+            if(act==null) return false;
+            act();
+            return true;
+        }
+
+        private void TalkKeys()
+        {
+            for(int i=0;i<9;i++)
+                if(Input.GetKeyDown(KeyCode.Alpha1+i) || Input.GetKeyDown(KeyCode.Keypad1+i)) { TalkSay(i+1); return; }
+            // F здесь не читаем: F — у общего выбора GearPanel (см. OfferInteractions).
+            bool closing=_talk==Talk.Battle || _talk==Talk.Farewell || _talk==Talk.Toll;
+            if(Input.GetKeyDown(KeyCode.Escape)) { if(closing) EndTalk(); else CloseTalk(); }
         }
 
         /// <summary>
@@ -737,7 +919,7 @@ namespace Sinbinder.Gameplay
                _state.CargoTaken || _state.CaravanAssaulted) return;
 
             _state.CaravanAssaulted=true;
-            _caravanChoiceOpen=false;
+            CloseTalk();
             foreach(var guard in _guards)
             {
                 if(guard==null || guard.IsDead) continue;
@@ -778,7 +960,9 @@ namespace Sinbinder.Gameplay
                !_state.CaravanPassed && !_state.CargoTaken &&
                !_state.CaravanAssaulted)
             {
-                OpenCaravanChoice();
+                var captain=Captain();
+                if(captain!=null && Dist(SinbinderPlayer.Where,captain.transform.position)<TalkReach) OpenCaravanChoice();
+                else Announce(Loc.T("Обоз под охраной. Сначала поговорите со старшим."));
                 return;
             }
             if(EnemiesLeft()>0)
@@ -825,39 +1009,22 @@ namespace Sinbinder.Gameplay
 
         private void OnGUI()
         {
-            if (_exiting || _plan==null || !SinbinderPlayer.Exists) return;
+            if (_exiting || _plan==null || !SinbinderPlayer.Exists || _talk!=Talk.Closed) return;
             var style=new GUIStyle(GUI.skin.box){alignment=TextAnchor.UpperLeft,wordWrap=true,fontSize=15};
+            var captain=Captain();
             string state=_plan.Kind==ExpeditionMapKind.SaltRoad
                 ? (_state.CaravanPassed ? Loc.T("Обоз пропущен, серебро увезли")
                     : _state.CargoTaken ? Loc.T("Серебро уже забрано")
                     : _state.CaravanAssaulted
                         ? Loc.T("Вы напали на обоз: охрана теперь враждебна")
-                        : Loc.T("Обоз не тронут. Охрана нейтральна, пока вы не нападёте"))
+                        : Loc.T("Обоз не тронут. Охрана не нападёт первой — поговорите со старшим"))
                 : (_state.SecretTaken ? Loc.T("Тайник изучен") : Loc.T("Осмотреть алтарь часовни"));
             string prompt=Dist(SinbinderPlayer.Where,Gate)<4f ? Loc.T("F — вернуться в склеп")
-                : _plan.Kind==ExpeditionMapKind.SaltRoad && !_state.CargoTaken &&
-                  !_state.CaravanAssaulted &&
-                  Dist(SinbinderPlayer.Where,CaravanDecisionPoint)<6f
-                    ? Loc.T("F — решить судьбу обоза")
+                : captain!=null && Dist(SinbinderPlayer.Where,captain.transform.position)<TalkReach
+                    ? Loc.F("F — говорить: {0}",Loc.Name(captain.DisplayName))
                 : Dist(SinbinderPlayer.Where,Objective)<4f ? Loc.T("F — исследовать цель")
                 : Loc.T("Следуйте к янтарному огню; бирюзовый огонь — путь назад.");
             string notice=Time.unscaledTime<_noticeUntil ? "\n"+_notice : "";
-            if (_caravanChoiceOpen)
-            {
-                float width=Mathf.Min(460f,Screen.width-24f);
-                var area=new Rect((Screen.width-width)*0.5f,
-                    Mathf.Max(8f,Screen.height*0.25f),width,178f);
-                GUI.Box(area,Loc.T("Соляной обоз. Возчики безоружны. Охрана готова защищать груз."));
-                if(GUI.Button(new Rect(area.x+12f,area.y+52f,width-24f,34f),
-                    Loc.T("Напасть на охрану и забрать серебро")))
-                    ChooseCaravan(true);
-                if(GUI.Button(new Rect(area.x+12f,area.y+94f,width-24f,34f),
-                    Loc.T("Пропустить обоз без добычи")))
-                    ChooseCaravan(false);
-                if(GUI.Button(new Rect(area.x+12f,area.y+136f,width-24f,30f),
-                    Loc.T("Пока не решать")))
-                    _caravanChoiceOpen=false;
-            }
             GUI.Box(new Rect(14f,Screen.height-138f,Mathf.Min(560f,Screen.width-28f),125f),
                 Loc.T(_plan.Title)+"\n"+state+Loc.F(" · живых стражей: {0}",EnemiesLeft())+
                 "\n"+prompt+notice,style);
@@ -873,8 +1040,8 @@ namespace Sinbinder.Gameplay
         private void Exit(bool commitResult)
         {
             if(_exiting) return;
+            CloseTalk();
             _exiting=true;
-            _caravanChoiceOpen=false;
             if (commitResult && _state != null)
                 _state.EnemiesRemaining=EnemiesLeft();
             if (commitResult && _plan != null) SettleSurvivors();

@@ -25,7 +25,10 @@ assert "_state.EnemiesRemaining=0;" in p
 assert "_state.CaravanAssaulted=true;" in p
 assert "CaravanAssaulted=state.CaravanAssaulted" in p
 assert "private void OpenCaravanChoice()" in p
-assert "private void ChooseCaravan(bool attack)" in p
+# 26.11 (автор: «выбор во время диалога, как в Ведьмаке 3»): окно с двумя кнопками заменено
+# разговором со старшим охраны (CaravanStories): решение — ответом, исход — когда разговор закрыт.
+assert "private void EndTalk()" in p and "private void LetCaravanGo(int coins)" in p
+assert "UI.TalkView.Show(" in p and "CaravanStories.Get(" in p
 # The caravan is a PLAYABLE choice, not a fake two-button dialogue
 # while hostile guards are already attacking the player. A returning hunter
 # has a separate reason to be hostile, even on a peaceful caravan route.
@@ -38,7 +41,7 @@ assert "w.Initialize(soul,shell,relations,false,disposition," in p
 assert "private void ProvokeCaravan()" in p
 assert "visit._state.EnemiesRemaining<mission.Guards" in p
 assert "Вы напали на обоз: охрана теперь враждебна" in p
-assert "Охрана нейтральна, пока вы не нападёте" in p
+assert "Охрана не нападёт первой" in p
 assert "guard.Team=Team.Enemy;" in p
 assert "CombatManager.Instance.UpdateTeam(body,Team.Enemy);" in p
 assert "public static void OnGuardAttacked(Warrior victim, GameObject attacker)" in p
@@ -50,7 +53,6 @@ assert "else RegisterEnemyUnit(unit);" in combat
 assert "public void RegisterEnemyUnit(Damageable unit) => Register(unit, _enemyUnits);" in combat
 assert "_state.CaravanPassed=true;" in p and "_state.CaravanAssaulted=true;" in p
 assert "expedition.OpenCaravanChoice" in p
-assert "GUI.Button(" in p
 assert "(_state.CargoTaken && !_state.CaravanPassed)" in p
 assert "if(_state.CaravanPassed)" in p
 assert "PersonalExpedition.Enter(_chosen" in ui
