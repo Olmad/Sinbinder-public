@@ -11,6 +11,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="AutoAttackTickChecks.cs" />
     <Compile Include="EmotionSaveChecks.cs" />
+    <Compile Include="WitnessGriefChecks.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/WitnessGrief.cs" Link="WitnessGrief.cs" />
     <Compile Include="SoulDescriptionChecks.cs" />
     <Compile Include="../../Assets/Scripts/Gameplay/OrderAdvice.cs" Link="OrderAdvice.cs" />
     <Compile Include="../../Assets/Scripts/Core/Loc.cs" Link="Loc.cs" />

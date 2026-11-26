@@ -203,6 +203,17 @@ namespace Sinbinder.AOS
     }
 
     internal sealed class AOSWarriorWrapper : MonoBehaviour { public void MarkStruck() { } }
+
+    internal enum EmotionType { Calm, Joy, Fear, Anger, Sadness, Disgust, Surprise, Hope }
+
+    // Records the feelings a hit produces (26.11: the fright below a third of health).
+    internal sealed class EmotionSystem
+    {
+        public static EmotionSystem Instance { get; set; }
+        public List<(Warrior Who, EmotionType Type, float Intensity)> Triggered { get; } = new();
+        public void TriggerEmotion(Warrior warrior, EmotionType type, float intensity) =>
+            Triggered.Add((warrior, type, intensity));
+    }
 }
 
 namespace Sinbinder.Audio

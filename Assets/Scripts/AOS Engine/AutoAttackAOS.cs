@@ -29,6 +29,14 @@ namespace Sinbinder.AOS
         private bool _hasPresentedRefusal;
         private uint _lastPresentedRefusalOrder;
 
+        // Новый приказ слышен сразу, а не на своём такте (26.11, полировка AOS по слову автора). До этого
+        // приказ ждал очередного такта решения — до целой секунды: послушный воин стоял, будто не слышал,
+        // и игрок не мог отличить «думает» от «не расслышал». Теперь — короткий вдох, свой у каждого
+        // (0,12–0,27 с по имени), чтобы отряд из двадцати не думал в один кадр. Сам такт для мира прежний.
+        private const float HearBeat = 0.12f, HearSpread = 0.15f;
+        private uint _heardOrder;
+        private float _hearDelay = HearBeat;
+
         void Awake()
         {
             _wrapper = GetComponent<AOSWarriorWrapper>();
@@ -42,6 +50,8 @@ namespace Sinbinder.AOS
             int stamp = 0;
             foreach (char c in gameObject.name) stamp = (stamp * 31 + c) & 0x7fffffff;
             _lastDecisionTime = Time.time - (stamp % 1000) / 1000f * _decisionInterval;
+            _hearDelay = HearBeat + (stamp % 97) / 96f * HearSpread;
+            _heardOrder = _warrior != null ? _warrior.CommandRevision : 0u;
         }
 
         void OnDisable()
@@ -64,6 +74,13 @@ namespace Sinbinder.AOS
             if (_self != null && _self.IsDead) return;
 
             if (_pausing || Time.deltaTime <= 0f) return;
+            uint order = _warrior != null ? _warrior.CommandRevision : 0u;
+            if (order != _heardOrder)
+            {
+                _heardOrder = order;
+                float soon = Time.time + _hearDelay - _decisionInterval;
+                if (_lastDecisionTime > soon) _lastDecisionTime = soon;
+            }
             if (Time.time - _lastDecisionTime < _decisionInterval) return;
             _lastDecisionTime = Time.time;
 

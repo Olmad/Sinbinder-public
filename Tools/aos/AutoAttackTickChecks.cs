@@ -53,6 +53,25 @@ internal static class AutoAttackTickChecks
         tick.ResumeCoroutine();
         check(mind.Executed.Count == 1 && mind.Executed[0] == ActionType.Flee,
             "the current order's action executes after its own refusal beat");
+
+        // 26.11: a new order is heard after a short beat, not on the next one-second tick.
+        (tick, mind, presenter, warrior) = ReadyTick();
+        mind.RefusesCommand = false;
+        Invoke(tick, "Update");                       // 11.00 — the regular tick
+        Time.time = 11.05f;
+        warrior.CommandRevision++;
+        Invoke(tick, "Update");
+        check(mind.DecisionCount == 1, "a new order is not decided in the very frame it is given");
+        Time.time = 11.20f;
+        Invoke(tick, "Update");
+        check(mind.DecisionCount == 2 && mind.Executed.Count == 2,
+            "a new order is decided within the hearing beat instead of waiting for the next second");
+        Time.time = 11.60f;
+        Invoke(tick, "Update");
+        check(mind.DecisionCount == 2, "without a new order the regular one-second tick is kept");
+        Time.time = 12.25f;
+        Invoke(tick, "Update");
+        check(mind.DecisionCount == 3, "the regular tick resumes a second after the heard order");
     }
 
     private static (AutoAttackAOS, AOSWarriorWrapper, RefusalPresenter, Warrior) ReadyTick()

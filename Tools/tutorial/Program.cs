@@ -423,8 +423,9 @@ internal static class Program
               courtSource.Contains("The original vote and original cause are authoritative.") &&
               courtSource.Contains("if (originalVotes == null && !d.Weighed &&"),
             "no extra court prompt in the dream; recorded votes are never reweighed");
-        Check(preferencesSource.Contains("CourtChoiceMade => PlayerPrefs.GetInt(CourtChoiceKey, 0) != 0") &&
-              preferencesSource.Contains("PlayerPrefs.SetInt(CourtChoiceKey, 1);") &&
+        // 26.11: settings go through Sinbinder.Core.Prefs (off the work PC, Core/DataFolder), not PlayerPrefs.
+        Check(preferencesSource.Contains("CourtChoiceMade => Sinbinder.Core.Prefs.GetInt(CourtChoiceKey, 0) != 0") &&
+              preferencesSource.Contains("Sinbinder.Core.Prefs.SetInt(CourtChoiceKey, 1);") &&
               preferencesSource.Contains("public static void SetAutomaticCourt(bool enabled)") &&
               preferencesSource.Contains("ToggleCourt() => SetAutomaticCourt(!Court)"),
             "choice persists and the pause-menu toggle is the same preference");

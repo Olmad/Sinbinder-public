@@ -127,6 +127,7 @@ internal static class Program
             "initial order identity remains usable");
         AutoAttackTickChecks.Run(Check);
         EmotionSaveChecks.Run(Check, adviceRoot);
+WitnessGriefChecks.Run(Check);
 
         Check(OrderIntegrity.ShouldPresentRefusal(false, 0u, 0u),
             "first refusal gets a visible pause");

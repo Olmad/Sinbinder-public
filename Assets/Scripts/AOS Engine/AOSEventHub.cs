@@ -84,8 +84,15 @@ namespace Sinbinder.AOS
                 float dist = Vector3.Distance(w.transform.position, victim.transform.position);
                 if (dist < 15f)
                 {
-                    EmotionSystem.Instance?.TriggerEmotion(w, EmotionType.Sadness, 0.4f);
-                    EmotionSystem.Instance?.TriggerEmotion(w, EmotionType.Anger, 0.3f);
+                    // Как принять гибель своего — от греха души (WitnessGrief, автор 26.11).
+                    var grief = WitnessGrief.For(w.Soul);
+                    var feel = EmotionSystem.Instance;
+                    if (feel != null)
+                    {
+                        if (grief.Sadness > 0f) feel.TriggerEmotion(w, EmotionType.Sadness, grief.Sadness);
+                        if (grief.Anger > 0f) feel.TriggerEmotion(w, EmotionType.Anger, grief.Anger);
+                        if (grief.Fear > 0f) feel.TriggerEmotion(w, EmotionType.Fear, grief.Fear);
+                    }
                     MemoryProcessor.Instance?.CreateMemory(w, "AllyDied", victim.Id, EmotionType.Sadness, 0.7f);
 
                     if (killerWarrior != null)

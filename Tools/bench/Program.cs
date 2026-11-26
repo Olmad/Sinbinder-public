@@ -962,9 +962,16 @@ static class Bench
         // что кто-то начал заводить анимацию на каждое умение, а их полсотни.
         // До 16 октября рамка стояла на шести и падала с 1 октября молча:
         // вывод стенда никто не читал целиком.
-        Check(contract.Length <= 8,
-              $"состояний стало {contract.Length}: рамка «пять анимаций, "
+        //
+        // 26.11: рамка мерила весь договор, а с 22.10 по 29.10 в него легли пять клипов сцен — сесть
+        // за карты, копать, вызов арьергарда, сбор души, балалайка (коммиты 11337db5…19dbab32). Это
+        // не «анимация на умение», а сцены, и с ними рамка падала месяц молча — вторично. Мерим то,
+        // ради чего она стоит: во сколько состояний сводятся решения AOS; клипы сцен — списком.
+        Check(used.Count <= 8,
+              $"решения разошлись на {used.Count} состояний: рамка «пять анимаций, "
             + "не пятьдесят» поехала");
+        var scenic = contract.Where(s => !used.ContainsKey(s)).ToArray();
+        Console.WriteLine($"  клипы вне решений (сцены, движение, смерть): {string.Join(", ", scenic)}");
 
         Console.WriteLine(bad == 0 ? "  Тело: чисто." : $"  Тело: провалов {bad}.");
     }
@@ -2575,7 +2582,14 @@ static class Bench
     {
         Console.WriteLine("\n=== АНГЛИЙСКИЙ: генератор фраз без русских букв ===");
 
+        // Вверх от сборки до корня проекта: стенд собирают и в bin/, и в Tools/ci/.work/bench (unity-dotnet.ps1),
+        // и путь «пять ступеней вверх» верен только для первого — во втором таблица «пропадала» (до 26.11).
         string path = Path.Combine(AppContext.BaseDirectory, "../../../../../Assets/Resources/Lang/en.txt");
+        for (var up = new DirectoryInfo(AppContext.BaseDirectory); up != null; up = up.Parent)
+        {
+            string probe = Path.Combine(up.FullName, "Assets", "Resources", "Lang", "en.txt");
+            if (File.Exists(probe)) { path = probe; break; }
+        }
         if (!File.Exists(path))
         {
             Console.WriteLine($"  ПРОВАЛ: нет таблицы {path}");

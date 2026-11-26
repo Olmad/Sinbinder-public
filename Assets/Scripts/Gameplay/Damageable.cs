@@ -62,6 +62,9 @@ namespace Sinbinder.Gameplay
         /// </summary>
         public static Damageable Untouchable;
 
+        /// <summary>Ниже этой доли здоровья удар пугает (<see cref="AOS.EmotionType.Fear"/>).</summary>
+        public const float FrightShare = 1f / 3f;
+
         public void TakeDamage(float damage, GameObject attacker)
         {
             ApplyDamage(damage, attacker, allowGuardInterception: true);
@@ -156,8 +159,17 @@ namespace Sinbinder.Gameplay
 
             _hp -= damage;
 
-            // Удар слышно — по телу того, кого ударили (Audio.Sfx).
+            // Испуг — чувство, а не только голос (26.11, полировка AOS). Таблица весов эмоций
+            // (EmotionSystem.GetEmotionWeight) обещала: испуганный слушает Страх в полтора раза громче,
+            // Гнев — вдвое тише. Но испуга не вызывал никто — радость, печаль и гнев есть, страха нет,
+            // и обещание было декоративным (69-PLAN Э1.07). Теперь он приходит тем ударом, что опускает
+            // воина ниже трети здоровья, — один раз на падение, гаснет, как другие чувства, за полминуты.
             if (_warrior == null) _warrior = GetComponent<Warrior>();
+            float fright = _maxHP * FrightShare;
+            if (_warrior != null && _hp > 0f && _hp < fright && _hp + damage >= fright)
+                AOS.EmotionSystem.Instance?.TriggerEmotion(_warrior, AOS.EmotionType.Fear, 0.5f);
+
+            // Удар слышно — по телу того, кого ударили (Audio.Sfx).
             Audio.Sfx.Hit(_warrior, transform.position);
             // И видно — вспышка и пыль по телу ударенного (41-SHOWCASE п. 7).
             HitBurst.At(_warrior, transform.position);

@@ -26,6 +26,37 @@ internal static class CombatIntegrationChecks
         SceneChange(check);
         PersonalVisit(check);
         TugKnockdown(check);
+        Fright(check);
+    }
+
+    // 26.11: the fear emotion promised by the emotion weights now actually happens.
+    private static void Fright(Action<bool, string> check)
+    {
+        using var battle = new Fixture();
+        var feel = new EmotionSystem();
+        EmotionSystem.Instance = feel;
+        try
+        {
+            var warrior = battle.Spawn(Team.Player, "wounded");
+            var enemy = battle.Spawn(Team.Enemy, "striker");
+            float max = warrior.MaxHP;
+
+            warrior.TakeDamage(max * 0.5f, enemy.gameObject);
+            check(feel.Triggered.Count == 0, "a hit that leaves half of health does not frighten");
+
+            warrior.TakeDamage(max * 0.25f, enemy.gameObject);
+            check(feel.Triggered.Count == 1 && feel.Triggered[0].Type == EmotionType.Fear &&
+                  feel.Triggered[0].Who == warrior.Warrior,
+                "the hit that drops a warrior below a third of health frightens him once");
+
+            warrior.TakeDamage(max * 0.05f, enemy.gameObject);
+            check(feel.Triggered.Count == 1, "further hits below a third do not stack the fright");
+
+            var doomed = battle.Spawn(Team.Player, "doomed");
+            Kill(doomed, enemy);
+            check(feel.Triggered.All(t => t.Who != doomed.Warrior), "a killing blow is death, not fright");
+        }
+        finally { EmotionSystem.Instance = null; }
     }
 
     private static void Victory(Action<bool, string> check)
