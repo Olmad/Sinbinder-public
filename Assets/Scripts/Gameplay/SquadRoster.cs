@@ -449,6 +449,7 @@ namespace Sinbinder.Gameplay
                 var member = _members[i];
                 if (!ambiguous.Contains(i) && owners.TryGetValue(i, out var warrior))
                 {
+                    member = CaptureSoul(warrior, member);
                     member = CaptureEquipment(warrior, member);
                     // Звание и подвиги, заслуженные в этой же сцене, — тоже в запись (проверка 23.11:
                     // снимок брал только вещи, и загрузка отнимала имя, полученное после смены доли).
@@ -588,6 +589,17 @@ namespace Sinbinder.Gameplay
 
         private static Member Capture(Warrior w, Member member)
         {
+            member = CaptureSoul(w, member);
+            member.IsAway = false;
+            member.Shell = w.Shell;
+            member.Title = AOS.TitleManager.TitleOf(w);
+            CaptureDeeds(w, ref member);
+            return CaptureEquipment(w, CaptureCondition(w, member));
+        }
+
+        // Save the live personality, not the previous scene's roster.
+        private static Member CaptureSoul(Warrior w, Member member)
+        {
             member.Name = w.DisplayName;
             member.WarriorId = w.Id;
             member.Sin = w.Soul.Sin;
@@ -600,11 +612,9 @@ namespace Sinbinder.Gameplay
             member.SoulKin = w.Soul.Kin;
             member.Seed = MemorySeed.Copy(w.Soul.Memory);
             member.SeedCaptured = true;
-            member.IsAway = false;
-            member.Shell = w.Shell;
-            member.Title = AOS.TitleManager.TitleOf(w);
-            CaptureDeeds(w, ref member);
-            return CaptureEquipment(w, CaptureCondition(w, member));
+            member.Gender = w.Soul.Gender;
+            member.Trade = w.Soul.Trade;
+            return member;
         }
 
         /// <summary>Подвиги с тела — копией: тело в сцене живёт своей жизнью дальше.</summary>
