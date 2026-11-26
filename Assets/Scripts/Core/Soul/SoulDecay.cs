@@ -101,7 +101,7 @@ namespace Sinbinder.Core
             MemorySeed memory = null;
             if (KeepsMemory(quality) && source.Memory != null)
             {
-                memory = source.Memory;
+                memory = MemorySeed.Copy(source.Memory);
             }
             else if (KeepsPerks(quality) && source.Memory != null)
             {
@@ -110,7 +110,7 @@ namespace Sinbinder.Core
                 memory = new MemorySeed
                 {
                     Story = "",
-                    NarrativePerks = source.Memory.NarrativePerks
+                    NarrativePerks = MemorySeed.Copy(source.Memory).NarrativePerks
                 };
             }
 
