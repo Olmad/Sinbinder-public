@@ -350,7 +350,7 @@ namespace Sinbinder.Core
             bool sandboxChanged = save.Scene == CryptMap.SceneName && save.OpensCryptSandbox != CryptMap.Opened;
             bool changeScene = !string.IsNullOrEmpty(save.Scene)
                 && (reload || save.Scene != Here || sandboxChanged || CryptSquadChanged(save) ||
-                    WorkshopRecruitsChanged(save));
+                    WorkshopRecruitsChanged(save) || !CapturedBodiesMatch(save, LivingSquadIn(SceneManager.GetActiveScene())));
             string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;
             if (changeScene && !Application.CanStreamedLevelBeLoaded(scene))
             {
@@ -402,6 +402,27 @@ namespace Sinbinder.Core
             return presentIds.Count == 0;
         }
 
+        // A known modern snapshot cannot be applied to a namesake or
+        // another binding generation. Reconstruct through ReturnTo if needed.
+        private static bool CapturedBodiesMatch(SaveGame save, IEnumerable<Warrior> living)
+        {
+            if (save?.Squad == null) return false;
+            var bodies = living.ToLookup(w => w.Id);
+            var seen = new HashSet<string>();
+            foreach (var member in save.Squad)
+            {
+                if (member == null) return false;
+                if (!member.HasSoulSpectra || member.IsAway || string.IsNullOrEmpty(member.SoulId)) continue;
+                if (string.IsNullOrEmpty(member.WarriorId) || !seen.Add(member.WarriorId)) return false;
+                var matches = bodies[member.WarriorId];
+                if (matches.Count() != 1) return false;
+                var body = matches.First();
+                if (!body.gameObject.activeInHierarchy || body.Shell != (ShellType)member.Shell ||
+                    !body.Soul.MatchesBoundIdentity(member.SoulId, member.SoulPersonId)) return false;
+            }
+            return true;
+        }
+
         private static bool WorkshopRecruitsChanged(SaveGame save)
         {
             var device = CryptWorkshop.Device;
@@ -446,6 +467,12 @@ namespace Sinbinder.Core
                 return false;
             }
 
+            if (keepScene && !CapturedBodiesMatch(save, LivingSquadIn(SceneManager.GetActiveScene())))
+            {
+                Debug.LogWarning("[SAVE] Captured personality needs scene reconstruction; in-place load cancelled.");
+                return false;
+            }
+
             Gameplay.CardTable.BeforeSaveOrLoad();
             var previousEmotionOwners = keepScene ? EmotionOwners() : null;
             var emotionOwnerIds = keepScene ? new Dictionary<string, string>() : null;
@@ -479,7 +506,7 @@ namespace Sinbinder.Core
                     ? liveWarriors.FirstOrDefault(w => w.Id == m.WarriorId &&
                         (!restoreCryptCondition || w.gameObject.activeInHierarchy == !m.IsAway)) : null;
                 var namesakes = liveNames[m.Name];
-                if (living == null && (!restoreCryptCondition || string.IsNullOrEmpty(m.WarriorId)) &&
+                if (living == null && !m.HasSoulSpectra && (!restoreCryptCondition || string.IsNullOrEmpty(m.WarriorId)) &&
                     namesakes.Count() == 1 && savedNames[m.Name].Count() == 1)
                     living = namesakes.First();
                 if (living != null && mappedBodies.ContainsKey(living)) living = null;
@@ -651,6 +678,15 @@ namespace Sinbinder.Core
             {
                 if (mappedBodies.TryGetValue(warrior, out var member))
                 {
+                    if (member.SoulSpectra != null && !string.IsNullOrEmpty(member.SoulId) &&
+                        warrior.Soul.MatchesBoundIdentity(member.SoulId, member.SoulPersonId))
+                    {
+                        var captured = SoulData.FromRoster(member.Name, member.Sin, member.Moral,
+                            member.Intensity, member.SoulLevel, member.SoulSpectra, member.Seed,
+                            member.Gender, member.SoulId, member.SoulKin, member.SoulPersonId);
+                        captured.SetTrade(member.Trade);
+                        warrior.Soul.RestoreBoundPersonality(captured, member.SeedCaptured || member.Seed != null);
+                    }
                     warrior.RestoreEquipment(member.Equipment, member.Gear);
                     SquadRoster.ApplyDeeds(warrior, member);
                     if (restoreCryptCondition && !member.IsAway)
