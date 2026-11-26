@@ -42,7 +42,9 @@ internal static class MemoryRestoreChecks
         {
             check(system.GetMemoriesById("outgoing").Count == 0 &&
                   system.GetMemoriesById("foreign").Count == 0 &&
-                  system.GetMemoriesById("incoming").Single().CreationTime == 95f,
+                  system.GetMemoriesById("incoming").Single().CreationTime == 95f &&
+                  system.GetMemoriesById("incoming").Single().TargetPersonId == "person-known" &&
+                  system.GetMemoriesById("incoming").Single().TargetID == "known",
                 "actual memory manager installs only selected cold state");
             system.CreateMemoryById("outgoing", "Old", "", EmotionType.Joy, 0.9f);
             system.CreateMemoryById("incoming", "Future", "", EmotionType.Anger, 0.9f);
