@@ -26,7 +26,7 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
-            if (!Input.GetKeyDown(KeyCode.G) || Dev.PhotoMode.Active || !SinbinderPlayer.Exists) return;
+            if (!Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Drop) || Dev.PhotoMode.Active || !SinbinderPlayer.Exists) return;
             if (Core.GamePauseController.Instance != null && Core.GamePauseController.Instance.IsPaused) return;
             if (!RecordHands.Empty) RecordHands.PutDown();
             else if (Remains.Carrying) Remains.PutDown();

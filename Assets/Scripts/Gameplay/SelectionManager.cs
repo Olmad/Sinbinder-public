@@ -73,7 +73,7 @@ namespace Sinbinder.Gameplay
             // replace the ongoing tutorial's scripted first Court.
             // Not J: J is SatchelHands' "next jar" in every scene, so one press
             // switched the jar AND opened the Court (review 16.11).
-            if (Input.GetKeyDown(ReviewKey) && !SoulCourt.Sitting &&
+            if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Review) && !SoulCourt.Sitting &&
                 (DreamTutorialDirector.Instance == null ||
                  DreamTutorialDirector.StageName == "Finished"))
             {
@@ -82,8 +82,8 @@ namespace Sinbinder.Gameplay
             }
 
             var view = Camera.main != null ? Camera.main.GetComponent<RTS_Camera>() : null;
-            if (Input.GetKeyDown(KeyCode.Tab) ||
-                (view != null && view.FirstPersonNow && Input.GetKeyDown(KeyCode.V)))
+            if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.View) ||
+                (view != null && view.FirstPersonNow && Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Role)))
             { CancelGesture(); return; }
             if (view != null && (view.WarriorModeNow || !view.MouseActionsReady))
             { CancelGesture(); return; }
@@ -239,19 +239,19 @@ namespace Sinbinder.Gameplay
         {
             if (_selectedUnits.Count == 0) return;
 
-            if (Input.GetKeyDown(KeyCode.H)) Stance(CommandKind.Hold);
+            if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.StanceHold)) Stance(CommandKind.Hold);
             // Оборона на G, а не на D: D одновременно ведёт камеру вправо
             // (RTS_Camera), и при выделенном отряде одно нажатие делало
             // и то и другое. WASD принадлежат камере целиком.
             // G с вещью в руках — отпустить её (HandsDrop), а не «оборона».
-            else if (Input.GetKeyDown(KeyCode.G) && !HandsDrop.Busy) Stance(CommandKind.Defend);
-            else if (Input.GetKeyDown(KeyCode.C)) Stance(CommandKind.None);
+            else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.StanceDefend) && !HandsDrop.Busy) Stance(CommandKind.Defend);
+            else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.StanceFree)) Stance(CommandKind.None);
 
             // Приказы с точкой — через прицел, как на панели (UI.CommandPanel).
-            else if (Input.GetKeyDown(KeyCode.M)) Aim(CommandKind.Move);
-            else if (Input.GetKeyDown(KeyCode.T)) Aim(CommandKind.Attack);
-            else if (Input.GetKeyDown(KeyCode.X)) Aim(CommandKind.FallBack);
-            else if (Input.GetKeyDown(KeyCode.P)) Aim(CommandKind.Patrol);
+            else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.OrderMove)) Aim(CommandKind.Move);
+            else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.OrderAttack)) Aim(CommandKind.Attack);
+            else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.OrderFallBack)) Aim(CommandKind.FallBack);
+            else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.OrderPatrol)) Aim(CommandKind.Patrol);
         }
 
         /// <summary>
@@ -279,7 +279,7 @@ namespace Sinbinder.Gameplay
         }
 
         /// <summary>Суд над последним решением выбранного воина; Shift — полный суд.</summary>
-        public const KeyCode ReviewKey = KeyCode.U;
+        public static KeyCode ReviewKey => Sinbinder.Core.Controls.Key(Sinbinder.Core.Act.Review);
 
         /// <summary>
         /// Replay the exact LAST ORDER decision of one selected soldier in

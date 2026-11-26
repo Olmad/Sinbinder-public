@@ -34,7 +34,7 @@ namespace Sinbinder.Gameplay
         [SerializeField] private KeyCode _switchKey = KeyCode.Tab;
 
         /// <summary>Tab — камера; V — Командир/Воин только в первом лице.</summary>
-        public KeyCode SwitchKey => _switchKey;
+        public KeyCode SwitchKey => Sinbinder.Core.Controls.Key(Sinbinder.Core.Act.View);
 
         public enum FirstPersonRole { Commander, Warrior }
         [SerializeField] private FirstPersonRole _role = FirstPersonRole.Commander;
@@ -52,8 +52,8 @@ namespace Sinbinder.Gameplay
         {
             get
             {
-                if (!_hasFocus || Input.GetKeyDown(KeyCode.Tab) ||
-                    (FirstPersonNow && Input.GetKeyDown(KeyCode.V)) ||
+                if (!_hasFocus || Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.View) ||
+                    (FirstPersonNow && Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Role)) ||
                     Time.frameCount == _lastChangeFrame) return false;
 
                 // Несколько компонентов читают это свойство за один кадр.
@@ -248,8 +248,8 @@ namespace Sinbinder.Gameplay
             if (paused) { LatchMouse(); Release(); return; }
 
             if (OpeningReveal.Busy) LatchMouse();
-            else if (Input.GetKeyDown(_switchKey)) Switch();
-            else if (Input.GetKeyDown(KeyCode.V) && FirstPersonNow) SwitchRole();
+            else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.View)) Switch();
+            else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Role) && FirstPersonNow) SwitchRole();
 
             ApplyCursor();
 
@@ -450,10 +450,10 @@ namespace Sinbinder.Gameplay
 
             Vector3 move = Vector3.zero;
 
-            if (Input.GetKey(KeyCode.W)) move.z += 1;
-            if (Input.GetKey(KeyCode.S)) move.z -= 1;
-            if (Input.GetKey(KeyCode.A)) move.x -= 1;
-            if (Input.GetKey(KeyCode.D)) move.x += 1;
+            if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Forward)) move.z += 1;
+            if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Back)) move.z -= 1;
+            if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Left)) move.x -= 1;
+            if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Right)) move.x += 1;
 
             // Край экрана водит камеру только когда мышь в окне и окно
             // в работе. Иначе камера уезжает сама: курсор, оставленный

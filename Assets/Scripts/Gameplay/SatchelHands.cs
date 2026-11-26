@@ -50,7 +50,7 @@ namespace Sinbinder.Gameplay
             var self = GetComponent<Warrior>();
             if (self != null && self.IsDead) return;
 
-            if (Input.GetKeyDown(_next))
+            if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.NextJar))
             {
                 Satchel.Next();
                 // Без номера банки: номер — тоже цифра на экране (автор,
@@ -59,7 +59,7 @@ namespace Sinbinder.Gameplay
                                       : Loc.F("Под рукой: {0}.", Satchel.Describe(Satchel.Selected)));
             }
 
-            if (Input.GetKeyDown(_swap)) Swap();
+            if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Raise)) Swap();
         }
 
         private void Swap()

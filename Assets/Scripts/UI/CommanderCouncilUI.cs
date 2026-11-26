@@ -224,7 +224,7 @@ namespace Sinbinder.UI
                 Greet();
             }
 
-            if (!Input.GetKeyDown(_openKey)) return;
+            if (!Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Interact)) return;
 
             // F, набранная в консоли (~), — буква, а не «открыть совет».
             if (Dev.CheatConsole.Open) return;
@@ -245,7 +245,7 @@ namespace Sinbinder.UI
 
             Gameplay.Herald.Line(Loc.F("Карган: «Пришли. Нажмите {0} — и решайте, владыка: "
                     + "кого отправить, а кого при себе оставить. Я скажу, "
-                    + "чего от каждого ждать».", _openKey));
+                    + "чего от каждого ждать».", Sinbinder.Core.Controls.Name(Sinbinder.Core.Act.Interact)));
         }
 
         /// <summary>

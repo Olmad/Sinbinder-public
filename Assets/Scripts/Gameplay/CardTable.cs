@@ -315,7 +315,7 @@ namespace Sinbinder.Gameplay
 
             if (Watching)
             {
-                if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.Escape) ||
+                if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Interact) || Input.GetKeyDown(KeyCode.Escape) ||
                     !SinbinderPlayer.Exists ||
                     CampFocus.GroundDistance(SinbinderPlayer.Where, transform.position) > Reach + 1.5f)
                 {
@@ -331,7 +331,7 @@ namespace Sinbinder.Gameplay
                 if (Input.GetKeyDown(KeyCode.N) && (_round == null || _round.Finished))
                     NewDeal(true);
             }
-            else if (Input.GetKeyDown(KeyCode.F) && Near && !UI.Modal.Any &&
+            else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Interact) && Near && !UI.Modal.Any &&
                      !UI.GearPanel.Open && !UI.PauseMenu.IsOpen)
             {
                 var pause = GamePauseController.Instance;

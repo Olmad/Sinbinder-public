@@ -85,10 +85,10 @@ namespace Sinbinder.Gameplay
             }
 
             Vector3 wish = Vector3.zero;
-            if (Input.GetKey(KeyCode.W)) wish.z += 1f;
-            if (Input.GetKey(KeyCode.S)) wish.z -= 1f;
-            if (Input.GetKey(KeyCode.A)) wish.x -= 1f;
-            if (Input.GetKey(KeyCode.D)) wish.x += 1f;
+            if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Forward)) wish.z += 1f;
+            if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Back)) wish.z -= 1f;
+            if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Left)) wish.x -= 1f;
+            if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Right)) wish.x += 1f;
 
             if (wish.sqrMagnitude < Deadzone)
             {

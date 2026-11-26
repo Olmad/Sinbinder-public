@@ -40,6 +40,9 @@ namespace Sinbinder.UI
 
         void Update()
         {
+            // Страница «Управление» ждёт клавишу — кадр её, и Esc тоже (отмена, а не закрыть меню).
+            if (_open && _controls && CaptureKey()) return;
+
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
 
             // Этот Esc закрыл консоль (Dev.CheatConsole) — меню он не открывает.
@@ -68,6 +71,9 @@ namespace Sinbinder.UI
             _shown = this;
             _open = true;
             _graphics = false;
+            _controls = false;
+            _capture = null;
+            _hint = null;
             _maps = false;
             _lobby = false;
             if (_panel != null) _panel.SetActive(true);
@@ -92,6 +98,7 @@ namespace Sinbinder.UI
             _spawned.Clear();
 
             if (_graphics) { DrawGraphics(); return; }
+            if (_controls) { DrawControls(); return; }
             if (_maps) { DrawMaps(); return; }
             if (_lobby) { DrawLobby(); return; }
 
@@ -131,8 +138,8 @@ namespace Sinbinder.UI
 
             Add(ref y, Loc.T("Гнёзда сохранений"), "F9", null);
             Add(ref y, Loc.T("Что игра объясняет"), "O", null);
-            Add(ref y, Loc.T("Сменить взгляд"), "Tab", null);
-            Add(ref y, Loc.T("Командир или Воин (первое лицо)"), "V", null);
+            Add(ref y, Loc.T("Сменить взгляд"), Controls.Name(Act.View), null);
+            Add(ref y, Loc.T("Командир или Воин (первое лицо)"), Controls.Name(Act.Role), null);
 
             // Настройки — только те, которых больше нигде нет. Ясность
             // живёт своей панелью (строка выше — дверь к ней), сохранения
@@ -149,6 +156,13 @@ namespace Sinbinder.UI
             Add(ref y, Loc.T("Поворот взгляда"), Core.Preferences.SensitivityName(), () =>
             {
                 Core.Preferences.CycleSensitivity();
+                Draw();
+            });
+
+            // Управление — своя страница: клавиши переназначаются (автор, 26.11).
+            Add(ref y, Loc.T("Управление"), Loc.T("переназначить клавиши"), () =>
+            {
+                _controls = true;
                 Draw();
             });
 
@@ -245,17 +259,100 @@ namespace Sinbinder.UI
             if (_panel == null || _rows == null) return;
 
             var panel = (RectTransform)_panel.transform;
+            // Высота — по странице, но не меньше собранной в сцене: короткая страница после длинной не остаётся
+            // длинной пустой доской (страница «Управление», 26.11).
+            if (_baseHeight <= 0f) _baseHeight = panel.sizeDelta.y;
             float need = -_rows.anchoredPosition.y - y + 24f;
-            panel.sizeDelta = new Vector2(panel.sizeDelta.x, Mathf.Max(panel.sizeDelta.y, need));
+            panel.sizeDelta = new Vector2(panel.sizeDelta.x, Mathf.Max(_baseHeight, need));
             _rows.sizeDelta = new Vector2(_rows.sizeDelta.x, -y);
 
-            float room = panel.parent is RectTransform screen ? screen.rect.height - 40f : 0f;
+            // Экран — холст целиком: родитель панели бывает растянутой пустышкой нулевой высоты, и тогда
+            // уменьшение не срабатывало — меню уходило за верх и низ экрана (кадр полигона 26.11, 1600×900).
+            var canvas = _panel.GetComponentInParent<Canvas>();
+            var screenRect = canvas != null ? (RectTransform)canvas.rootCanvas.transform : panel.parent as RectTransform;
+            float room = screenRect != null ? screenRect.rect.height - 40f : 0f;
             float height = panel.sizeDelta.y;
             panel.localScale = room > 0f && height > room ? Vector3.one * (room / height) : Vector3.one;
         }
 
         private bool _graphics;
         private bool _maps, _lobby;
+        private float _baseHeight;
+
+        // ── Страница «Управление» (автор, 26.11: «необходима настройка управления, чтобы можно было переназначить
+        // кнопки»). Две колонки строк «клавиша · действие»; щелчок — ждём клавишу, Esc — отмена. Занятая клавиша
+        // меняется местами (Core.Controls.Bind) — ни одно действие не остаётся без клавиши.
+        private bool _controls;
+        private Core.Act? _capture;
+
+        /// <summary>Ждёт ли страница клавишу (верстаку и Update).</summary>
+        public static bool Capturing => _shown != null && _shown._open && _shown._capture.HasValue;
+
+        /// <summary>Esc и выбор клавиши, пока страница ждёт. true — кадр занят.</summary>
+        private bool CaptureKey()
+        {
+            if (!_capture.HasValue) return false;
+            if (Input.GetKeyDown(KeyCode.Escape)) { _capture = null; Draw(); return true; }
+            foreach (KeyCode k in System.Enum.GetValues(typeof(KeyCode)))
+            {
+                if (!Input.GetKeyDown(k) || !Core.Controls.Bindable(k)) continue;
+                Press(_capture.Value, k);
+                return true;
+            }
+            return true;
+        }
+
+        /// <summary>Назначить клавишу (страница и верстак).</summary>
+        public static string Press(Core.Act act, KeyCode key)
+        {
+            var swapped = Core.Controls.Bind(act, key);
+            string line = swapped.HasValue
+                ? Loc.F("«{0}» — {1}; «{2}» теперь на {3}.", Core.Controls.Title(act), Core.Controls.Name(act),
+                        Core.Controls.Title(swapped.Value), Core.Controls.Name(swapped.Value))
+                : Loc.F("«{0}» — {1}.", Core.Controls.Title(act), Core.Controls.Name(act));
+            if (_shown != null) { _shown._capture = null; _shown._hint = line; _shown.Draw(); }
+            return line;
+        }
+
+        private string _hint;
+
+        private void DrawControls()
+        {
+            if (_title != null) _title.text = Loc.T("Управление");
+
+            float y = 0f;
+            Add(ref y, Loc.T("Назад"), "", () => { _controls = false; _capture = null; _hint = null; Draw(); });
+            string say = _capture.HasValue
+                ? Loc.F("Нажмите клавишу для «{0}» · Esc — отмена", Core.Controls.Title(_capture.Value))
+                : _hint ?? Loc.T("Щёлкните действие и нажмите новую клавишу. Esc, цифры и F1–F12 заняты игрой.");
+            Add(ref y, "", say, null);
+            y -= MenuRows.Height * 0.25f;
+
+            var acts = (Core.Act[])System.Enum.GetValues(typeof(Core.Act));
+            int half = (acts.Length + 1) / 2;
+            float top = y;
+            for (int i = 0; i < acts.Length; i++)
+            {
+                var a = acts[i];
+                bool waiting = _capture == a;
+                string key = waiting ? "…" : Core.Controls.Name(a);
+                bool moved = Core.Controls.Key(a) != Core.Controls.Default(a);
+                string title = key + "   " + Core.Controls.Title(a) + (moved && !waiting ? "  *" : "");
+                float rowY = top - (i % half) * MenuRows.Height;
+                var go = MenuRows.Row(_rows, _font, rowY, title, "", () => { _capture = a; _hint = null; Draw(); });
+                foreach (var label in go.GetComponentsInChildren<Text>()) label.fontSize = 22;   // две колонки — шрифт помельче
+                var rt = (RectTransform)go.transform;
+                bool right = i >= half;
+                rt.anchorMin = new Vector2(right ? 0.5f : 0f, 1f);
+                rt.anchorMax = new Vector2(right ? 1f : 0.5f, 1f);
+                rt.sizeDelta = new Vector2(-6f, rt.sizeDelta.y);
+                rt.anchoredPosition = new Vector2(right ? 3f : 0f, rowY);
+                _spawned.Add(go);
+            }
+            y = top - half * MenuRows.Height - MenuRows.Height * 0.25f;
+            Add(ref y, Loc.T("Сбросить всё"), Loc.T("клавиши как задумано"), () => { Core.Controls.Reset(); _capture = null; _hint = Loc.T("Клавиши — как задумано."); Draw(); });
+            Fit(y);
+        }
 
         /// <summary>
         /// Страница карт «Перетягивания» (автор, 27.10: «меню, где отображаются карты в определённой

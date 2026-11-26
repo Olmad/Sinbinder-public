@@ -524,7 +524,7 @@ namespace Sinbinder.UI
             _skillFace.color = !ready ? Dim : _skillHover ? Lit : Plain;
             _skillCell.GetComponent<Button>().interactable = ready;
 
-            if (Input.GetKeyDown(KeyCode.Q) && ready) _skill.Ask();
+            if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Skill) && ready) _skill.Ask();
 
             if (!_skillHover) return "";
             string tip = $"{_skill.Word} · Q\n{_skill.Tip}";

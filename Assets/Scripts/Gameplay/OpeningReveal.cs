@@ -244,7 +244,7 @@ namespace Sinbinder.Gameplay
                 if (view != null && Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0.2f)
                     view.Yaw += Input.GetAxisRaw("Horizontal") * 110f * Time.unscaledDeltaTime;
                 if (Autopilot && view != null) view.Yaw = Mathf.MoveTowardsAngle(view.Yaw, lightYaw, 75f * Time.unscaledDeltaTime);
-                bool forward = Autopilot || Input.GetAxisRaw("Vertical") > 0.2f || Input.GetKey(KeyCode.W);
+                bool forward = Autopilot || Input.GetAxisRaw("Vertical") > 0.2f || Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Forward);
                 // Идти к свету можно, только глядя на него: отвернулся — стоит.
                 if (forward && Mathf.Abs(off) < 30f)
                     DreamProgress = Mathf.Min(1f, DreamProgress + Time.unscaledDeltaTime / DreamWalk);
@@ -291,7 +291,7 @@ namespace Sinbinder.Gameplay
             Lying = true;
 
             float waited = 0f;
-            while (!(Input.GetKeyDown(KeyCode.F) || (Autopilot && waited > 1.2f)))
+            while (!(Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Interact) || (Autopilot && waited > 1.2f)))
             {
                 waited += Time.unscaledDeltaTime;
                 hint.color = new Color(0.90f, 0.84f, 0.72f, Mathf.Clamp01((waited - 0.4f) / 0.8f));

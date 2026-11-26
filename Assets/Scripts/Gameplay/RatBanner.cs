@@ -510,7 +510,7 @@ namespace Sinbinder.Gameplay
             yield return null;   // нажатие, которым ответили, — не «дальше»
             while (Time.unscaledTime < until)
             {
-                if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.Space)
+                if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Interact) || Input.GetKeyDown(KeyCode.Space)
                     || Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0)) yield break;
                 yield return null;
             }

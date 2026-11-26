@@ -130,7 +130,7 @@ namespace Sinbinder.Gameplay
 
         void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Z) && Time.timeScale > 0f) TryAny();
+            if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Whisper) && Time.timeScale > 0f) TryAny();
         }
 
         /// <summary>Шепнуть ближнему к Греховоду из тех, кому можно. Ложь — некому.</summary>

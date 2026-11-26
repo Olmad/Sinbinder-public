@@ -46,7 +46,7 @@ namespace Sinbinder.Gameplay
 
             _cooldownTimer -= Time.deltaTime;
 
-            if (Input.GetKeyDown(_harvestKey) && _cooldownTimer <= 0f)
+            if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Harvest) && _cooldownTimer <= 0f)
                 TryHarvest();
         }
 

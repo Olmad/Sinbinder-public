@@ -762,7 +762,7 @@ namespace Sinbinder.Gameplay
                     }
                     break;
                 case Stage.Rebind:
-                    if (Pressed(KeyCode.R) && GroundDistance(_hero.transform.position, _woundedAt) < 4f)
+                    if (Pressed(Sinbinder.Core.Controls.Key(Sinbinder.Core.Act.Raise)) && GroundDistance(_hero.transform.position, _woundedAt) < 4f)
                         TryRebind();
                     break;
                 case Stage.Command:
@@ -879,7 +879,7 @@ namespace Sinbinder.Gameplay
                 case Stage.Fallen:
                     KeepHeroAlive();
                     ArmArrived();
-                    if (Pressed(KeyCode.R) && GroundDistance(_hero.transform.position, _lateAt) < 4f) Reraise();
+                    if (Pressed(Sinbinder.Core.Controls.Key(Sinbinder.Core.Act.Raise)) && GroundDistance(_hero.transform.position, _lateAt) < 4f) Reraise();
                     else if (Time.time - _lateSince > 2f && FindJar() < 0 && !Fading(_lateBody))
                     {
                         // Не успели: душа угасла. Дальше без него — как в игре.
@@ -1010,7 +1010,7 @@ namespace Sinbinder.Gameplay
                     {
                         if (!DreamRoad.NearShrine(_hero.transform.position)) break;
                         if (!_atShrine) { _atShrine = true; _line = "На камне — банка с душой. E — забрать её в суму."; }
-                        if (!Pressed(KeyCode.E)) break;
+                        if (!Pressed(Sinbinder.Core.Controls.Key(Sinbinder.Core.Act.Harvest))) break;
                         if (!Satchel.AddJar()) { Set(Stage.Return, GateLine); break; }   // сума полна — к воротам
                         _jarIndex = Satchel.Jars - 1;
                         Satchel.Fill(_jarIndex, new SoulData(Loc.N("Путник у дороги"), SinType.Sloth, MoralType.Neutral, 1, 35f),
@@ -1032,7 +1032,7 @@ namespace Sinbinder.Gameplay
                     Seals();
                     if (!_sealsOpen) break;
                     if (!DreamRoad.NearGate(_hero.transform.position) && !OnSeal(_hero.transform.position, DreamRoad.LordSealAt)) break;
-                    if (Pressed(KeyCode.F)) StartCoroutine(Crypt());
+                    if (Pressed(Sinbinder.Core.Controls.Key(Sinbinder.Core.Act.Interact))) StartCoroutine(Crypt());
                     break;
             }
         }
@@ -2045,7 +2045,7 @@ namespace Sinbinder.Gameplay
 
             // Поднять павшего можно в любой миг на площади: E у тела.
             var near = NearFallen(me);
-            if (near != null && Pressed(KeyCode.E)) RaiseFallen(near);
+            if (near != null && Pressed(Sinbinder.Core.Controls.Key(Sinbinder.Core.Act.Harvest))) RaiseFallen(near);
 
             // Кто где стоит: поднятый у дороги или любой поднятый страж; один человек — одна печать.
             for (int i = 0; i < _sealOn.Length; i++) _sealOn[i] = null;

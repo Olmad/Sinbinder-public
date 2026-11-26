@@ -172,12 +172,12 @@ namespace Sinbinder.UI
 
             if (!_open)
             {
-                if (Input.GetKeyDown(_key)) TryOpen();
+                if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Inventory)) TryOpen();
                 // У стола совета и у стола с картами F — их (Gameplay.CardTable):
                 // за картами стоят люди, и без этой оговорки F заговаривал бы
                 // с тем, на кого смотришь, вместо того чтобы подсесть.
-                else if (Input.GetKeyDown(_talkKey) && RatBanner.Reachable) RatBanner.Lift();   // знамя павшего — прежде разговора (автор, 23.10)
-                else if (Input.GetKeyDown(_talkKey) && !CommanderCouncilUI.AtTable
+                else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Interact) && RatBanner.Reachable) RatBanner.Lift();   // знамя павшего — прежде разговора (автор, 23.10)
+                else if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Interact) && !CommanderCouncilUI.AtTable
                          && !Gameplay.CardTable.Near && !TryTalk()) TryChest();
                 return;
             }
@@ -196,7 +196,7 @@ namespace Sinbinder.UI
                 else if (owes && (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))) Choose(3);
             }
 
-            if (Input.GetKeyDown(_key) || Input.GetKeyDown(_talkKey) || Input.GetKeyDown(KeyCode.Escape))
+            if (Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Inventory) || Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Interact) || Input.GetKeyDown(KeyCode.Escape))
                 Close();
         }
 
@@ -351,21 +351,21 @@ namespace Sinbinder.UI
             { _prompt.text = ""; return; }
 
             // Знамя павшего — прежде разговора: у тела стоят свои, и F ушло бы им.
-            if (RatBanner.Reachable) { _prompt.text = RatBanner.Prompt; return; }
+            if (RatBanner.Reachable) { _prompt.text = Core.Controls.Relabel(RatBanner.Prompt); return; }
 
             // F belongs to the cards whenever the player stands at that table,
             // even if the reticle happens to point at the card-playing warrior.
             // Otherwise the HUD promised "talk" while input opened the cards.
             if (Gameplay.CardTable.Near && !Gameplay.CardTable.Watching)
             {
-                _prompt.text = Loc.T("F — карты: смотреть или сыграть");
+                _prompt.text = Core.Controls.Relabel(Loc.T("F — карты: смотреть или сыграть"));
                 return;
             }
 
             var w = LookedAt();
-            if (w != null) { _prompt.text = Loc.F("F — поговорить: {0}", Loc.Name(w.DisplayName)); return; }
+            if (w != null) { _prompt.text = Core.Controls.Relabel(Loc.F("F — поговорить: {0}", Loc.Name(w.DisplayName))); return; }
 
-            _prompt.text = Best(out var target) ? target.Prompt : "";
+            _prompt.text = Best(out var target) ? Core.Controls.Relabel(target.Prompt) : "";
         }
 
         /// <summary>Что сделает F: насколько взгляд промахнулся мимо вещи, подпись и само дело.</summary>

@@ -24,7 +24,7 @@ namespace Sinbinder.UI
 {
     public class MiniMap : MonoBehaviour
     {
-        public const KeyCode Key = KeyCode.K;
+        public static KeyCode Key => Sinbinder.Core.Controls.Key(Sinbinder.Core.Act.Map);
 
         private const float Span = 96f;          // метров по стороне видимого окна
         private const float RasterSpan = 160f;   // метров в запечённой земле — с запасом на ходьбу
@@ -221,7 +221,7 @@ namespace Sinbinder.UI
         private static string Place()
         {
             string t = PersonalExpedition.CurrentTitle;
-            if (!string.IsNullOrEmpty(t)) return Loc.T(t) + "  ·  K";
+            if (!string.IsNullOrEmpty(t)) return Loc.T(t) + "  ·  " + Sinbinder.Core.Controls.Name(Sinbinder.Core.Act.Map);
             string name;
             switch (SceneManager.GetActiveScene().name)
             {
@@ -232,7 +232,7 @@ namespace Sinbinder.UI
                 case "Crypt_Test": name = Loc.T("Полигон"); break;
                 default: name = Loc.T("Карта"); break;
             }
-            return name + "  ·  K";
+            return name + "  ·  " + Sinbinder.Core.Controls.Name(Sinbinder.Core.Act.Map);
         }
 
         // ── кто где ──

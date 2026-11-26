@@ -583,10 +583,10 @@ namespace Sinbinder.Gameplay
                 Vector3 move = Vector3.zero;
                 if (!led)
                 {
-                    if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) move += heading;
-                    if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) move -= heading;
-                    if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) move += right;
-                    if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) move -= right;
+                    if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Forward) || Input.GetKey(KeyCode.UpArrow)) move += heading;
+                    if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Back) || Input.GetKey(KeyCode.DownArrow)) move -= heading;
+                    if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Right) || Input.GetKey(KeyCode.RightArrow)) move += right;
+                    if (Sinbinder.Core.Controls.Held(Sinbinder.Core.Act.Left) || Input.GetKey(KeyCode.LeftArrow)) move -= right;
                     if (move.sqrMagnitude > 0f) still = Time.unscaledTime;
                     if (UI.Letterbox.Skipping || Time.unscaledTime - t0 > 12f || Time.unscaledTime - still > 6f) led = true;
                 }

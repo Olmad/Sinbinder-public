@@ -249,7 +249,7 @@ namespace Sinbinder.UI
             t.Label = go.GetComponent<Text>();
             t.Label.font = UiStyle.Body;
             t.Label.fontSize = 21;
-            t.Label.text = "·  " + text;
+            t.Label.text = "·  " + Core.Controls.Relabel(text);
             t.Label.alignment = TextAnchor.MiddleLeft;
             t.Label.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.Label.verticalOverflow = VerticalWrapMode.Overflow;

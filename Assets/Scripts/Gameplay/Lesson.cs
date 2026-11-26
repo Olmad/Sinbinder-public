@@ -1199,6 +1199,9 @@ namespace Sinbinder.Gameplay
             _plate.SetActive(true);
 
             var (key, words) = Words();
+            // Переназначенные клавиши (меню «Управление»): буква на плашке и в строке — нынешние.
+            key = Core.Controls.KeyWord(key);
+            words = Core.Controls.Relabel(words);
             _key.text = key;
             // Рамка — на одну букву: «ЛКМ» шрифтом 46 ломалась на «ЛК / М» (кадр сна 16.11).
             int letters = string.IsNullOrEmpty(key) ? 1 : key.Length;

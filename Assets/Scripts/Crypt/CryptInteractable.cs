@@ -43,7 +43,7 @@ namespace Sinbinder.Crypt
         protected virtual bool Ready => true;
 
         /// <summary>Что сказать при подходе.</summary>
-        protected virtual string Hint => Loc.F("{0} — нажмите {1}.", Flat(Label), _key);
+        protected virtual string Hint => Loc.F("{0} — нажмите {1}.", Flat(Label), Sinbinder.Core.Controls.Name(Sinbinder.Core.Act.Interact));
 
         void Update()
         {
@@ -55,7 +55,7 @@ namespace Sinbinder.Crypt
             _wasNear = near;
 
             if (!near || !Ready) return;
-            if (!Input.GetKeyDown(_key)) return;
+            if (!Sinbinder.Core.Controls.Down(Sinbinder.Core.Act.Interact)) return;
 
             // Отвечает только ближайший.
             //
