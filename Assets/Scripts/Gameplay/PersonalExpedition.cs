@@ -807,7 +807,7 @@ namespace Sinbinder.Gameplay
                         if(!_asked.Contains(i)) { int q=i; AddOption(Loc.T(s.Questions[i].Ask),null,()=>Ask(q)); }
                     if(!string.IsNullOrEmpty(s.TollAsk))
                         AddOption(Loc.T(s.TollAsk),Loc.F("{0} без боя, остальное уедет",Grammar.Coins(TollCoins())),()=>Decide(Talk.Toll));
-                    AddOption(Loc.T(s.AttackAsk),Loc.T("бой с охраной — серебро ваше, если победите"),()=>Decide(Talk.Battle));
+                    AddOption(Loc.T(s.AttackAsk),Loc.T("Бой с охраной. После победы исследуйте отмеченную цель."),()=>Decide(Talk.Battle));
                     AddOption(Loc.T(s.PassAsk),Loc.T("обоз уедет, добычи не будет"),()=>Decide(Talk.Farewell));
                     _options.Add(new UI.TalkView.Option{Text=Loc.T("Esc · Пока не решать"),Act=CloseTalk});
                     break;
