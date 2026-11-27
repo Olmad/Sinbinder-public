@@ -87,7 +87,6 @@ jobs:
           src = p.read_bytes()
           old = '''        Check(story.Contains("сбежал"),
                         "побег на вылазке назван отходом — а приказов там не отдают");'''
-          old = old.replace("\n                ", "\n              ")
           new = '''        var failedEscape = new BattleRecord();
                   failedEscape.AddEvent(new BattleEvent
                   {
@@ -105,7 +104,6 @@ jobs:
                   Check(attemptedOK, "неудавшийся побег выдан за завершённый");
                   Check(completedOK, "завершённый побег выдан за неудавшуюся попытку");
                   Console.WriteLine($"ESCAPE_RETELL completed={completedOK} attempted={attemptedOK}");'''
-          new = new.replace("\n        ", "\n")
           oldb, newb = old.encode(), new.encode()
           if b"\r\n" in src:
               oldb, newb = oldb.replace(b"\n", b"\r\n"), newb.replace(b"\n", b"\r\n")
