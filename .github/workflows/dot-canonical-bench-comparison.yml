@@ -1,154 +1,143 @@
-name: Dot caravan toll regression
+name: Dot caravan return HUD regression
 on:
   push:
     branches: ['dot/verify-baseline']
 permissions:
   contents: read
 jobs:
-  caravan-toll:
+  caravan-hud:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '3847fa32d755bda4e29ff755a548c38a0e125eea'
-          fetch-depth: 2
+          ref: '1de1295cf090450fdcd775c7c08093b7f5bac9bf'
+          fetch-depth: 3
           persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Reproduce counterexample and verify fix without Unity
+      - name: Check extracted HUD and actual F-selection logic without Unity
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '3847fa32d755bda4e29ff755a548c38a0e125eea'
+          test "$(git rev-parse HEAD)" = '1de1295cf090450fdcd775c7c08093b7f5bac9bf'
           git diff --check '4c4334951a20139e7f57e0a282b3d6c18b0fcb75' HEAD
           sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
           test -n "$sdk"
           printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
-          export FIXTURE="$RUNNER_TEMP/caravan"
+          export FIXTURE="$RUNNER_TEMP/caravan-hud"
           mkdir -p "$FIXTURE"
-          cat > "$FIXTURE/Caravan.csproj" <<'CSPROJ'
+          cat > "$FIXTURE/Hud.csproj" <<'PROJECT'
           <Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>
-          CSPROJ
-          cat > "$FIXTURE/template.txt" <<'CS'
+          PROJECT
+          cat > "$FIXTURE/template" <<'CS'
           using System;
           using System.Collections.Generic;
-          using UnityEngine;
-          static class Program
-          {
-              static void Main()
-              {
-                  var route = new Route();
-                  Inventory.PlayerInventory.Instance = null;
-                  route.Run(10);
-                  Need(route.Open && route.Marked && !route.Paid && route.Cart.ActiveSelf && !route.Cart.Departed && route.Guard.Moves == 0, "missing wallet must keep the negotiated caravan and goal available");
-                  Need(route.Notices.Count == 1 && route.Notices[0].Contains("Добыча остаётся на месте"), "unpaid deal must report a retry, not success");
-                  var purse = Inventory.PlayerInventory.Instance = new Inventory.PlayerInventory();
-                  purse.OnInventoryChanged = () => route.Run(10);
-                  route.Run(10);
-                  route.Run(10);
-                  Need(!route.Open && !route.Marked && route.Paid && purse.Gold == 10 && route.Cart.Departed && route.Guard.Moves == 1, "retry pays once even with a reentrant wallet callback");
-                  Need(route.Notices.FindAll(x=>x.Contains("Обоз отдал долю")).Count == 1, "success announced exactly once");
-                  route = new Route();
-                  purse = Inventory.PlayerInventory.Instance = new Inventory.PlayerInventory();
-                  purse.AddGold(int.MaxValue - 5);
-                  route.Run(10);
-                  Need(route.Open && route.Marked && !route.Paid && !route.Cart.Departed && purse.Gold == int.MaxValue - 5, "overflow must not pay or remove the objective");
-                  route = new Route();
-                  Inventory.PlayerInventory.Instance = null;
-                  route.Run(0);
-                  Need(!route.Open && !route.Marked && !route.Paid && route.Cart.Departed && route.Notices[0].Contains("Добычи не будет"), "farewell without a toll still works without a wallet");
-                  Console.WriteLine("PASS: 6 assertions on production LetCaravanGo and AddGold with simulated Unity");
+          enum ExpeditionMapKind { SaltRoad, Chapel }
+          enum Team { Neutral, Enemy }
+          class Plan { public ExpeditionMapKind Kind; }
+          class State { public bool CaravanPassed, CargoTaken, CaravanAssaulted; }
+          struct Vector3 {
+              public float x,y,z;
+              public static Vector3 up => new Vector3 {y=1};
+              public static Vector3 operator *(Vector3 a,float b) => new Vector3 {x=a.x*b, y=a.y*b, z=a.z*b};
+              public static Vector3 operator +(Vector3 a,Vector3 b) => new Vector3 {x=a.x+b.x, y=a.y+b.y, z=a.z+b.z};
+          }
+          class Transform { public Vector3 position; }
+          class Warrior { public bool IsDead; public Team Team; public readonly Transform transform=new(); public string DisplayName="Captain"; }
+          static class Gaze { public static float Miss(object v,float r=0)=>0; }
+          static class SinbinderPlayer { public static bool Exists=true; public static Vector3 Where; }
+          static class Loc { public static string T(string s)=>s; public static string F(string s, string t)=>string.Format(s,t); public static string Name(string s)=>s; }
+          class Program {
+              static Program _active;
+              bool _exiting;
+              Plan _plan = new();
+              State _state = new();
+              List<Warrior> _guards = new();
+              const float TalkReach=6f;
+              Vector3 Gate=>new Vector3 {z=0};
+              Vector3 Objective=>new Vector3 {z=40};
+              static float Dist(Vector3 a,Vector3 b)=>Math.Abs(a.z-b.z);
+              void Exit(){}
+              void OpenCaravanChoice(){}
+              void CollectObjective(){}
+              //GONE
+              //CAPTAIN
+              //OFFER
+              string Prompt(){
+                  var captain=Captain();
+                  //PROMPT
+                  return prompt;
               }
-              static void Need(bool yes, string message)
-              {
-                  if (!yes) { Console.Error.WriteLine("FAIL: " + message); Environment.Exit(7); }
+              static void Main(string[] args){
+                  const string back="Следуйте к бирюзовому огню, чтобы вернуться в склеп.";
+                  const string fexit="F — вернуться в склеп", fgoal="F — исследовать цель", talk="F — говорить: Captain";
+                  const string route="Следуйте к янтарному огню; бирюзовый огонь — путь назад.";
+                  _active=new Program(); _active._plan.Kind=ExpeditionMapKind.SaltRoad;
+                  _active._guards.Add(new Warrior { Team=Team.Neutral }); _active._guards[0].transform.position.z=46;
+                  _active._state.CaravanPassed=true; _active._state.CargoTaken=true;
+                  Check(40,back,null,"departure/farewell at old goal");
+                  Check(20,back,null,"departure/farewell on road");
+                  Check(0,fexit,fexit,"departure/farewell at gate");
+                  if(args.Length>0)throw new Exception("negative control did not fail");
+                  Check(46,back,null,"paid departure with captain still in scene");
+                  _active=new Program {_state=new State {CaravanPassed=true,CargoTaken=true}};
+                  Check(40,back,null,"revisit after restoring departure flags");
+                  _active._state=new State();
+                  _active._guards.Add(new Warrior {Team=Team.Neutral,CargoDummy=false}); _active._guards[0].transform.position.z=46;
+                  Check(40,fgoal,fgoal,"caravan still present/failed toll");
+                  Check(46,talk,talk,"caravan captain still available");
+                  Check(20,route,null,"caravan still present/road");
+                  _active._plan.Kind=ExpeditionMapKind.Chapel;
+                  _active._state.CaravanPassed=true;
+                  Check(40,fgoal,fgoal,"chapel unaffected");
+                  Check(4,route,null,"exact exit threshold unchanged");
+                  _active._exiting=true;
+                  var offers=0;
+                  OfferInteractions((n,s,a)=>offers++);
+                  if(offers!=0) throw new Exception("exiting still offers interactions");
+                  Console.WriteLine("PASS exiting interaction guard");
               }
-          }
-          sealed class Route
-          {
-              readonly State _state = new();
-              readonly Plan _plan = new();
-              readonly GameObject _mapRoot = new();
-              readonly List<Guard> _guards = new();
-              const string GoalMark = "goal";
-              const string GoalLabel = "label";
-              public readonly List<string> Notices = new();
-              public readonly Guard Guard = new();
-              public readonly GameObject Cart = new();
-              public bool Open => !_state.CaravanPassed && !_state.CargoTaken && _state.EnemiesRemaining == 1;
-              public bool Paid => _state.Tolled;
-              public bool Marked => UI.MiniMap.Marked;
-              public Route() { UI.MiniMap.Marked = true; _guards.Add(Guard); _mapRoot.transform.Add(new Transform { name = ExpeditionMapBuilder.Cart, gameObject = Cart }); }
-              public void Run(int coins) => LetCaravanGo(coins);
-              void Announce(string message) => Notices.Add(message);
-              // ROUTE_SOURCE
-          }
-          sealed class Plan { public float Depth => 100f; }
-          sealed class State { public bool CaravanPassed, CargoTaken, Tolled; public int EnemiesRemaining = 1; }
-          enum CommandKind { Move }
-          sealed class Guard
-          {
-              public bool IsDead => false;
-              public readonly GameObject gameObject = new();
-              public int Moves;
-              public void IssueCommand(CommandKind kind, Vector3 point) => Moves++;
-          }
-          static class ExpeditionMapBuilder
-          {
-              public const string Cart = "cart", Beacon = "beacon";
-              public static Vector3 Point(Plan p, float x, float z) => new(x, 0, z);
-          }
-          static class CartRoll { public static void Send(GameObject item, Vector3 away) => item.Departed = true; }
-          static class Loc { public static string T(string text) => text; public static string F(string fmt, object x) => string.Format(fmt, x); }
-          static class Grammar { public static string Coins(int amount) => amount.ToString(); }
-          namespace UI { static class MiniMap { public static bool Marked; public static void Unmark(string mark) => Marked = false; } }
-          namespace UnityEngine
-          {
-              readonly record struct Vector3(float X, float Y, float Z)
-              {
-                  public static Vector3 operator +(Vector3 x, Vector3 y) => new(x.X+y.X, x.Y+y.Y, x.Z+y.Z);
-              }
-              sealed class GameObject { public readonly List<Transform> transform = new(); public bool Departed; public bool ActiveSelf = true; public void SetActive(bool x) => ActiveSelf=x; }
-              sealed class Transform { public string name = ""; public GameObject gameObject = new(); }
-              static class Object { public static void Destroy(GameObject x,float delay) {} }
-              static class Random { public static float Range(float a,float b) => 0f; }
-          }
-          namespace Inventory
-          {
-              sealed class PlayerInventory
-              {
-                  public static PlayerInventory Instance;
-                  int _gold;
-                  public int Gold => _gold;
-                  public Action OnInventoryChanged;
-                  // WALLET_SOURCE
+              static void Check(int z,string desired,string expectedOffer,string label){
+                  SinbinderPlayer.Where=new Vector3 {z=z};
+                  string actualOffer=null;
+                  OfferInteractions((n,s,a)=>actualOffer=s);
+                  string actual=_active.Prompt();
+                  if(actualOffer!=expectedOffer || actual!=desired)throw new Exception($"{label}: HUD '{actual}', F '{actualOffer}'");
+                  Console.WriteLine("PASS "+label);
               }
           }
           CS
-          cat > "$FIXTURE/generate.py" <<'PY'
-          from pathlib import Path
-          import subprocess, sys, os
-          def get(path, start, end):
-              s = subprocess.check_output(["git", "show", sys.argv[1] + ":" + path], text=True)
-              a = s.index(start)
-              return s[a:s.index(end, a)].strip()
-          p=Path(os.environ["FIXTURE"])
-          source=(p/"template.txt").read_text()
-          route=get("Assets/Scripts/Gameplay/PersonalExpedition.cs", "private void LetCaravanGo(int coins)", "/// <summary>Проверке: что сейчас")
-          wallet=get("Assets/Scripts/Inventory/PlayerInventory.cs", "public void AddGold(int amount)", "public bool SpendGold(int amount)")
-          (p/"Program.cs").write_text(source.replace("// ROUTE_SOURCE", route).replace("// WALLET_SOURCE",wallet))
+          sed -i 's/,CargoDummy=false//' "$FIXTURE/template"
+          python3 - <<'PY'
+          import os, pathlib, re, subprocess
+          p = 'Assets/Scripts/Gameplay/PersonalExpedition.cs'
+          current = pathlib.Path(p).read_text(encoding='utf-8')
+          original = subprocess.check_output(['git','show','4c4334951a20139e7f57e0a282b3d6c18b0fcb75:'+p]).decode('utf-8-sig')
+          folder = pathlib.Path(os.environ['FIXTURE'])
+          template = (folder/'template').read_text()
+          def pick(pattern, s):
+              hits = re.findall(pattern,s,re.M|re.S)
+              assert len(hits) == 1, (pattern,len(hits))
+              return hits[0]
+          for name,s in [('candidate',current),('baseline',original)]:
+              code = template.replace('//GONE',pick(r'(^        private bool CaravanObjectiveGone =>[^;]+;)',s) if name=='candidate' else '')
+              code = code.replace('//CAPTAIN',pick(r'(^        private Warrior Captain\(\).*?^        \})',s))
+              code = code.replace('//OFFER',pick(r'(^        public static void OfferInteractions\(.*?^        \})',s))
+              code = code.replace('//PROMPT',pick(r'(^            string prompt=.*?;\n)            string notice',s))
+              (folder/(name+'.txt')).write_text(code)
+          loc = pathlib.Path('Assets/Resources/Lang/en.txt').read_text(encoding='utf-8')
+          assert loc.count('msgid "Следуйте к бирюзовому огню, чтобы вернуться в склеп."\nmsgstr "Follow the turquoise fire to return to the crypt."') == 1
+          print('PASS exact English localization key')
           PY
-          python3 "$FIXTURE/generate.py" '4c4334951a20139e7f57e0a282b3d6c18b0fcb75'
-          dotnet build "$FIXTURE/Caravan.csproj" -c Release
-          code=0
-          dotnet run --no-build --project "$FIXTURE/Caravan.csproj" -c Release > "$RUNNER_TEMP/caravan-before.log" 2>&1 || code=$?
-          test "$code" -eq 7
-          grep -F 'FAIL: missing wallet must keep the negotiated caravan' "$RUNNER_TEMP/caravan-before.log"
-          python3 "$FIXTURE/generate.py" '3847fa32d755bda4e29ff755a548c38a0e125eea'
-          dotnet run --project "$FIXTURE/Caravan.csproj" -c Release | tee "$RUNNER_TEMP/caravan-after.log"
-          dotnet run --project Tools/expeditions/ExpeditionChecks.csproj -c Release
-      - name: Parse game C# syntax
-        working-directory: Tools/tutorial
-        run: dotnet run -c Release --project SyntaxChecks.csproj -- ../../Assets/Scripts
+          cd "$FIXTURE"
+          cp candidate.txt Program.cs
+          dotnet run --project Hud.csproj
+          cp baseline.txt Program.cs
+          dotnet build --project Hud.csproj
+          ulimit -c 0
+          if dotnet bin/Debug/net8.0/Hud.dll baseline > baseline.log 2>&1; then cat baseline.log; echo 'Baseline unexpectedly passed'; exit 1; fi
+          cat baseline.log
+          grep -q "departure/farewell at old goal: HUD 'F — исследовать цель', F ''" baseline.log
+          echo 'PASS regression reproduced on baseline'
