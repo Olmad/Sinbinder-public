@@ -3843,6 +3843,34 @@ static class Bench
         int bad = 0;
         void Check(bool ok, string what) { if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); } }
 
+        // 0. Знаки двух спектров независимы; ноль не даёт греховных особенностей.
+        var signedSoul = new SoulData("Знаки", SinType.Wrath, MoralType.Neutral, 1, 80f);
+        signedSoul.Set(SinType.Greed, -60f);
+        var signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(signed.Is(SinType.Wrath) && !signed.Has(SinType.Greed),
+              "щедрость ошибочно считается вторичной жадностью");
+        Check(!Traits.Fitting(signed).Exists(t => t.Name == "Падок на добро"),
+              "щедрая душа получает особенность жадности");
+
+        signedSoul.Set(SinType.Wrath, -80f);
+        signedSoul.Set(SinType.Greed, 60f);
+        signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(signed.Virtue && !signed.Is(SinType.Wrath) && signed.Has(SinType.Greed),
+              "главная добродетель скрывает настоящий вторичный грех");
+        Check(Traits.Fitting(signed).Exists(t => t.Name == "Падок на добро"),
+              "вторичная жадность не учитывается при подборе особенностей");
+
+        signedSoul.Set(SinType.Greed, 0f);
+        signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(!signed.Has(signed.Second), "нулевой второй спектр считается грехом");
+        signedSoul.Set(SinType.Wrath, 0f);
+        signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(!Enum.GetValues(typeof(SinType)).Cast<SinType>().Any(signed.Has),
+              "нулевая душа имеет вымышленный грех");
+        var sketchSigns = TraitSoul.Of(new Sketch { Sin = SinType.Wrath, Second = SinType.Greed, Strength = 80f });
+        Check(sketchSigns.Is(SinType.Wrath) && sketchSigns.Has(SinType.Greed),
+              "генератор положительных грехов потерял вторичный грех");
+
         // 1. Карта, где людей больше, чем примет: 8 очагов по 12 жителей, все происхождения.
         int people = 0, noTrait = 0, noLines = 0, noNick = 0, two = 0;
         var seen = new Dictionary<string, int>();
@@ -3979,7 +4007,7 @@ static class Bench
             foreach (bool virtue in new[] { false, true })
             {
                 var s = new TraitSoul { Sin = sin, Second = sin == SinType.Greed ? SinType.Pride : SinType.Greed,
-                                        Virtue = virtue, Moral = virtue ? MoralType.Pious : MoralType.Neutral,
+                                        Virtue = virtue, SecondIsVice = !virtue, Moral = virtue ? MoralType.Pious : MoralType.Neutral,
                                         Trade = Trade.Hunter, Shell = ShellType.Ghost };
                 int fits = Traits.Fitting(s).Count;
                 string label = (virtue ? "добродетель " : "") + sin;
