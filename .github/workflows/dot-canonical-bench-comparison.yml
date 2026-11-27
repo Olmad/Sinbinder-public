@@ -75,6 +75,50 @@ jobs:
           if after[2] - before[2]:
               sys.exit(1)
           PY
+      - name: Validate narrow bench-only correction on the integrated revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="$RUNNER_TEMP/bench-comparison"
+          cd "$RUNNER_TEMP/sinbinder-after"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("Tools/bench/Program.cs")
+          src = p.read_bytes()
+          old = '''        Check(story.Contains("сбежал"),
+                        "побег на вылазке назван отходом — а приказов там не отдают");'''
+          old = old.replace("\n                ", "\n              ")
+          new = '''        var failedEscape = new BattleRecord();
+                  failedEscape.AddEvent(new BattleEvent
+                  {
+                      ActorName = "Мясник", Action = ActionType.Flee, Resolved = false
+                  });
+                  var completedEscape = new BattleRecord();
+                  completedEscape.AddEvent(new BattleEvent
+                  {
+                      ActorName = "Мясник", Action = ActionType.Flee, Resolved = true
+                  });
+                  string attempted = Sinbinder.Crypt.Retelling.Tell(failedEscape);
+                  string completed = Sinbinder.Crypt.Retelling.Tell(completedEscape);
+                  bool attemptedOK = attempted.Contains("не смог") && !attempted.Contains("вышел из боя");
+                  bool completedOK = completed.Contains("вышел из боя") && !completed.Contains("не смог");
+                  Check(attemptedOK, "неудавшийся побег выдан за завершённый");
+                  Check(completedOK, "завершённый побег выдан за неудавшуюся попытку");
+                  Console.WriteLine($"ESCAPE_RETELL completed={completedOK} attempted={attemptedOK}");'''
+          new = new.replace("\n        ", "\n")
+          oldb, newb = old.encode(), new.encode()
+          if b"\r\n" in src:
+              oldb, newb = oldb.replace(b"\n", b"\r\n"), newb.replace(b"\n", b"\r\n")
+          assert src.count(oldb) == 1, repr(oldb)
+          p.write_bytes(src.replace(oldb, newb, 1))
+          PY
+          git diff -- Tools/bench/Program.cs > "$result/moments-test-only.patch"
+          test -s "$result/moments-test-only.patch"
+          git diff --check -- Tools/bench/Program.cs
+          dotnet build Tools/bench/bench.csproj -c Release > "$result/repair-build.log" 2>&1 || { tail -40 "$result/repair-build.log"; exit 1; }
+          timeout 360 dotnet run --project Tools/bench/bench.csproj -c Release --no-build -- 20000 > "$result/repair.log" 2>&1
+          grep -Fx 'ESCAPE_RETELL completed=True attempted=True' "$result/repair.log"
+          if grep -E '^\s*(ПРОВАЛ|FAIL)(\s|:|!|$)' "$result/repair.log"; then exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
