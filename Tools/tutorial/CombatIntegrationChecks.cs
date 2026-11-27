@@ -27,6 +27,26 @@ internal static class CombatIntegrationChecks
         PersonalVisit(check);
         TugKnockdown(check);
         Fright(check);
+        HitTimestamp(check);
+    }
+
+    private static void HitTimestamp(Action<bool, string> check)
+    {
+        using var battle = new Fixture();
+        var victim = battle.Spawn(Team.Player, "clock victim");
+        var attacker = battle.Spawn(Team.Enemy, "clock attacker");
+        float previous = Time.time;
+        try
+        {
+            check(victim.LastHitAt == -999f, "unhit warrior has no recent wound");
+            Time.time = 12.5f;
+            victim.TakeDamage(1f, attacker.gameObject);
+            check(victim.LastHitAt == 12.5f, "first hit records current clock");
+            Time.time = 18f;
+            victim.TakeDamage(1f, attacker.gameObject);
+            check(victim.LastHitAt == 18f, "second hit replaces the old wound timestamp");
+        }
+        finally { Time.time = previous; }
     }
 
     // 26.11: the fear emotion promised by the emotion weights now actually happens.
