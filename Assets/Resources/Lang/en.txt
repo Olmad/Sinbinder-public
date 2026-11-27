@@ -10956,8 +10956,8 @@ msgid "{0} без боя, остальное уедет"
 msgstr "{0} without a fight, the rest rides on"
 
 #: Gameplay/PersonalExpedition.cs
-msgid "бой с охраной — серебро ваше, если победите"
-msgstr "a fight with the guards — the silver is yours if you win"
+msgid "Бой с охраной. После победы исследуйте отмеченную цель."
+msgstr "Fight the guards. After winning, investigate the marked objective."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "обоз уедет, добычи не будет"
