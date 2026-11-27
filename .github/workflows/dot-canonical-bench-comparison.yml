@@ -1,64 +1,48 @@
-name: Dot canonical AOS bench comparison
+name: Dot Dream CI reproduction
 on:
   push:
-    branches:
-      - 'dot/verify-baseline'
+    branches: ['dot/verify-baseline']
 permissions:
   contents: read
 jobs:
-  compatibility:
+  dream-reproduction:
     runs-on: ubuntu-latest
-    timeout-minutes: 9
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '75ee4975a45340e9e8b6efc9d5b1bad815441519'
-          fetch-depth: 0
+          ref: '7c72b99cdef137802185d49452ac17b608b5fd7c'
           persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Apply Moments test to exact PR26 without publishing a merge
+      - name: Reproduce and isolate the shim error on the current canonical SHA
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '75ee4975a45340e9e8b6efc9d5b1bad815441519'
-          git -c user.name='Sinbinder test' -c user.email='test@users.noreply.github.com' cherry-pick --no-commit '0672fcee32f7b840eb137f51f25d0ddd49814c1a'
-          git diff --cached --check
-          test "$(git diff --cached --name-only)" = 'Tools/bench/Program.cs'
+          test "$(git rev-parse HEAD)" = '7c72b99cdef137802185d49452ac17b608b5fd7c'
           sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
           test -n "$sdk"
           printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
-      - name: Run both suites and challenge the corrected escape assertion
-        shell: bash
+          if dotnet build Tools/tutorial/TutorialChecks.csproj -c Release > "$RUNNER_TEMP/dream-before.log" 2>&1; then
+            echo 'Original build passed; expected failure was not reproducible.'
+            exit 1
+          fi
+          grep -E "CombatIntegrationShim.cs.*error CS0649.*Time.time" "$RUNNER_TEMP/dream-before.log"
+          test "$(grep -Fc 'public static float time;' Tools/tutorial/CombatIntegrationShim.cs)" -eq 1
+          sed -i 's/public static float time;/public static float time = 0f;/' Tools/tutorial/CombatIntegrationShim.cs
+          git diff --check -- Tools/tutorial/CombatIntegrationShim.cs
+          git diff -- Tools/tutorial/CombatIntegrationShim.cs > "$RUNNER_TEMP/dream-shim.patch"
+          dotnet build Tools/tutorial/TutorialChecks.csproj -c Release
+      - name: Execute original Dream rules
+        run: dotnet run --no-build -c Release --project Tools/tutorial/TutorialChecks.csproj
+      - name: Execute original syntax gate
+        working-directory: Tools/tutorial
         run: |
-          set -euo pipefail
-          result="$RUNNER_TEMP/bench-compat"
-          mkdir -p "$result"
-          run_bench() { dotnet run --project Tools/bench/bench.csproj -c Release --no-build -- "$@"; }
-          dotnet build Tools/bench/bench.csproj -c Release
-          run_bench --trait-spectra | tee "$result/traits.log"
-          grep -F 'Trait spectrum checks: 259/259 PASS' "$result/traits.log"
-          run_bench 20000 > "$result/combined.log" 2>&1
-          grep -Fx 'ESCAPE_RETELL completed=True attempted=True' "$result/combined.log"
-          grep -F '=== ПОРОГ КОЛЕБАНИЯ ===' "$result/combined.log"
-          if grep -E '^\s*(ПРОВАЛ|FAIL)(\s|:|!|$)' "$result/combined.log"; then exit 1; fi
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("Assets/Scripts/Crypt/Retelling.cs")
-          src = p.read_bytes()
-          import re
-          changed, count = re.subn(rb"(case ActionType\.Flee:\s*return )ev\.Resolved\b",
-                                   lambda m: m[1] + b"false", src)
-          assert count == 1, count
-          p.write_bytes(changed)
-          PY
-          dotnet build Tools/bench/bench.csproj -c Release --no-restore
-          run_bench 20000 > "$result/mutant.log" 2>&1
-          grep -Fx 'ESCAPE_RETELL completed=False attempted=True' "$result/mutant.log"
-          grep -F 'ПРОВАЛ: завершённый побег выдан за неудавшуюся попытку' "$result/mutant.log"
+          dotnet build SyntaxChecks.csproj -c Release
+          dotnet run --no-build -c Release --project SyntaxChecks.csproj -- ../../Assets/Scripts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pr26-and-moments-compatibility
-          path: ${{ runner.temp }}/bench-compat
+          name: dream-ci-reproduction
+          path: ${{ runner.temp }}/dream-*
