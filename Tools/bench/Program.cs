@@ -1085,6 +1085,27 @@ static class Bench
         Check(PhraseGenerator.Did(ActionType.Flee, ctxNone, Gender.Female) == "сбежала",
               "побег в женском роде назван неверно");
 
+        // ── 3. Отказ женщины целиком: имя, причина, поступок ──
+        // План 69 §7 (20.11): в личной вылазке отказ женщины звучал
+        // «ему… остался». Каждая часть строки по отдельности проверена
+        // выше; здесь — что они сходятся в одной строке журнала.
+        var woman = new Warrior
+        {
+            Soul = new SoulData("Лиска", MoralType.Neutral, 1, new float[7], null, Gender.Female),
+            Loyalty = 50f
+        };
+        foreach (var (voice, act) in new[] { ("Sloth", ActionType.Idle), ("Fear", ActionType.Flee),
+                                             ("Greed", ActionType.Loot), ("Wrath", ActionType.Attack) })
+        {
+            var refusal = new Decision { Action = act, TopModule = voice, RefusedCommand = true };
+            string refusalLine = PhraseGenerator.LogLine(woman, TypicalContext(), refusal);
+            Console.WriteLine($"  отказ женщины ({voice}): «{refusalLine}»");
+            Check(refusalLine.Contains("не выполнила")
+                  && !System.Text.RegularExpressions.Regex.IsMatch(refusalLine,
+                         @"\b([Оо]н|его|ему|нём|него|остался|устал|сбежал|пошёл|бросился|выполнил)\b"),
+                  $"отказ женщины в мужском роде ({voice}): «{refusalLine}»");
+        }
+
         Console.WriteLine(bad == 0 ? "  Род: чисто." : $"  Род: провалов {bad}.");
     }
 
