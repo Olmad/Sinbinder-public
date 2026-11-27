@@ -874,10 +874,17 @@ namespace Sinbinder.Gameplay
         private void LetCaravanGo(int coins)
         {
             if(_state.CaravanPassed || _state.CargoTaken) return;
+            var purse=coins>0 ? Inventory.PlayerInventory.Instance : null;
+            if(coins>0 && (purse==null || purse.Gold>int.MaxValue-coins))
+            {
+                Announce(Loc.T("Ваш кошель недоступен. Добыча остаётся на месте."));
+                return;
+            }
             _state.CaravanPassed=true;
             _state.CargoTaken=true;
             _state.Tolled=coins>0;
             _state.EnemiesRemaining=0;
+            if(coins>0) purse.AddGold(coins);
             var away=ExpeditionMapBuilder.Point(_plan,0f,_plan.Depth*0.5f-4f);
             foreach (var guard in _guards)
             {
@@ -900,8 +907,6 @@ namespace Sinbinder.Gameplay
                 }
             if(coins>0)
             {
-                var purse=Inventory.PlayerInventory.Instance;
-                if(purse!=null) purse.AddGold(coins);
                 Announce(Loc.F("Обоз отдал долю — {0} — и ушёл по дороге.",Grammar.Coins(coins)));
             }
             else Announce(Loc.T("Обоз ушёл по дороге. Добычи не будет."));
