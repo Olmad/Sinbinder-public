@@ -3837,11 +3837,73 @@ static class Bench
     /// жителей больше, чем примет); меняет ли каждая особенность решение (иначе это декоративное обещание,
     /// 69-PLAN Э1.07); у каждого ли греха и добродетели есть свои.
     /// </summary>
+    // A deterministic production-linked regression gate, independent of balance sweeps.
+    static int TraitSpectrumChecks()
+    {
+        int bad = 0, checks = 0;
+        void Check(bool ok, string what)
+        {
+            checks++;
+            if (!ok) { bad++; Console.WriteLine($"  FAIL: {what}"); }
+        }
+
+        // 0. Знаки двух спектров независимы; ноль не даёт греховных особенностей.
+        var signedSoul = new SoulData("Знаки", SinType.Wrath, MoralType.Neutral, 1, 80f);
+        signedSoul.Set(SinType.Greed, -60f);
+        var signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(signed.Is(SinType.Wrath) && !signed.Has(SinType.Greed),
+              "щедрость ошибочно считается вторичной жадностью");
+        Check(!Traits.Fitting(signed).Exists(t => t.Name == "Падок на добро"),
+              "щедрая душа получает особенность жадности");
+
+        signedSoul.Set(SinType.Wrath, -80f);
+        signedSoul.Set(SinType.Greed, 60f);
+        signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(signed.Virtue && !signed.Is(SinType.Wrath) && signed.Has(SinType.Greed),
+              "главная добродетель скрывает настоящий вторичный грех");
+        Check(Traits.Fitting(signed).Exists(t => t.Name == "Падок на добро"),
+              "вторичная жадность не учитывается при подборе особенностей");
+
+        signedSoul.Set(SinType.Greed, 0f);
+        signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(!signed.Has(signed.Second), "нулевой второй спектр считается грехом");
+        signedSoul.Set(SinType.Wrath, 0f);
+        signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(!Enum.GetValues(typeof(SinType)).Cast<SinType>().Any(signed.Has),
+              "нулевая душа имеет вымышленный грех");
+        var sketchSigns = TraitSoul.Of(new Sketch { Sin = SinType.Wrath, Second = SinType.Greed, Strength = 80f });
+        Check(sketchSigns.Is(SinType.Wrath) && sketchSigns.Has(SinType.Greed),
+              "генератор положительных грехов потерял вторичный грех");
+
+        // Exhaust every ordered pair of distinct axes and both independent signs.
+        foreach (SinType primary in Enum.GetValues(typeof(SinType)))
+        foreach (SinType secondary in Enum.GetValues(typeof(SinType)))
+        {
+            if (primary == secondary) continue;
+            foreach (int p in new[] { -1, 1 })
+            foreach (int q in new[] { -1, 0, 1 })
+            {
+                var soul = new SoulData("Matrix", primary, MoralType.Neutral, 1, p * 80f);
+                soul.Set(secondary, q * 60f);
+                var t = TraitSoul.Of(soul, ShellType.Ghost);
+                Check(t.Is(primary) == (p > 0) && t.Has(primary) == (p > 0)
+                      && t.Has(secondary) == (q > 0)
+                      && !Enum.GetValues(typeof(SinType)).Cast<SinType>()
+                          .Any(axis => axis != primary && axis != secondary && t.Has(axis)),
+                      $"spectrum matrix {primary}:{p}, {secondary}:{q}");
+            }
+        }
+        Console.WriteLine($"Trait spectrum checks: {checks - bad}/{checks} PASS");
+        return bad;
+    }
+
     static void TraitsCheck(AOSConfig cfg)
     {
         Console.WriteLine("\n=== ОСОБЕННОСТИ: пустых нет, каждая меняет решение ===");
         int bad = 0;
         void Check(bool ok, string what) { if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); } }
+
+        bad += TraitSpectrumChecks();
 
         // 1. Карта, где людей больше, чем примет: 8 очагов по 12 жителей, все происхождения.
         int people = 0, noTrait = 0, noLines = 0, noNick = 0, two = 0;
@@ -3979,7 +4041,7 @@ static class Bench
             foreach (bool virtue in new[] { false, true })
             {
                 var s = new TraitSoul { Sin = sin, Second = sin == SinType.Greed ? SinType.Pride : SinType.Greed,
-                                        Virtue = virtue, Moral = virtue ? MoralType.Pious : MoralType.Neutral,
+                                        Virtue = virtue, SecondIsVice = !virtue, Moral = virtue ? MoralType.Pious : MoralType.Neutral,
                                         Trade = Trade.Hunter, Shell = ShellType.Ghost };
                 int fits = Traits.Fitting(s).Count;
                 string label = (virtue ? "добродетель " : "") + sin;
@@ -5881,6 +5943,11 @@ static class Bench
     {
         Debug.Mute = true;
         if (args.Length > 0 && args[0] == "генератор") { GeneratorReport(); return; }
+        if (args.Length == 1 && args[0] == "--trait-spectra")
+        {
+            Environment.ExitCode = TraitSpectrumChecks() == 0 ? 0 : 1;
+            return;
+        }
         int n = args.Length > 0 && int.TryParse(args[0], out var asked) ? asked : 200000;
         var cfg = ScriptableObject.CreateInstance<AOSConfig>();
         ApplyAsset(cfg);

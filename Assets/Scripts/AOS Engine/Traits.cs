@@ -12,6 +12,10 @@ namespace Sinbinder.AOS
         public SinType Sin, Second;
         /// <summary>Главное в душе — добродетель (спектр ниже нуля), а не порок.</summary>
         public bool Virtue;
+        /// <summary>Нулевой главный спектр не является грехом.</summary>
+        public bool PrimaryNeutral;
+        /// <summary>Знак второго спектра независим от знака главного.</summary>
+        public bool SecondIsVice;
         public MoralType Moral;
         public Trade Trade;
         public ShellType Shell;
@@ -19,26 +23,30 @@ namespace Sinbinder.AOS
         public static TraitSoul Of(SoulData soul, ShellType shell)
         {
             var t = new TraitSoul { Shell = shell };
-            if (soul == null) return t;
+            if (soul == null) { t.PrimaryNeutral = true; return t; }
             t.Sin = soul.Sin;
-            t.Virtue = soul.Get(t.Sin) < 0f;
+            float primary = soul.Get(t.Sin);
+            t.Virtue = primary < 0f;
+            t.PrimaryNeutral = primary == 0f;
             t.Moral = soul.Moral;
             t.Trade = soul.Trade;
             float best = float.MinValue;
             for (int i = 0; i < SoulData.SpectrumCount; i++)
             {
                 if (i == (int)t.Sin) continue;
-                float v = Math.Abs(soul.Get((SinType)i));
-                if (v > best) { best = v; t.Second = (SinType)i; }
+                float signed = soul.Get((SinType)i);
+                float v = Math.Abs(signed);
+                if (v > best) { best = v; t.Second = (SinType)i; t.SecondIsVice = signed > 0f; }
             }
             return t;
         }
 
         public static TraitSoul Of(Sketch k) => new TraitSoul
-            { Sin = k.Sin, Second = k.Second, Virtue = false, Moral = k.Moral, Trade = k.Trade, Shell = k.Shell };
+            { Sin = k.Sin, Second = k.Second, Virtue = false, SecondIsVice = k.Second != k.Sin,
+              Moral = k.Moral, Trade = k.Trade, Shell = k.Shell };
 
-        public bool Is(SinType sin) => Sin == sin && !Virtue;
-        public bool Has(SinType sin) => Is(sin) || (Second == sin && !Virtue);
+        public bool Is(SinType sin) => Sin == sin && !Virtue && !PrimaryNeutral;
+        public bool Has(SinType sin) => Is(sin) || (Second == sin && SecondIsVice);
         public bool Good => Moral == MoralType.Pious || Virtue;
         public bool Bad => Moral == MoralType.Vicious;
     }
