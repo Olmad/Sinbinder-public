@@ -1,48 +1,52 @@
-name: Dot Dream CI reproduction
+name: Dot tutorial regression control
 on:
   push:
     branches: ['dot/verify-baseline']
 permissions:
   contents: read
 jobs:
-  dream-reproduction:
+  tutorial-control:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '7c72b99cdef137802185d49452ac17b608b5fd7c'
+          ref: 'e373179d40bc9440208710c1bf6ef3f065de44da'
           persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Reproduce and isolate the shim error on the current canonical SHA
+      - name: Test unchanged, with a bad wound timestamp, and after restoration
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '7c72b99cdef137802185d49452ac17b608b5fd7c'
+          test "$(git rev-parse HEAD)" = 'e373179d40bc9440208710c1bf6ef3f065de44da'
           sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
           test -n "$sdk"
           printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
-          if dotnet build Tools/tutorial/TutorialChecks.csproj -c Release > "$RUNNER_TEMP/dream-before.log" 2>&1; then
-            echo 'Original build passed; expected failure was not reproducible.'
+          p=Tools/tutorial/TutorialChecks.csproj
+          f=Assets/Scripts/Gameplay/Damageable.cs
+          echo '=== Unchanged PR ==='
+          dotnet run -c Release --project "$p" | tee "$RUNNER_TEMP/tutorial-original.log"
+          grep -F 'actual damage records the current combat clock' "$RUNNER_TEMP/tutorial-original.log"
+          test "$(grep -Fc 'LastHitAt = Time.time;' "$f")" -eq 1
+          sed -i 's/LastHitAt = Time.time;/LastHitAt = 0f;/' "$f"
+          git diff --check -- "$f"
+          git diff -- "$f" > "$RUNNER_TEMP/tutorial-negative.patch"
+          echo '=== Deliberately wrong timestamp: build must pass, check must fail ==='
+          dotnet build "$p" -c Release
+          if dotnet run --no-build -c Release --project "$p" > "$RUNNER_TEMP/tutorial-negative.log" 2>&1; then
+            echo 'Tests did not detect the wrong wound timestamp'
             exit 1
           fi
-          grep -E "CombatIntegrationShim.cs.*error CS0649.*Time.time" "$RUNNER_TEMP/dream-before.log"
-          test "$(grep -Fc 'public static float time;' Tools/tutorial/CombatIntegrationShim.cs)" -eq 1
-          sed -i 's/public static float time;/public static float time = 0f;/' Tools/tutorial/CombatIntegrationShim.cs
-          git diff --check -- Tools/tutorial/CombatIntegrationShim.cs
-          git diff -- Tools/tutorial/CombatIntegrationShim.cs > "$RUNNER_TEMP/dream-shim.patch"
-          dotnet build Tools/tutorial/TutorialChecks.csproj -c Release
-      - name: Execute original Dream rules
-        run: dotnet run --no-build -c Release --project Tools/tutorial/TutorialChecks.csproj
-      - name: Execute original syntax gate
-        working-directory: Tools/tutorial
-        run: |
-          dotnet build SyntaxChecks.csproj -c Release
-          dotnet run --no-build -c Release --project SyntaxChecks.csproj -- ../../Assets/Scripts
+          grep -Ei 'FAIL.*actual damage records the current combat clock|actual damage records the current combat clock.*FAIL' "$RUNNER_TEMP/tutorial-negative.log"
+          git restore -- "$f"
+          git diff --exit-code -- "$f"
+          echo '=== Restored PR ==='
+          dotnet run -c Release --project "$p" | tee "$RUNNER_TEMP/tutorial-restored.log"
+          grep -F 'actual damage records the current combat clock' "$RUNNER_TEMP/tutorial-restored.log"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: dream-ci-reproduction
-          path: ${{ runner.temp }}/dream-*
+          name: tutorial-regression-control
+          path: ${{ runner.temp }}/tutorial-*
