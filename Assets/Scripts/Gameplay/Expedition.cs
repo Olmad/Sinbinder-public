@@ -357,12 +357,23 @@ namespace Sinbinder.Gameplay
         public static Warrior Summon(GameObject holder, SquadRoster.Member m,
                                      RelationshipSystem relations)
         {
-            // The roster already persists the warrior's generated life
-            // story and narrative perks. Temporary AOS projections must
-            // receive that same testimony, not an invented empty soul.
-            var w = Make(holder, m.Name, m.Sin, m.Moral, m.Intensity,
-                         m.Loyalty, m.IsCommander, Team.Player, relations,
-                         m.Gender, m.Shell, m.Seed);
+            // An offscreen projection represents the same person, not a
+            // new recruit. Copy the biography and use the captured signed
+            // spectra; applying shell drift again would change AOS each round.
+            var soul = SoulData.FromRoster(m.Name, m.Sin, m.Moral, m.Intensity,
+                m.SoulLevel, m.SoulSpectra, MemorySeed.Copy(m.Seed), m.Gender,
+                m.SoulId, m.SoulKin, m.SoulPersonId);
+            soul.SetTrade(m.Trade);
+            var go = new GameObject(m.Name);
+            go.transform.SetParent(holder.transform);
+            var w = go.AddComponent<Warrior>();
+            // Keep temporary actor IDs independent of the live roster ledger
+            // until checkpoint/experienced-memory identity is reconciled.
+            if (m.SoulSpectra != null)
+                w.RestoreBoundBody(soul, m.Shell, relations, m.IsCommander, Team.Player, null);
+            else
+                w.Initialize(soul, m.Shell, relations, m.IsCommander, Team.Player);
+            w.ChangeLoyalty(m.Loyalty - w.Loyalty);
             w.UnpaidMissions = m.UnpaidMissions;
             // Previous battles do not heal themselves when simulations use
             // new temporary objects; keep the actual survivor's injury.

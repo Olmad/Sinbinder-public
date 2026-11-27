@@ -91,6 +91,13 @@ internal static class RosterSpectraChecks
               save.Split(new[] { "SoulKin = m.SoulKin," }, StringSplitOptions.None).Length == 3 &&
               spawn.Contains("member.SoulId, member.SoulKin, member.SoulPersonId);"),
             "identity and kin flow through roster capture, save, load and spawn (source)");
+        string expedition = Read("Assets/Scripts/Gameplay/Expedition.cs");
+        check(expedition.Contains("SoulData.FromRoster(m.Name, m.Sin, m.Moral, m.Intensity,") &&
+              expedition.Contains("m.SoulLevel, m.SoulSpectra, MemorySeed.Copy(m.Seed), m.Gender,") &&
+              expedition.Contains("m.SoulId, m.SoulKin, m.SoulPersonId);") &&
+              expedition.Contains("soul.SetTrade(m.Trade);") &&
+              expedition.Contains("if (m.SoulSpectra != null)\n                w.RestoreBoundBody("),
+            "actual expedition uses tested full-soul reconstruction and skips repeated binding (source)");
         string warrior = Read("Assets/Scripts/Gameplay/Warrior.cs");
         int begin = warrior.IndexOf("internal void RestoreBoundBody(", StringComparison.Ordinal);
         int end = begin >= 0 ? warrior.IndexOf("/// <summary>", begin, StringComparison.Ordinal) : -1;

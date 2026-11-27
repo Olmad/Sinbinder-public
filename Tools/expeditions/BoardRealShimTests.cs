@@ -176,9 +176,37 @@ static class RealBoardShimTests
         historyHolder.SetActive(false);
         var historyProjection=Expedition.Summon(historyHolder,
             commanderWithHistory,new RelationshipSystem(null));
-        Check(object.ReferenceEquals(historyProjection.Soul.Memory,
-                commanderWithHistory.Seed) && historyProjection.Soul.HasMemory,
-            "commander retains real narrative story for thirteen-module AOS");
+        Check(!object.ReferenceEquals(historyProjection.Soul.Memory,
+                commanderWithHistory.Seed) && historyProjection.Soul.HasMemory &&
+                historyProjection.Soul.Memory.Story==commanderWithHistory.Seed.Story &&
+                !historyProjection.RestoredBoundBody,
+            "legacy commander retains detached narrative story and legacy binding route");
+
+        // Exercise the actual Expedition.Summon entry point. SoulData and
+        // Warrior are shimmed here; their real helpers are covered by aos.
+        var captured=Member("Captured fixture",SinType.Wrath,80f);
+        captured.SoulSpectra=new float[]{-32f,80f,17f,-12f,9f,0f,5f};
+        captured.SoulLevel=4;
+        captured.SoulId="captured-soul";
+        captured.SoulPersonId="captured-person";
+        captured.SoulKin="captured-pair";
+        captured.Trade=Trade.Hunter;
+        captured.Moral=MoralType.Pious;
+        captured.Gender=Gender.Female;
+        captured.Seed=new MemorySeed{Story="Original biography"};
+        var projected=Expedition.Summon(historyHolder,captured,new RelationshipSystem(null));
+        Check(projected.RestoredBoundBody && projected.Soul.Level==4 &&
+              projected.Soul.CopySpectra().SequenceEqual(captured.SoulSpectra) &&
+              projected.Soul.Id==captured.SoulId && projected.Soul.PersonId==captured.SoulPersonId &&
+              projected.Soul.Kin==captured.SoulKin && projected.Soul.Trade==captured.Trade &&
+              projected.Soul.Moral==captured.Moral && projected.Soul.Gender==captured.Gender,
+            "captured auto warrior receives all spectra, identity, kin, trade and bound body route");
+        projected.Soul.Spectra[0]=99f;
+        projected.Soul.Memory.Story="Changed projection";
+        var repeated=Expedition.Summon(historyHolder,captured,new RelationshipSystem(null));
+        Check(repeated.Soul.Get(SinType.Greed)==-32f && repeated.Soul.Memory.Story=="Original biography" &&
+              captured.SoulSpectra[0]==-32f && captured.Seed.Story=="Original biography",
+            "rebuilding a round does not alias or mutate roster personality");
         var board=new MissionBoard();
         string dispatched=board.Send(Mission("Придорожная часовня"),"Греховод1",
             new[]{"Помощник1"},null);
@@ -209,9 +237,10 @@ static class RealBoardShimTests
         MissionBoard.RestoreJourneys(saved);
         var afterLoadProjection=Expedition.Summon(historyHolder,
             commanderWithHistory,new RelationshipSystem(null));
-        Check(object.ReferenceEquals(afterLoadProjection.Soul.Memory,
-                commanderWithHistory.Seed),
-            "loaded combat round still projects identical narrative identity");
+        Check(!object.ReferenceEquals(afterLoadProjection.Soul.Memory,
+                commanderWithHistory.Seed) &&
+                afterLoadProjection.Soul.Memory.Story==commanderWithHistory.Seed.Story,
+            "loaded combat round projects an independent copy of the same narrative");
         Check(MissionBoard.Journeys.Single().EncounterTrace.Frames.Count==alreadyRecorded,
             "serializing one round preserves exact real AOS log");
         int time=0;
