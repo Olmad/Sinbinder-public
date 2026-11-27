@@ -27,6 +27,37 @@ internal static class CombatIntegrationChecks
         PersonalVisit(check);
         TugKnockdown(check);
         Fright(check);
+        HitTimestamp(check);
+    }
+
+    // Drive the existing Unity time shim, rather than suppressing CS0649.
+    // AOS uses this exact timestamp to recognize recently wounded allies.
+    private static void HitTimestamp(Action<bool, string> check)
+    {
+        using var battle = new Fixture();
+        var ally = battle.Spawn(Team.Player, "timestamp ally");
+        var enemy = battle.Spawn(Team.Enemy, "timestamp enemy");
+        float before = ally.LastHitAt;
+        try
+        {
+            UnityEngine.Time.time = 12.5f;
+            ally.TakeDamage(0f, enemy.gameObject);
+            check(ally.LastHitAt == before, "zero damage does not create a recent wound");
+            ally.TakeDamage(1f, enemy.gameObject);
+            check(ally.LastHitAt == 12.5f, "actual damage records the current combat clock");
+            UnityEngine.Time.time = 19f;
+            ally.TakeDamage(float.NaN, enemy.gameObject);
+            ally.Heal(1f);
+            check(ally.LastHitAt == 12.5f, "invalid damage and healing cannot refresh a recent wound");
+            ally.TakeArrow(1f, enemy.gameObject);
+            check(ally.LastHitAt == 19f, "later arrow impact updates the same wound timestamp");
+            UnityEngine.Time.time = 25f;
+            Kill(ally, enemy);
+            UnityEngine.Time.time = 26f;
+            ally.TakeDamage(1f, enemy.gameObject);
+            check(ally.IsDead && ally.LastHitAt == 25f, "a dead unit cannot refresh the last wound with a late hit");
+        }
+        finally { UnityEngine.Time.time = 0f; }
     }
 
     // 26.11: the fear emotion promised by the emotion weights now actually happens.
