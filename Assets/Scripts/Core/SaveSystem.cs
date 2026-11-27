@@ -770,6 +770,7 @@ namespace Sinbinder.Core
             {
                 Id = soul.Id,
                 PersonId = soul.PersonId,
+                Kin = soul.Kin,
                 Name = soul.Name,
                 Moral = (int)soul.Moral,
                 Level = soul.Level,
@@ -797,6 +798,7 @@ namespace Sinbinder.Core
             var soul = new SoulData(s.Name, (MoralType)s.Moral, s.Level,
                                     s.Spectra, memory, (Gender)s.Gender, s.Id, s.PersonId);
             soul.SetTrade((Trade)s.Trade);
+            soul.SetKin(s.Kin);
             soul.Remember(s.Title);
             if (SoulDecay.KeepsMemory((SoulQuality)s.Quality))
                 soul.SetPastMemories(s.PastMemories, Time.time);

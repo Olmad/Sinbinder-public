@@ -9,6 +9,8 @@ namespace Sinbinder.Core
     {
         public string Id;
         public string PersonId;
+        // Authored kin group, independent of custody and personal identity.
+        public string Kin;
         public string Name;
         public int Moral;
         public int Level;
