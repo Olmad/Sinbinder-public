@@ -2474,6 +2474,7 @@ namespace Sinbinder.Tests
                     "Gameplay.Wardrobe.SoftMeshes Gameplay.Wardrobe.Worn Gameplay.CrystalBall.CampSquads UI.ReliefMap.Places " +
                     "UI.ReliefMap.RoadPairs UI.ReliefMap.River UI.ReliefMap.Art UI.ReliefMap._colors UI.ReliefMap._heights " +
                     "UI.ScalesOverhead.Corners UI.SpeechBubbles.Corners " +
+                    "Gameplay.ExpeditionMapBuilder._worn Gameplay.ExpeditionMapBuilder.Pines Gameplay.ExpeditionMapBuilder.DeadTrees " +
                     "UI.SquadStrategyUI.Keys"));
 
         private static Dictionary<string, string> Kinds(params (string kind, string keys)[] groups)
