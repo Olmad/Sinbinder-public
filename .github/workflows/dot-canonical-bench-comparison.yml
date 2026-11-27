@@ -1,33 +1,57 @@
-name: Dot TwinsCheck baseline
+name: Dot caravan choice hint verification
 on:
   push:
     branches: ['dot/verify-baseline']
 permissions:
   contents: read
 jobs:
-  twins-baseline:
+  caravan-hint:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '7c72b99cdef137802185d49452ac17b608b5fd7c'
+          ref: 'b465c24c2641c835f395a3289fbcf8185c0bbbee'
+          fetch-depth: 3
           persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Measure the canonical AOS twins baseline without changing weights
+      - name: Verify the bilingual hint and unchanged gameplay
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '7c72b99cdef137802185d49452ac17b608b5fd7c'
+          test "$(git rev-parse HEAD)" = 'b465c24c2641c835f395a3289fbcf8185c0bbbee'
+          git diff --check '4c4334951a20139e7f57e0a282b3d6c18b0fcb75' HEAD
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          base = '4c4334951a20139e7f57e0a282b3d6c18b0fcb75'
+          p = "Assets/Scripts/Gameplay/PersonalExpedition.cs"
+          catalog = "Assets/Resources/Lang/en.txt"
+          expected_paths = {p, catalog}
+          changed = set(subprocess.check_output(['git', 'diff', '--name-only', base, 'HEAD'], text=True).splitlines())
+          assert changed == expected_paths, changed
+          old = "бой с охраной — серебро ваше, если победите"
+          new = "Бой с охраной. После победы исследуйте отмеченную цель."
+          en_old = "a fight with the guards — the silver is yours if you win"
+          en_new = "Fight the guards. After winning, investigate the marked objective."
+          def exact_replacement(path, a, b):
+              previous = subprocess.check_output(['git', 'show', f'{base}:{path}'])
+              current = Path(path).read_bytes()
+              a, b = a.encode(), b.encode()
+              assert previous.count(a) == 1 and current.count(b) == 1, path
+              assert previous.replace(a, b) == current, path
+          exact_replacement(p, f'Loc.T("{old}"),()=>Decide(Talk.Battle)', f'Loc.T("{new}"),()=>Decide(Talk.Battle)')
+          exact_replacement(catalog, f'msgid "{old}"\nmsgstr "{en_old}"', f'msgid "{new}"\nmsgstr "{en_new}"')
+          source = Path(p).read_text()
+          assert 'Loc.T("F — исследовать цель"), expedition.CollectObjective' in source
+          print("PASS: exact RU/EN caravan hint and real F objective, no gameplay changes")
+          PY
           sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
           test -n "$sdk"
           printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
-          dotnet run -c Release --project Tools/bench/bench.csproj -- двойники | tee "$RUNNER_TEMP/twins.log"
-          git diff --exit-code
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: twins-baseline
-          path: ${{ runner.temp }}/twins.log
+          dotnet run --project Tools/expeditions/ExpeditionChecks.csproj -c Release
+      - name: Parse game C# syntax
+        working-directory: Tools/tutorial
+        run: dotnet run -c Release --project SyntaxChecks.csproj -- ../../Assets/Scripts
