@@ -155,9 +155,27 @@ namespace Sinbinder.AOS
 
             _nextBeat = Time.unscaledTime + _beatCooldown;
             Time.timeScale = _beatScale;
+            _slowed = true;
 
             yield return new WaitForSecondsRealtime(_beatSeconds);
 
+            Unslow();
+        }
+
+        private bool _slowed;
+
+        /// <summary>
+        /// Замедление держит корутина воина. Если воин пропал в эти полсекунды
+        /// (погиб, поднят в другое тело, сцена сменилась), корутина умирает
+        /// вместе с ним, а мир оставался медленным навсегда: следующий отказ
+        /// замедляет, только когда скорость обычная (аудит ботов R19-06, 26.11).
+        /// </summary>
+        void OnDisable() => Unslow();
+
+        private void Unslow()
+        {
+            if (!_slowed) return;
+            _slowed = false;
             if (Mathf.Approximately(Time.timeScale, _beatScale)) Time.timeScale = 1f;
         }
 
