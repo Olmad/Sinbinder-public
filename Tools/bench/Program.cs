@@ -5659,8 +5659,22 @@ static class Bench
                                        && e.ActorName == "Мясник");
         Check(fleeTimes <= 1, "один и тот же побег пересказан дважды");
 
-        Check(story.Contains("сбежал"),
+        // Приказов на вылазке не отдают: побег — «сбежать», не «отступить».
+        // А удался он или нет — разные строки: попытку не выдать за побег.
+        Check(story.Contains("сбеж") && !story.Contains("отступ"),
               "побег на вылазке назван отходом — а приказов там не отдают");
+        string Escape(bool done)
+        {
+            var one = new BattleRecord();
+            one.AddEvent(new BattleEvent { ActorName = "Мясник", Action = ActionType.Flee, Resolved = done });
+            return Sinbinder.Crypt.Retelling.Tell(one);
+        }
+        string escaped = Escape(true), tried = Escape(false);
+        Console.WriteLine($"  побег удался: «{escaped}»; не удался: «{tried}»");
+        Check(escaped.Contains("сбежал") && !escaped.Contains("пытал"),
+              "удавшийся побег пересказан как попытка");
+        Check(tried.Contains("пытал") && !tried.Contains("сбежал"),
+              "неудавшийся побег выдан за удавшийся");
 
         Check(Sinbinder.Crypt.Retelling.Tell(null) == "",
               "пересказ пустой записи что-то выдумал");
