@@ -56,20 +56,32 @@ namespace Sinbinder.AOS
         public float DecayRate;          // скорость забывания
         public float CreationTime;       // Time.time в момент создания
 
-        // Match known persons first; never join different known people
-        // merely because a body key happens to coincide.
+        // A known person can only match the same known person. A missing
+        // identity is not evidence that the old body still belongs to them.
+        // Preserve body-address matching only for two legacy/unknown records.
         internal bool MatchesTarget(string bodyId, string personId)
-            => !string.IsNullOrEmpty(TargetPersonId) && !string.IsNullOrEmpty(personId)
-                ? TargetPersonId == personId : TargetID == bodyId;
+            => !string.IsNullOrEmpty(TargetPersonId) || !string.IsNullOrEmpty(personId)
+                ? !string.IsNullOrEmpty(TargetPersonId) && TargetPersonId == personId
+                : (TargetID ?? "") == (bodyId ?? "");
 
         internal static Dictionary<string, string> UniqueLivingBodies(IEnumerable<KeyValuePair<string, string>> bodies)
         {
             var result = new Dictionary<string, string>(StringComparer.Ordinal);
+            var owners = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var body in bodies)
             {
                 if (string.IsNullOrEmpty(body.Key) || string.IsNullOrEmpty(body.Value)) continue;
                 if (!result.TryGetValue(body.Key, out var previous)) result.Add(body.Key, body.Value);
                 else if (previous != body.Value) result[body.Key] = null;
+
+                // Two people sharing one live body address is just as ambiguous
+                // as one person appearing in two live bodies.
+                if (!owners.TryGetValue(body.Value, out var owner)) owners.Add(body.Value, body.Key);
+                else if (owner != body.Key)
+                {
+                    result[owner] = null;
+                    result[body.Key] = null;
+                }
             }
             return result;
         }
@@ -78,10 +90,11 @@ namespace Sinbinder.AOS
         // record and event time stay unchanged for persistence and history.
         internal MemoryRecord ProjectTarget(IReadOnlyDictionary<string, string> current)
         {
-            if (string.IsNullOrEmpty(TargetPersonId) || current == null ||
-                !current.TryGetValue(TargetPersonId, out var bodyId))
-                return this;
-            if (bodyId == TargetID) return this;
+            if (string.IsNullOrEmpty(TargetPersonId) || current == null) return this;
+            // When the person is absent, never expose their historical body
+            // as a current target: it may now belong to somebody else.
+            current.TryGetValue(TargetPersonId, out var bodyId);
+            if ((bodyId ?? "") == TargetID) return this;
             return new MemoryRecord
             {
                 EventType = EventType, TargetID = bodyId ?? "", TargetPersonId = TargetPersonId,

@@ -191,6 +191,15 @@ namespace Sinbinder.AOS
 
         public void CreateMemoryById(string warriorId, string eventType, string targetId, EmotionType emotion, float importance)
         {
+            // A conflicted registry entry is not an ordinary legacy/unknown
+            // address. Do not record a targeted event for an arbitrary person.
+            if (!string.IsNullOrEmpty(targetId) &&
+                _bodyPeople.TryGetValue(targetId, out var registered) && registered == null)
+            {
+                Debug.LogWarning("[AOS] Ignored targeted memory with ambiguous body identity.");
+                return;
+            }
+
             if (!_memories.ContainsKey(warriorId))
                 _memories[warriorId] = new List<MemoryRecord>();
 
@@ -202,7 +211,6 @@ namespace Sinbinder.AOS
             {
                 existing.Importance = Mathf.Max(existing.Importance, importance);
                 existing.CreationTime = Time.time;
-                if (string.IsNullOrEmpty(existing.TargetPersonId)) existing.TargetPersonId = personId;
             }
             else
             {

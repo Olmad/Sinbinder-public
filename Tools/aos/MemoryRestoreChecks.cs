@@ -71,6 +71,72 @@ internal static class MemoryRestoreChecks
             system.CreateMemoryById("incoming", "NewEvent", "reused", EmotionType.Joy, 0.8f);
             check(MemoryProcessor.Snapshot(allowed).Single(m => m.EventType == "NewEvent").TargetPersonId == "new-person",
                 "new scene does not inherit prior body identity mappings");
+            // QA PR23: a conflicting body registration must not refresh an
+            // already addressed historical event or assign it to the wrong soul.
+            MemoryProcessor.ForgetAll();
+            var historical = Row("incoming", "collision");
+            historical.TargetPersonId = "person-a";
+            historical.Age = 15f;
+            MemoryProcessor.Restore(new List<SavedMemory> { historical });
+            MemoryProcessor.RegisterBodyIdentity("collision", "person-a");
+            MemoryProcessor.RegisterBodyIdentity("collision", "person-b");
+            system.CreateMemoryById("incoming", historical.EventType, "collision", EmotionType.Joy, 0.9f);
+            var afterConflict = MemoryProcessor.Snapshot(allowed);
+            check(afterConflict.Count == 1 && afterConflict[0].TargetPersonId == "person-a" &&
+                  afterConflict[0].Age == 15f && afterConflict[0].Importance == 0.8f,
+                "ambiguous body address cannot refresh or create a targeted historical memory");
+
+            // Both directions of known/unknown matching must fail closed,
+            // including an old save without TargetPersonId.
+            MemoryProcessor.ResetBodyIdentities();
+            system.CreateMemoryById("incoming", historical.EventType, "collision", EmotionType.Joy, 0.9f);
+            check(MemoryProcessor.Snapshot(allowed).Count == 2 &&
+                  MemoryProcessor.Snapshot(allowed).Single(m => m.TargetPersonId == "person-a").Age == 15f,
+                "unknown current address cannot refresh a known person");
+            MemoryProcessor.RegisterBodyIdentity("collision", "person-b");
+            system.CreateMemoryById("incoming", historical.EventType, "collision", EmotionType.Joy, 0.7f);
+            check(MemoryProcessor.Snapshot(allowed).Count == 3 &&
+                  MemoryProcessor.Snapshot(allowed).Single(m => string.IsNullOrEmpty(m.TargetPersonId)).Importance == 0.9f &&
+                  MemoryProcessor.Snapshot(allowed).Single(m => m.TargetPersonId == "person-b").Importance == 0.7f,
+                "known person cannot inherit a legacy memory merely by sharing its body address");
+
+            // Positive controls: legacy repetition remains valid, and known
+            // identity is recognized across bodies, with normal recency update.
+            system.CreateMemoryById("incoming", "LegacyRepeat", "legacy-only", EmotionType.Joy, 0.6f);
+            system.CreateMemoryById("incoming", "LegacyRepeat", "legacy-only", EmotionType.Joy, 0.8f);
+            check(MemoryProcessor.Snapshot(allowed).Single(m => m.EventType == "LegacyRepeat").Importance == 0.8f,
+                "two unknown legacy addresses still match on their body key");
+            MemoryProcessor.RegisterBodyIdentity("new-a", "person-a");
+            system.CreateMemoryById("incoming", historical.EventType, "new-a", EmotionType.Joy, 0.95f);
+            var renewed = MemoryProcessor.Snapshot(allowed).Single(m => m.TargetPersonId == "person-a");
+            check(renewed.Age == 0f && renewed.Importance == 0.95f && renewed.TargetID == "collision",
+                "same known person in another body refreshes the original event without rewriting history");
+
+            // A current projection may not point a known person's old
+            // memory at a different present person, or an ambiguous live body.
+            var live = renewed.ToLive(Time.time);
+            var absent = MemoryRecord.UniqueLivingBodies(new[]
+            {
+                new KeyValuePair<string, string>("person-b", "collision")
+            });
+            check(live.ProjectTarget(absent).TargetID == "" && live.TargetID == "collision",
+                "absent person cannot project onto reused historical body");
+            var shared = MemoryRecord.UniqueLivingBodies(new[]
+            {
+                new KeyValuePair<string, string>("person-a", "shared"),
+                new KeyValuePair<string, string>("person-b", "shared"),
+                new KeyValuePair<string, string>("person-a", "shared")
+            });
+            check(live.ProjectTarget(shared).TargetID == "" && shared["person-b"] == null,
+                "two live people sharing one body cannot project to an arbitrary target");
+            var returned = MemoryRecord.UniqueLivingBodies(new[]
+            {
+                new KeyValuePair<string, string>("person-a", "new-a"),
+                new KeyValuePair<string, string>("person-b", "collision")
+            });
+            check(live.ProjectTarget(returned).TargetID == "new-a" && live.TargetID == "collision",
+                "unique returning person resolves to current body while original memory remains intact");
+
             MemoryProcessor.ForgetAll();
             check(MemoryProcessor.Snapshot(null).Count == 0, "new game discards every accumulated memory");
         }
