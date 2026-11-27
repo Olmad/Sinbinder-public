@@ -1,52 +1,410 @@
-name: Dot tutorial regression control
+name: Dot F17 victory loot reproduction
 on:
   push:
     branches: ['dot/verify-baseline']
 permissions:
   contents: read
 jobs:
-  tutorial-control:
+  f17-victory:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 'e373179d40bc9440208710c1bf6ef3f065de44da'
+          ref: '7c72b99cdef137802185d49452ac17b608b5fd7c'
           persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Test unchanged, with a bad wound timestamp, and after restoration
+      - name: Run the production victory distributor with unavailable loot receivers
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'e373179d40bc9440208710c1bf6ef3f065de44da'
+          test "$(git rev-parse HEAD)" = '7c72b99cdef137802185d49452ac17b608b5fd7c'
           sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
           test -n "$sdk"
           printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
-          p=Tools/tutorial/TutorialChecks.csproj
-          f=Assets/Scripts/Gameplay/Damageable.cs
-          echo '=== Unchanged PR ==='
-          dotnet run -c Release --project "$p" | tee "$RUNNER_TEMP/tutorial-original.log"
-          grep -F 'actual damage records the current combat clock' "$RUNNER_TEMP/tutorial-original.log"
-          test "$(grep -Fc 'LastHitAt = Time.time;' "$f")" -eq 1
-          sed -i 's/LastHitAt = Time.time;/LastHitAt = 0f;/' "$f"
-          git diff --check -- "$f"
-          git diff -- "$f" > "$RUNNER_TEMP/tutorial-negative.patch"
-          echo '=== Deliberately wrong timestamp: build must pass, check must fail ==='
-          dotnet build "$p" -c Release
-          if dotnet run --no-build -c Release --project "$p" > "$RUNNER_TEMP/tutorial-negative.log" 2>&1; then
-            echo 'Tests did not detect the wrong wound timestamp'
-            exit 1
-          fi
-          grep -Ei 'FAIL.*actual damage records the current combat clock|actual damage records the current combat clock.*FAIL' "$RUNNER_TEMP/tutorial-negative.log"
-          git restore -- "$f"
-          git diff --exit-code -- "$f"
-          echo '=== Restored PR ==='
-          dotnet run -c Release --project "$p" | tee "$RUNNER_TEMP/tutorial-restored.log"
-          grep -F 'actual damage records the current combat clock' "$RUNNER_TEMP/tutorial-restored.log"
+          dotnet run --project Tools/loot/LootChecks.csproj -c Release | tee "$RUNNER_TEMP/f17-original.log"
+          cat > Tools/loot/HarvestableBodyChecks.cs <<'FIXTURE'
+          using System;
+          using System.Reflection;
+          using Sinbinder.Core;
+          using Sinbinder.Gameplay;
+          using Sinbinder.Inventory;
+
+          internal static class HarvestableBodyChecks
+          {
+              internal static void Run(Action<bool, string> check)
+              {
+                  PlayerLoot(check);
+                  ReceiverFailure(check);
+                  OtherTeams(check);
+                  InvalidOrUnavailable(check);
+                  ReentrantInventoryChange(check);
+                  VictoryShares(check);
+                  ResetInventory();
+              }
+
+              private static void PlayerLoot(Action<bool, string> check)
+              {
+                  var store = OpenInventory();
+                  store.SetGold(20);
+                  var warrior = new Warrior { Team = Team.Player, Kept = 4, EquipmentSlotFree = true };
+                  warrior.Pocket(6);
+                  var body = Body(13, "Sword", foe: true);
+                  check(body.CanLoot(warrior) && body.HasLoot, "AOS player warrior can target a resource-bearing enemy corpse");
+
+                  var loot = body.GatherLoot(warrior);
+                  check(loot.gold == 13 && warrior.PocketGold == 10 && store.Gold == 29 && body.GoldValue == 0,
+                      "accepted player gold is conserved across corpse, split pocket and wallet");
+                  check(loot.equipment == "Sword" && warrior.Equipped?.Name == "Sword" && !body.HasEquipment && store.Count == 0,
+                      "accepted trophy is equipped once and does not create an inventory copy");
+                  check(!body.HasLoot && !body.CanLoot(warrior) && !body.IsCollected,
+                      "depleted resource body stops attracting AOS while remaining available to Remains");
+
+                  loot = body.GatherLoot(warrior);
+                  check(loot.gold == 0 && loot.equipment == null && body.CollectGold() == 0 && body.CollectEquipment() == null &&
+                        warrior.PocketGold == 10 && store.Gold == 29 && store.Count == 0,
+                      "a second resource action cannot duplicate money or equipment");
+
+                  var ally = Body(7, "Allied shield", foe: false);
+                  loot = ally.GatherLoot(warrior);
+                  check(!ally.CanLoot(warrior) && loot.gold == 0 && loot.equipment == null && ally.HasLoot,
+                      "player squad cannot consume the resources of a friendly corpse");
+              }
+
+              private static void ReceiverFailure(Action<bool, string> check)
+              {
+                  var full = OpenInventory();
+                  for (int i = 0; i < full.MaxSlots; i++)
+                      if (!full.AddItem(new InventoryItem("Stored gear " + i, "", ItemType.Equipment)))
+                          throw new InvalidOperationException("Failed to fill the production inventory");
+
+                  var warrior = new Warrior { Team = Team.Player, Kept = 2 };
+                  var body = Body(10, "Helmet", foe: true);
+                  var loot = body.GatherLoot(warrior);
+                  check(loot.gold == 10 && warrior.PocketGold == 2 && full.Gold == 8 &&
+                        loot.equipment == null && body.HasEquipment && body.HasLoot && !body.IsCollected && full.Count == full.MaxSlots,
+                      "full pack retains refused equipment after successful gold transfer");
+
+                  full.RemoveItem(full.GetAllItems()[0].Id);
+                  loot = body.GatherLoot(warrior);
+                  check(loot.gold == 0 && loot.equipment == "Helmet" && !body.HasEquipment &&
+                        full.GetAllItems().Exists(item => item.Name == "Helmet") && full.Count == full.MaxSlots,
+                      "a newly free pack slot receives only the remaining trophy");
+
+                  ResetInventory();
+                  var noStore = new Warrior { Team = Team.Player, Kept = 3, EquipmentSlotFree = true };
+                  body = Body(10, "Knife", foe: true);
+                  loot = body.GatherLoot(noStore);
+                  check(loot.gold == 0 && body.GoldValue == 10 && noStore.PocketGold == 0 &&
+                        loot.equipment == "Knife" && noStore.Equipped?.Name == "Knife" && !body.HasEquipment,
+                      "missing wallet leaves the full split on the corpse but allows a free equipment slot");
+                  check(body.HasLoot && !body.CanLoot(noStore),
+                      "player avoids repeatedly targeting gold the missing wallet cannot receive");
+
+                  body = Body(5, "Shield", foe: true);
+                  loot = body.GatherLoot(noStore);
+                  check(loot.gold == 0 && loot.equipment == null && body.GoldValue == 5 && body.HasEquipment,
+                      "missing wallet and unavailable equipment slot preserve both recoverable resources");
+              }
+
+              private static void OtherTeams(Action<bool, string> check)
+              {
+                  var store = OpenInventory();
+                  store.SetGold(15);
+                  var neutral = new Warrior { Team = Team.Neutral, Kept = 2 };
+                  var body = Body(8, "Relic", foe: false);
+                  var loot = body.GatherLoot(neutral);
+                  check(loot.gold == 8 && neutral.PocketGold == 8 && store.Gold == 15 && body.GoldValue == 0,
+                      "neutral keeps its gold in its own pocket without funding the protagonist");
+                  check(loot.equipment == null && body.HasEquipment && store.Count == 0 && SquadGear.LastStore == null,
+                      "neutral has no gear fallback to the protagonist pack");
+
+                  var enemy = new Warrior { Team = Team.Enemy, EquipmentSlotFree = true };
+                  body = Body(6, "Dagger", foe: false);
+                  loot = body.GatherLoot(enemy);
+                  check(loot.gold == 6 && enemy.PocketGold == 6 && loot.equipment == "Dagger" &&
+                        enemy.Equipped?.Name == "Dagger" && store.Gold == 15 && store.Count == 0 && !body.IsCollected,
+                      "enemy can accept both resources on its own while preserving remains");
+              }
+
+              private static void InvalidOrUnavailable(Action<bool, string> check)
+              {
+                  var store = OpenInventory();
+                  var warrior = new Warrior { Team = Team.Player, Kept = 3, EquipmentSlotFree = true };
+                  var body = Body(10, null, foe: true);
+                  store.SetGold(int.MaxValue - 1);
+                  var loot = body.GatherLoot(warrior);
+                  check(loot.gold == 0 && warrior.PocketGold == 0 && store.Gold == int.MaxValue - 1 && body.GoldValue == 10,
+                      "full numeric wallet preserves the entire gold split");
+
+                  store.SetGold(0);
+                  warrior.Pocket(int.MaxValue - 1);
+                  loot = body.GatherLoot(warrior);
+                  check(loot.gold == 0 && warrior.PocketGold == int.MaxValue - 1 && store.Gold == 0 && body.GoldValue == 10,
+                      "full numeric pocket preserves the entire gold split");
+
+                  var neutral = new Warrior { Team = Team.Neutral };
+                  neutral.Pocket(int.MaxValue);
+                  loot = body.GatherLoot(neutral);
+                  check(loot.gold == 0 && neutral.PocketGold == int.MaxValue && body.GoldValue == 10 && store.Gold == 0,
+                      "NPC pocket cannot overflow or transfer its balance to the protagonist");
+
+                  var invalidSplit = new Warrior { Team = Team.Player, Kept = 11 };
+                  loot = body.GatherLoot(invalidSplit);
+                  check(loot.gold == 0 && invalidSplit.PocketGold == 0 && body.GoldValue == 10 && store.Gold == 0,
+                      "a split outside the resource quantity transfers nothing");
+
+                  var blocked = Body(10, "Hauberk", foe: true);
+                  blocked.MarkCollected();
+                  loot = blocked.GatherLoot(warrior);
+                  check(!blocked.HasLoot && !blocked.CanLoot(warrior) && loot.gold == 0 && loot.equipment == null,
+                      "a corpse already taken for remains cannot yield resources afterward");
+
+                  var corrupt = new HarvestableBody { Foe = true };
+                  corrupt.Initialize(ShellType.Living, -1, true, "");
+                  loot = corrupt.GatherLoot(warrior);
+                  check(!corrupt.HasLoot && !corrupt.CanLoot(warrior) && loot.gold == 0 && loot.equipment == null && store.Count == 0,
+                      "negative coins and nameless equipment never enter a pocket or pack");
+
+                  body = Body(4, "Trophy", foe: true);
+                  var dead = new Warrior { Team = Team.Player, IsDead = true };
+                  var uninitialized = new Warrior { Team = Team.Player, Soul = null };
+                  check(!body.CanLoot(null) && !body.CanLoot(dead) && !body.CanLoot(uninitialized) &&
+                        body.GatherLoot(dead).gold == 0 && body.GatherLoot(uninitialized).equipment == null && body.GoldValue == 4,
+                      "missing, dead and uninitialized collectors do not consume resources");
+              }
+
+              private static void ReentrantInventoryChange(Action<bool, string> check)
+              {
+                  var store = OpenInventory();
+                  var warrior = new Warrior { Team = Team.Player, Kept = 3 };
+                  var body = Body(11, "Sword", foe: true);
+                  int calls = 0;
+                  bool reentryBlocked = true;
+                  store.OnInventoryChanged = () =>
+                  {
+                      calls++;
+                      var nested = body.GatherLoot(warrior);
+                      reentryBlocked &= nested.gold == 0 && nested.equipment == null &&
+                                        body.CollectGold() == 0 && body.CollectEquipment() == null;
+                  };
+
+                  var loot = body.GatherLoot(warrior);
+                  check(calls > 0 && reentryBlocked && loot.gold == 11 && loot.equipment == "Sword" &&
+                        store.Gold == 8 && warrior.PocketGold == 3 && store.Count == 1 && !body.HasLoot,
+                      "inventory callbacks cannot reenter the same corpse through either resource API");
+              }
+
+              private static void VictoryShares(Action<bool, string> check)
+              {
+                  const string trophy = "F17 victory trophy";
+                  bool previous = LootChain.Enabled;
+                  try
+                  {
+                      LootChain.Enabled = true;
+                      foreach (bool hasStore in new[] { false, true })
+                      {
+                          ResetInventory();
+                          var store = hasStore ? OpenInventory() : null;
+                          if (store != null)
+                              for (int i = 0; i < store.MaxSlots; i++)
+                                  if (!store.AddItem(new InventoryItem("Filler " + i, "", ItemType.Equipment)))
+                                      throw new InvalidOperationException("Could not fill inventory");
+
+                          var greed = new Warrior { Team = Team.Player, Kept = 2, Soul = new SoulData { Sin = SinType.Greed } };
+                          var pride = new Warrior { Team = Team.Player, Soul = new SoulData { Sin = SinType.Pride } };
+                          var body = Body(10, trophy, foe: true);
+                          var squad = new System.Collections.Generic.List<Damageable> { new(greed), new(pride) };
+                          var bodies = new System.Collections.Generic.List<HarvestableBody> { body };
+                          int Gold() => body.GoldValue + greed.PocketGold + pride.PocketGold + (store?.Gold ?? 0);
+                          int Trophies() => (body.HasEquipment ? 1 : 0) + (pride.Equipped?.Name == trophy ? 1 : 0)
+                              + (store?.GetAllItems().FindAll(item => item.Name == trophy).Count ?? 0);
+
+                          LootChain.Enabled = false;
+                          LootChain.Share(squad, bodies);
+                          check(Gold() == 10 && Trophies() == 1, "F17 disabled route is not the reproduction");
+                          LootChain.Enabled = true;
+                          LootChain.Share(squad, bodies);
+                          Console.WriteLine($"F17 after victory: store={(hasStore ? "full" : "missing")} gold={Gold()}/10 trophies={Trophies()}/1");
+                          check(Gold() == (hasStore ? 10 : 0) && Trophies() == 0,
+                              "F17 baseline loses rejected resources through the real victory distributor");
+
+                          if (store == null) store = OpenInventory();
+                          else store.RemoveItem(store.GetAllItems()[0].Id);
+                          LootChain.Share(squad, bodies);
+                          LootChain.Share(squad, bodies);
+                          Console.WriteLine($"F17 after two retries with space: gold={Gold()}/10 trophies={Trophies()}/1");
+                          check(Gold() == (hasStore ? 10 : 0) && Trophies() == 0,
+                              "F17 baseline cannot recover vanished loot even after a slot opens");
+                      }
+                  }
+                  finally
+                  {
+                      LootChain.Enabled = previous;
+                      ResetInventory();
+                  }
+              }
+
+              private static HarvestableBody Body(int gold, string equipment, bool foe)
+              {
+                  var body = new HarvestableBody { Foe = foe };
+                  body.Initialize(ShellType.Living, gold, equipment != null, equipment);
+                  return body;
+              }
+
+              private static PlayerInventory OpenInventory()
+              {
+                  ResetInventory();
+                  var store = new PlayerInventory();
+                  typeof(PlayerInventory).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(store, null);
+                  return store;
+              }
+
+              private static void ResetInventory()
+                  => typeof(PlayerInventory).GetProperty(nameof(PlayerInventory.Instance)).SetValue(null, null);
+          }
+
+          // The tests link production body and inventory code. Only Unity and the fighter,
+          // equipment and valuation boundaries are replaced to make reception explicit.
+          namespace UnityEngine
+          {
+              internal sealed class SerializeField : Attribute { }
+              internal enum RuntimeInitializeLoadType { SubsystemRegistration }
+              internal sealed class RuntimeInitializeOnLoadMethodAttribute : Attribute
+              {
+                  public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType loadType) { }
+              }
+              internal static class Object
+              {
+                  public static T FindFirstObjectByType<T>() where T : class => null;
+              }
+              public class MonoBehaviour
+              {
+                  protected object gameObject { get; } = new();
+                  protected void DontDestroyOnLoad(object value) { }
+                  protected void Destroy(object value) { }
+              }
+
+              internal static class Debug { public static void Log(string text) { } }
+              internal static class Mathf { public static int Min(int a, int b) => Math.Min(a, b); }
+          }
+
+          namespace Sinbinder.Core
+          {
+              public sealed class SoulData { public SinType Sin { get; set; } }
+              internal static class Loc
+              {
+                  public static string F(string format, params object[] args) => string.Format(format, args);
+                  public static string T(string value) => value;
+                  public static string N(string value) => value;
+                  public static string Name(string value) => value;
+              }
+              internal static class Grammar
+              {
+                  public static string For(int gender, string value) => value;
+                  public static string Pick(int gender, string male, string female) => male;
+              }
+          }
+
+          namespace Sinbinder.Gameplay
+          {
+              public enum Team { Player, Enemy, Neutral }
+
+              public sealed class Damageable
+              {
+                  public Damageable(Warrior warrior) => Warrior = warrior;
+                  public Warrior Warrior { get; }
+                  public bool IsDead => Warrior.IsDead;
+              }
+              public sealed class SinbinderPlayer : Warrior { }
+              public class Warrior
+              {
+                  public string DisplayName => Soul.Sin.ToString();
+                  public int Gender => 0;
+                  public Team Team;
+                  public bool IsDead;
+                  public SoulData Soul = new();
+                  public int Kept;
+                  public bool EquipmentSlotFree;
+                  public int PocketGold { get; private set; }
+                  public InventoryItem Equipped { get; private set; }
+
+                  public void Pocket(int gold) => PocketGold = checked(PocketGold + gold);
+
+                  public bool Give(InventoryItem item)
+                  {
+                      if (!EquipmentSlotFree || Equipped != null) return false;
+                      Equipped = item;
+                      return true;
+                  }
+              }
+
+              internal static class SquadGear
+              {
+                  internal static PlayerInventory LastStore { get; private set; }
+                  public static int Kept(Warrior warrior, int gold) => warrior.Kept;
+                  public static string GoldWord(int gold) => gold.ToString();
+                  public static void Place(Warrior warrior, InventoryItem item, out int slot, out InventoryItem old)
+                  {
+                      slot = 0;
+                      old = warrior.Equipped;
+                  }
+
+                  public static bool Pick(Warrior warrior, InventoryItem item, PlayerInventory store, out string word)
+                  {
+                      LastStore = store;
+                      word = "";
+                      return warrior.Give(item);
+                  }
+              }
+
+              internal static class BodyWorth
+              {
+                  public static int Gold(ShellType shell, SoulData soul) => 0;
+                  public static bool HasEquipment(ShellType shell, SoulData soul) => false;
+                  public static string Equipment(ShellType shell, SoulData soul) => null;
+              }
+          }
+
+          namespace Sinbinder.UI
+          {
+              internal sealed class BattleLogUI { public void Write(string value) { } }
+          }
+          FIXTURE
+          cat > Tools/loot/LootChecks.csproj <<'PROJECT'
+          <Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup>
+          <OutputType>Exe</OutputType>
+          <TargetFramework>net8.0</TargetFramework>
+          <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+          <ImplicitUsings>disable</ImplicitUsings>
+          <Nullable>disable</Nullable>
+          <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+          </PropertyGroup>
+          <ItemGroup>
+          <Compile Include="Program.cs"/>
+          <Compile Include="HarvestableBodyChecks.cs"/>
+          <Compile Include="../../Assets/Scripts/Gameplay/FallenBagTransfer.cs" Link="FallenBagTransfer.cs"/>
+          <Compile Include="../../Assets/Scripts/Gameplay/FallenBagChoice.cs" Link="FallenBagChoice.cs"/>
+          <Compile Include="../../Assets/Scripts/Gameplay/HarvestableBody.cs" Link="HarvestableBody.cs"/>
+          <Compile Include="../../Assets/Scripts/Inventory/InventoryItem.cs" Link="InventoryItem.cs"/>
+          <Compile Include="../../Assets/Scripts/Inventory/PlayerInventory.cs" Link="PlayerInventory.cs"/>
+          <Compile Include="../../Assets/Scripts/Inventory/StorageItem.cs" Link="StorageItem.cs"/>
+          <Compile Include="../../Assets/Scripts/Core/Soul/ShellType.cs" Link="ShellType.cs"/>
+          <Compile Include="../../Assets/Scripts/Core/Soul/SinType.cs" Link="SinType.cs"/>
+          <Compile Include="../../Assets/Scripts/Core/Soul/MoralType.cs" Link="MoralType.cs"/>
+          <Compile Include="../../Assets/Scripts/Gameplay/LootChain.cs" Link="LootChain.cs"/>
+          <Compile Include="../../Assets/Scripts/Gameplay/LootCarrySystem.cs" Link="LootCarrySystem.cs"/>
+          </ItemGroup>
+          </Project>
+          PROJECT
+          git diff --check -- Tools/loot
+          git diff -- Tools/loot > "$RUNNER_TEMP/f17-fixture.patch"
+          dotnet run --project Tools/loot/LootChecks.csproj -c Release | tee "$RUNNER_TEMP/f17-reproduction.log"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: tutorial-regression-control
-          path: ${{ runner.temp }}/tutorial-*
+          name: f17-victory-reproduction
+          path: ${{ runner.temp }}/f17-*
