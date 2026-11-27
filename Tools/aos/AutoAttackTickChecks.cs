@@ -115,10 +115,12 @@ namespace UnityEngine
         public static float Clamp(float value, float min, float max) => Math.Clamp(value, min, max);
         public static int Min(int a, int b) => Math.Min(a, b);
         public static float Min(float a, float b) => Math.Min(a, b);
+        public static float Max(float a, float b) => Math.Max(a, b);
         public static float Clamp01(float value) => Math.Clamp(value, 0f, 1f);
+        public static float Sign(float value) => value >= 0f ? 1f : -1f;
     }
-    internal static class Debug { public static void Log(string message) { } }
-    public sealed class GameObject { public string name = ""; }
+    internal static class Debug { public static void Log(string message) { } public static void LogWarning(string message) { } }
+    public sealed class GameObject { public string name = ""; public bool activeInHierarchy = true; }
 
     public class MonoBehaviour
     {
@@ -163,16 +165,28 @@ namespace Sinbinder.Core
 namespace Sinbinder.Gameplay
 {
     internal sealed class Damageable { public bool IsDead => false; }
+    internal enum BattleOutcome { Victory, Defeat, Draw }
+    internal struct BattleResult { public BattleOutcome Outcome { get; set; } public int EnemiesKilled { get; set; } public int AlliesLost { get; set; } }
+    internal sealed class CombatManager
+    {
+        public static CombatManager Instance { get; set; }
+        public List<Warrior> Warriors { get; } = new();
+        public List<Warrior> GetAllWarriors() => Warriors;
+    }
     public sealed class Warrior
     {
         public uint CommandRevision { get; set; } = 1u;
         public string Id { get; set; }
         public string DisplayName => Id;
+        public Sinbinder.Core.SoulData Soul { get; set; }
+        public bool IsDead { get; set; }
+        public UnityEngine.GameObject gameObject { get; } = new();
     }
 }
 
 namespace Sinbinder.AOS
 {
+    public enum DeedType { Test }
     internal sealed class DecisionContext { }
     internal struct Decision { public bool RefusedCommand; }
 

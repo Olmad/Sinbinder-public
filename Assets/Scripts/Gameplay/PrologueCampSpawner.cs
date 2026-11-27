@@ -491,8 +491,10 @@ namespace Sinbinder.Gameplay
         public const string BridgeMemory = Punishment.BridgeDeed;
 
         private static MemorySeed Memory(SquadRoster.Member member)
+            => MemorySeed.ForRosterSpawn(member.Seed, member.SeedCaptured, () => LegacyMemory(member));
+
+        private static MemorySeed LegacyMemory(SquadRoster.Member member)
         {
-            if (member.Seed != null) return member.Seed;   // история сгенерированного
 
             foreach (var c in Squad)
                 if (c.Name == member.Name && c.Deed == Deed.Bridge)
@@ -584,19 +586,24 @@ namespace Sinbinder.Gameplay
             go.transform.LookAt(new Vector3(look.x, at.y, look.z));
 
             var warrior = go.AddComponent<Warrior>();
-            var soul = new SoulData(member.Name, member.Sin, member.Moral, 1,
-                                    member.Intensity, Memory(member), member.Gender);
+            bool alreadyBound = member.SoulSpectra != null;
+            var soul = SoulData.FromRoster(member.Name, member.Sin, member.Moral,
+                member.Intensity, member.SoulLevel, member.SoulSpectra, Memory(member), member.Gender,
+                member.SoulId, member.SoulKin, member.SoulPersonId);
 
             // Ремесло тянет душу на себя — тем же приёмом, каким это
             // делает оболочка (08-FLOOR.md §3.2). Прикладывается один
             // раз, при создании: второй вызов удвоил бы наклон.
             soul.SetTrade(member.Trade);
-            Trades.Apply(soul, member.Trade);
+            if (!alreadyBound) Trades.Apply(soul, member.Trade);
 
             // Слава не зарабатывается на месте: она пришла с ним.
             // Дальше её читают те, кто встречает его через строй.
             if (member.Legend) warrior.Reputation.LegendaryUnlocked = true;
-            warrior.Initialize(soul, member.Shell, _relSystem, member.IsCommander, Team.Player, member.WarriorId);
+            if (alreadyBound)
+                warrior.RestoreBoundBody(soul, member.Shell, _relSystem, member.IsCommander, Team.Player, member.WarriorId);
+            else
+                warrior.Initialize(soul, member.Shell, _relSystem, member.IsCommander, Team.Player, member.WarriorId);
 
             // Имя, заслуженное в прошлой доле, — при нём (SquadRoster.Member.Title).
             AOS.TitleManager.Bestow(warrior, member.Title);

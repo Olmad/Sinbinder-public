@@ -34,6 +34,13 @@ namespace Sinbinder.Gameplay
             public MoralType Moral;
             public Gender Gender;
             public float Intensity;
+            // Null is legacy/new unbound data, not a captured neutral soul.
+            public float[] SoulSpectra;
+            public int SoulLevel;
+            // Soul identity is distinct from WarriorId (the body's identity).
+            public string SoulId;
+            public string SoulPersonId;
+            public string SoulKin;
             public float Loyalty;
             // 0 is old save / no recorded wounds; interpreted as full health.
             public float HealthFraction;
@@ -67,6 +74,8 @@ namespace Sinbinder.Gameplay
             /// как умер и как душа попала к нам). Пусто — память по составу лагеря.
             /// </summary>
             public Core.MemorySeed Seed;
+            // True even for an explicitly absent biography; false for legacy roster data.
+            public bool SeedCaptured;
 
             /// <summary>Слава, пришедшая с ним. Не заработанный титул.</summary>
             public bool Legend;
@@ -440,6 +449,7 @@ namespace Sinbinder.Gameplay
                 var member = _members[i];
                 if (!ambiguous.Contains(i) && owners.TryGetValue(i, out var warrior))
                 {
+                    member = CaptureSoul(warrior, member);
                     member = CaptureEquipment(warrior, member);
                     // Звание и подвиги, заслуженные в этой же сцене, — тоже в запись (проверка 23.11:
                     // снимок брал только вещи, и загрузка отнимала имя, полученное после смены доли).
@@ -579,16 +589,32 @@ namespace Sinbinder.Gameplay
 
         private static Member Capture(Warrior w, Member member)
         {
-            member.Name = w.DisplayName;
-            member.WarriorId = w.Id;
-            member.Sin = w.Soul.Sin;
-            member.Moral = w.Soul.Moral;
-            member.Intensity = w.Soul.Get(w.Soul.Sin);
+            member = CaptureSoul(w, member);
             member.IsAway = false;
             member.Shell = w.Shell;
             member.Title = AOS.TitleManager.TitleOf(w);
             CaptureDeeds(w, ref member);
             return CaptureEquipment(w, CaptureCondition(w, member));
+        }
+
+        // Save the live personality, not the previous scene's roster.
+        private static Member CaptureSoul(Warrior w, Member member)
+        {
+            member.Name = w.DisplayName;
+            member.WarriorId = w.Id;
+            member.Sin = w.Soul.Sin;
+            member.Moral = w.Soul.Moral;
+            member.Intensity = w.Soul.Get(w.Soul.Sin);
+            member.SoulSpectra = w.Soul.CopySpectra();
+            member.SoulLevel = w.Soul.Level;
+            member.SoulId = w.Soul.Id;
+            member.SoulPersonId = w.Soul.PersonId;
+            member.SoulKin = w.Soul.Kin;
+            member.Seed = MemorySeed.Copy(w.Soul.Memory);
+            member.SeedCaptured = true;
+            member.Gender = w.Soul.Gender;
+            member.Trade = w.Soul.Trade;
+            return member;
         }
 
         /// <summary>Подвиги с тела — копией: тело в сцене живёт своей жизнью дальше.</summary>

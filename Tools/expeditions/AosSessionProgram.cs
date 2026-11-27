@@ -46,11 +46,19 @@ namespace Sinbinder.Core
     public enum SinType { Greed, Wrath, Pride, Envy, Sloth, Gluttony, Lust }
     public enum MoralType { Vicious, Neutral, Pious }
     public enum ShellType { Skeleton }
+    public enum Trade { None, Hunter, Peasant, Archer, Alchemist, Mage }
     public sealed class MemorySeed
     {
         public string Story;
         public string Trigger;
         public readonly List<object> NarrativePerks=new List<object>();
+        public static MemorySeed Copy(MemorySeed source)
+        {
+            if(source==null) return null;
+            var result=new MemorySeed{Story=source.Story,Trigger=source.Trigger};
+            result.NarrativePerks.AddRange(source.NarrativePerks);
+            return result;
+        }
     }
     public sealed class SoulData
     {
@@ -60,6 +68,10 @@ namespace Sinbinder.Core
         public int Level = 1;
         public float Greed;
         public MoralType Moral;
+        public Trade Trade {get;private set;}
+        public string Id=Guid.NewGuid().ToString();
+        public string PersonId;
+        public string Kin="";
         public MemorySeed Memory;
         public bool HasMemory => Memory!=null && !string.IsNullOrEmpty(Memory.Story);
         public const int SpectrumCount=7;
@@ -71,6 +83,21 @@ namespace Sinbinder.Core
         {
             Name=name;Sin=sin;Level=level;Gender=gender;Greed=intensity;Memory=memory;
             Spectra[(int)sin]=intensity;
+        }
+        public void SetTrade(Trade trade) => Trade=trade;
+        public static SoulData FromRoster(string name,SinType sin,MoralType moral,float intensity,
+            int level,float[] spectra,MemorySeed memory,Gender gender,string id,string kin,string personId)
+        {
+            var soul=new SoulData(name,sin,moral,spectra==null ? 1 : level,intensity,memory,gender);
+            soul.Moral=moral;
+            if(spectra!=null)
+            {
+                Array.Copy(spectra,soul.Spectra,SpectrumCount);
+                if(!string.IsNullOrEmpty(id)) soul.Id=id;
+                soul.Kin=kin ?? "";
+            }
+            soul.PersonId=spectra!=null && !string.IsNullOrEmpty(personId) ? personId : soul.Id;
+            return soul;
         }
         public float Get(SinType type) => Spectra[(int)type];
     }
@@ -117,6 +144,10 @@ namespace Sinbinder.Gameplay
             public bool IsCommander;
             public int UnpaidMissions, Pocket;
             public Core.MemorySeed Seed;
+            public float[] SoulSpectra;
+            public int SoulLevel;
+            public string SoulId, SoulKin, SoulPersonId;
+            public Core.Trade Trade;
             public List<Inventory.InventoryItem> Gear=new List<Inventory.InventoryItem>();
             public List<Inventory.EquippedItem> Equipment;
         }
@@ -149,6 +180,14 @@ namespace Sinbinder.Gameplay
             Id="temp-"+(++ids);DisplayName=soul.Name;Soul=soul;
             Shell=shell;Gender=soul.Gender;Team=team;
             HP=MaxHP=15f;Attack=5f;Loyalty=50f;
+        }
+        public bool RestoredBoundBody {get;private set;}
+        internal void RestoreBoundBody(Core.SoulData soul,Core.ShellType shell,
+            Core.RelationshipSystem relations,bool isCommander,Team team,string warriorId)
+        {
+            Initialize(soul,shell,relations,isCommander,team);
+            if(!string.IsNullOrEmpty(warriorId)) Id=warriorId;
+            RestoredBoundBody=true;
         }
         public void ChangeLoyalty(float value) { Loyalty+=value; }
         public void SetHealthFraction(float fraction) { HP=MaxHP*fraction; }
@@ -421,9 +460,10 @@ static class Program
         storyHolder.SetActive(false);
         var storyWarrior=Expedition.Summon(storyHolder,members[0],
             new Sinbinder.Core.RelationshipSystem(null));
-        Check(object.ReferenceEquals(storyWarrior.Soul.Memory,priorLife) &&
-              storyWarrior.Soul.HasMemory,
-            "expedition projection receives the roster's real narrative seed");
+        Check(storyWarrior.Soul.HasMemory &&
+              !object.ReferenceEquals(storyWarrior.Soul.Memory,priorLife) &&
+              storyWarrior.Soul.Memory.Story==priorLife.Story,
+            "expedition projection receives a copy of the roster's real narrative seed");
         var full=Expedition.Fight(members,3);
         ExpeditionBattleCheckpoint firstRound;
         using(var underway=new Expedition.CombatEncounter(members,3))

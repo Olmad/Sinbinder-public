@@ -192,7 +192,7 @@ namespace Sinbinder.Gameplay
 
                 if (soul.RemainingTime <= 0f)
                 {
-                    Debug.Log($"[SOUL] Душа {soul.Warrior.DisplayName} угасла навсегда");
+                    Debug.Log($"[SOUL] Душа {soul.NameAtDeath} угасла навсегда");
                     OnSoulFaded?.Invoke(soul);
 
                     RemoveIndicator(soul);
@@ -218,11 +218,15 @@ namespace Sinbinder.Gameplay
             var fadingSoul = new FadingSoul
             {
                 Warrior = warrior,
+                DeathSnapshot = Core.SoulData.CaptureDeath(warrior.Soul, warrior.Soul.EarnedTitle),
                 Position = position,
                 RemainingTime = FadeTime,
                 SoulQuality = Core.SoulQuality.Shock
             };
 
+            // Snapshot only this body before it can acquire postmortem events.
+            fadingSoul.DeathSnapshot.SetPastMemories(
+                AOS.MemoryProcessor.Snapshot(new[] { warrior.Id }), Time.time);
             _fadingSouls.Add(fadingSoul);
 
             // Префаба нет ни одного, и это не повод оставить душу невидимой:
@@ -260,6 +264,19 @@ namespace Sinbinder.Gameplay
         }
 
         public FadingSoul TryHarvestSoul(Vector3 harvesterPosition)
+            => TryHarvestSoul(harvesterPosition, kept =>
+            {
+                _harvested.Add(kept);
+                return true;
+            });
+
+        // The player's harvest is a transfer directly into the reserved jar,
+        // never a temporary shelf entry that an event listener can reorder.
+        internal FadingSoul TryHarvestIntoJar(Vector3 harvesterPosition, int jar)
+            => TryHarvestSoul(harvesterPosition,
+                kept => Core.Satchel.Fill(jar, kept.Soul, kept.Quality));
+
+        private FadingSoul TryHarvestSoul(Vector3 harvesterPosition, System.Func<Kept, bool> store)
         {
             FadingSoul closest = null;
             float minDist = _harvestRadius;
@@ -276,13 +293,15 @@ namespace Sinbinder.Gameplay
 
             if (closest != null)
             {
+                // Копия с потерями по качеству. Оригинал остаётся у мертвеца.
+                // До подтверждения назначения огонёк и право на жатву остаются.
+                var kept = Core.SoulDecay.Harvest(closest.DeathSnapshot, closest.SoulQuality);
+                if (kept == null || !store(new Kept(kept, closest.SoulQuality))) return null;
                 _fadingSouls.Remove(closest);
-
-                // Копия с потерями по качеству. Оригинал остаётся у мертвеца:
-                // мы забираем не его, а то, что от него осталось.
-                var kept = Core.SoulDecay.Harvest(closest.Warrior.Soul, closest.SoulQuality);
-                if (kept != null) _harvested.Add(new Kept(kept, closest.SoulQuality));
-                Debug.Log($"[SOUL] Душа {closest.Warrior.DisplayName} собрана! Осталось угасающих: {_fadingSouls.Count}");
+                RemoveIndicator(closest);
+                // Listeners now observe the committed destination and cannot
+                // accidentally cause the harvester to take a different soul.
+                Debug.Log($"[SOUL] Душа {closest.NameAtDeath} собрана! Осталось угасающих: {_fadingSouls.Count}");
                 OnSoulHarvested?.Invoke(closest);
                 return closest;
             }
@@ -328,6 +347,9 @@ namespace Sinbinder.Gameplay
     public class FadingSoul
     {
         public Warrior Warrior;
+        // Only used as a historical source for decay, not as a new owner.
+        internal Core.SoulData DeathSnapshot { get; set; }
+        public string NameAtDeath => DeathSnapshot != null ? DeathSnapshot.Name : "";
         public Vector3 Position;
         public float RemainingTime;
         public Core.SoulQuality SoulQuality;

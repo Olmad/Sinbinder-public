@@ -1,5 +1,6 @@
 // Перевод: текст через Loc
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Sinbinder.AOS
@@ -11,10 +12,36 @@ namespace Sinbinder.AOS
         public string Owner;
         public string EventType;
         public string TargetID;
+        // Stable identity, if the target was known at the time of the event.
+        public string TargetPersonId;
         public int Emotion;
         public float Importance;
         public float DecayRate;
         public float Age;
+
+        internal bool IsValidForTransfer()
+            => !string.IsNullOrEmpty(Owner) && !string.IsNullOrEmpty(EventType) &&
+               Enum.IsDefined(typeof(EmotionType), Emotion) &&
+               !float.IsNaN(Importance) && !float.IsInfinity(Importance) && Importance >= 0f && Importance <= 1f &&
+               !float.IsNaN(DecayRate) && !float.IsInfinity(DecayRate) && DecayRate >= 0f &&
+               !float.IsNaN(Age) && !float.IsInfinity(Age) && Age >= 0f;
+
+        internal SavedMemory CopyAtAge(float extraAge, string newOwner = null)
+            => new SavedMemory
+            {
+                Owner = newOwner ?? Owner, EventType = EventType,
+                TargetID = newOwner != null && TargetID == Owner ? newOwner : TargetID ?? "",
+                TargetPersonId = TargetPersonId,
+                Emotion = Emotion, Importance = Importance, DecayRate = DecayRate,
+                Age = Age + Math.Max(0f, extraAge),
+            };
+
+        internal MemoryRecord ToLive(float now)
+            => new MemoryRecord
+            {
+                EventType = EventType, TargetID = TargetID ?? "", TargetPersonId = TargetPersonId, Emotion = (EmotionType)Emotion,
+                Importance = Importance, DecayRate = DecayRate, CreationTime = now - Age,
+            };
     }
 
     [Serializable]
@@ -22,10 +49,58 @@ namespace Sinbinder.AOS
     {
         public string EventType;
         public string TargetID;
+        // Stable identity, if the target was known at the time of the event.
+        public string TargetPersonId;
         public EmotionType Emotion;      // Теперь enum
         public float Importance;         // 0..1
         public float DecayRate;          // скорость забывания
         public float CreationTime;       // Time.time в момент создания
+
+        // A known person can only match the same known person. A missing
+        // identity is not evidence that the old body still belongs to them.
+        // Preserve body-address matching only for two legacy/unknown records.
+        internal bool MatchesTarget(string bodyId, string personId)
+            => !string.IsNullOrEmpty(TargetPersonId) || !string.IsNullOrEmpty(personId)
+                ? !string.IsNullOrEmpty(TargetPersonId) && TargetPersonId == personId
+                : (TargetID ?? "") == (bodyId ?? "");
+
+        internal static Dictionary<string, string> UniqueLivingBodies(IEnumerable<KeyValuePair<string, string>> bodies)
+        {
+            var result = new Dictionary<string, string>(StringComparer.Ordinal);
+            var owners = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var body in bodies)
+            {
+                if (string.IsNullOrEmpty(body.Key) || string.IsNullOrEmpty(body.Value)) continue;
+                if (!result.TryGetValue(body.Key, out var previous)) result.Add(body.Key, body.Value);
+                else if (previous != body.Value) result[body.Key] = null;
+
+                // Two people sharing one live body address is just as ambiguous
+                // as one person appearing in two live bodies.
+                if (!owners.TryGetValue(body.Value, out var owner)) owners.Add(body.Value, body.Key);
+                else if (owner != body.Key)
+                {
+                    result[owner] = null;
+                    result[body.Key] = null;
+                }
+            }
+            return result;
+        }
+
+        // A projected address is for current AOS decisions only. Original
+        // record and event time stay unchanged for persistence and history.
+        internal MemoryRecord ProjectTarget(IReadOnlyDictionary<string, string> current)
+        {
+            if (string.IsNullOrEmpty(TargetPersonId) || current == null) return this;
+            // When the person is absent, never expose their historical body
+            // as a current target: it may now belong to somebody else.
+            current.TryGetValue(TargetPersonId, out var bodyId);
+            if ((bodyId ?? "") == TargetID) return this;
+            return new MemoryRecord
+            {
+                EventType = EventType, TargetID = bodyId ?? "", TargetPersonId = TargetPersonId,
+                Emotion = Emotion, Importance = Importance, DecayRate = DecayRate, CreationTime = CreationTime,
+            };
+        }
 
         // Для обратной совместимости — вычисляемое свойство
         public float Strength => GetCurrentStrength(Time.time);

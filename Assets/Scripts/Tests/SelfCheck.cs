@@ -1088,7 +1088,10 @@ namespace Sinbinder.Tests
             try
             {
                 const string name = "Проверка переноса";
-                var her = MakeWarrior(name, SinType.Greed, 40f, ShellType.Ghost);
+                // Живая душа и запись отряда согласованы: CaptureSoul берёт
+                // пол и ремесло с души, а не из прежней записи (f03).
+                var her = MakeWarrior(name, SinType.Greed, 40f, ShellType.Ghost, Gender.Female);
+                her.Soul.SetTrade(Trade.Archer);
                 SquadRoster.Set(new[]
                 {
                     new SquadRoster.Member
@@ -1998,7 +2001,21 @@ namespace Sinbinder.Tests
                     "старый список надевает меч и оставляет единственный щит в мешке");
 
                 UnityEngine.Object.DestroyImmediate(body);
-                Check(SaveSystem.Restore(after), "снаряжение восстанавливается при отсутствии прежнего тела");
+                // Запись со снимком души не ставит её на месте пропавшего тела:
+                // такую запись ReturnTo открывает пересборкой сцены (f03).
+                int bagBefore = bag.Count;
+                Check(!SaveSystem.Restore(after) && bag.Count == bagBefore,
+                    "запись с душой без прежнего тела не грузится на месте и ничего не трогает");
+                // Старая запись без снимка души по-прежнему грузится на месте.
+                var noSoul = JsonUtility.FromJson<SaveGame>(JsonUtility.ToJson(after));
+                foreach (var member in noSoul.Squad)
+                {
+                    member.HasSoulSpectra = false;
+                    member.SoulSpectra = null;
+                    member.SoulId = null;
+                    member.SoulPersonId = null;
+                }
+                Check(SaveSystem.Restore(noSoul), "снаряжение восстанавливается при отсутствии прежнего тела");
                 var restoredHolder = NewObject("Тело из записи");
                 restoredHolder.SetActive(false);
                 var restored = Expedition.Summon(restoredHolder, SquadRoster.Members[0], new RelationshipSystem(null));
@@ -2415,7 +2432,8 @@ namespace Sinbinder.Tests
                       "Gameplay.TentInterior.Live Gameplay.TowerPost.Live Gameplay.WarriorAnimation._everyone Gameplay.WeaponPickup.Live " +
                       "Gameplay.WeaponPickup._worn Gameplay.Whisper.Last Gameplay.Whisper.Until UI.CommandPanel.Picked UI.GearPanel.Targets " +
                       "UI.Letterbox._hits UI.Modal.Dimmed UI.OverheadWord.Lit UI.ScalesOverhead.NextFor UI.SpeechBubbles.Hits " +
-                      "UI.SalaryPanelUI.Owed UI.OverheadUIPool._pool Core.Controls.Pretend UI.MiniMap.Marks"),
+                      "UI.SalaryPanelUI.Owed UI.OverheadUIPool._pool Core.Controls.Pretend UI.MiniMap.Marks " +
+                      "AOS.MemoryProcessor._bodyPeople"),
             // партия «Перетягивание»: до конца партии, партия в запись не идёт
             ("партия", "Core.Allegiance.Toward Core.MapSession.<Seats>k__BackingField Gameplay.Favor.GiftedAt Gameplay.Favor.Gifts " +
                        "Gameplay.Favor.Groups Gameplay.Favor.Purses Gameplay.Favor.SaidAt Gameplay.Remains.Stock Gameplay.Trophies.Got " +
@@ -2843,11 +2861,12 @@ namespace Sinbinder.Tests
         }
 
         private static Warrior MakeWarrior(string name, SinType sin, float intensity,
-                                           ShellType shell = ShellType.Skeleton)
+                                           ShellType shell = ShellType.Skeleton,
+                                           Gender gender = Gender.Male)
         {
             var go = NewObject(name);
             var warrior = go.AddComponent<Warrior>();
-            warrior.Initialize(new SoulData(name, sin, MoralType.Neutral, 1, intensity),
+            warrior.Initialize(new SoulData(name, sin, MoralType.Neutral, 1, intensity, null, gender),
                 shell, new RelationshipSystem(null));
             return warrior;
         }

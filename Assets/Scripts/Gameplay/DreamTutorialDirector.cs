@@ -1084,10 +1084,15 @@ namespace Sinbinder.Gameplay
         /// Банка в руке Греховода (автор, 26.11: «из банки, которую Греховод держит в руках»), а не первая полная:
         /// с двумя банками поднималась чужая душа с чужой памятью (аудит AOS-R12-01). −1 — в руке пусто.
         /// </summary>
-        private static int HeldJar()
+        private SoulData RequiredSoul
+            => _stage == Stage.Fallen
+                ? (_lateBody != null ? _lateBody.Soul : null)
+                : (_wounded != null ? _wounded.Soul : null);
+
+        private int HeldJar()
         {
             int i = Satchel.Selected;
-            return i >= 0 && i < Satchel.Jars && Satchel.At(i).FullJar ? i : -1;
+            return Satchel.HoldsPerson(i, RequiredSoul) ? i : -1;
         }
 
         /// <summary>
@@ -1106,17 +1111,12 @@ namespace Sinbinder.Gameplay
             l.intensity = 3.2f;
             l.shadows = LightShadows.None;
         }
-        private int FindJar()
-        {
-            for (int i = 0; i < Satchel.Jars; i++)
-                if (Satchel.At(i).FullJar) return i;
-            return -1;
-        }
+        private int FindJar() => Satchel.FindPerson(RequiredSoul);
 
         private void TryRebind()
         {
             int jar = HeldJar();
-            if (jar < 0 && FindJar() >= 0) { Log(Loc.N("В руке пустая банка. Возьмите банку с душой — J.")); return; }
+            if (jar < 0 && FindJar() >= 0) { Log(Loc.N("Возьмите банку с душой в руку (J)")); return; }
             var soul = jar >= 0 ? Satchel.At(jar).Soul : _fallbackSoul;
             if (soul == null) { Log(Loc.N("Сначала забери душу в банку.")); return; }
             // A tutorial reanimation is a local, explicit shortcut to Raising.Rise,
@@ -1541,7 +1541,7 @@ namespace Sinbinder.Gameplay
         private void Reraise()
         {
             int jar = HeldJar();
-            if (jar < 0 && FindJar() >= 0) { Log(Loc.N("В руке пустая банка. Возьмите банку с душой — J.")); return; }
+            if (jar < 0 && FindJar() >= 0) { Log(Loc.N("Возьмите банку с душой в руку (J)")); return; }
             if (jar < 0) { Log(Loc.N("Сначала заберите душу в банку — E у тела.")); return; }
             var face = Flat(_hero.transform.position - _lateAt);
             if (face.sqrMagnitude < 0.01f) face = Vector3.forward;
@@ -2065,7 +2065,7 @@ namespace Sinbinder.Gameplay
             var left = _sealOn[(int)DreamRoad.SealKind.BrotherLeft];
             var right = _sealOn[(int)DreamRoad.SealKind.BrotherRight];
             bool pair = left != null && right != null
-                && DreamTutorialChecks.KinPair(left.Soul?.Kin, left.Soul?.Id, right.Soul?.Kin, right.Soul?.Id);
+                && DreamTutorialChecks.KinPair(left.Soul?.Kin, left.Soul?.PersonId, right.Soul?.Kin, right.Soul?.PersonId);
             int glowL = DreamTutorialChecks.KinSeal(left != null, Fits(DreamRoad.SealKind.BrotherLeft, left), pair);
             int glowR = DreamTutorialChecks.KinSeal(right != null, Fits(DreamRoad.SealKind.BrotherRight, right), pair);
             _sealLit[(int)DreamRoad.SealKind.BrotherLeft] = _sealLit[(int)DreamRoad.SealKind.BrotherRight] = pair;
@@ -2080,7 +2080,10 @@ namespace Sinbinder.Gameplay
             }
 
             // Все пять разом — и держатся миг (§5: «короткое одновременное удержание»).
-            bool warriors = true;
+            bool warriors = DreamTutorialChecks.DistinctSealPeople(
+                _sealOn[(int)DreamRoad.SealKind.Wrath]?.Soul?.PersonId,
+                _sealOn[(int)DreamRoad.SealKind.Order]?.Soul?.PersonId,
+                left?.Soul?.PersonId, right?.Soul?.PersonId);
             for (int i = 1; i < _sealLit.Length; i++) warriors &= _sealLit[i];
             if (DreamTutorialChecks.AdvanceSeals(ref _sealHeld, true, warriors, _sealLit[0], Time.deltaTime)) { OpenSeals(); return; }
 

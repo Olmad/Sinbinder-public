@@ -57,6 +57,16 @@ namespace Sinbinder.Gameplay
             => !string.IsNullOrEmpty(kinA) && kinA == kinB
                && !string.IsNullOrEmpty(idA) && !string.IsNullOrEmpty(idB) && idA != idB;
 
+        // Four different living people are required, not four instances of
+        // souls or four references to the same warrior.
+        public static bool DistinctSealPeople(string wrath, string order, string brotherLeft, string brotherRight)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var id in new[] { wrath, order, brotherLeft, brotherRight })
+                if (string.IsNullOrEmpty(id) || !seen.Add(id)) return false;
+            return true;
+        }
+
         /// <summary>Печать брата: горит — пара на месте; вполсилы — брат на своей, второго нет
         /// или на второй не тот; тёмная — на ней никого или не брат. 0 — тёмная, 1 — ждёт, 2 — горит.</summary>
         public static int KinSeal(bool occupied, bool hasKin, bool pairStands)

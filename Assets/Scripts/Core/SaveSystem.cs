@@ -122,6 +122,12 @@ namespace Sinbinder.Core
                     Moral = (int)m.Moral,
                     Gender = (int)m.Gender,
                     Intensity = m.Intensity,
+                    HasSoulSpectra = m.SoulSpectra != null,
+                    SoulSpectra = m.SoulSpectra != null ? (float[])m.SoulSpectra.Clone() : null,
+                    SoulLevel = m.SoulLevel,
+                    SoulId = m.SoulId,
+                    SoulPersonId = m.SoulPersonId,
+                    SoulKin = m.SoulKin,
                     Loyalty = m.Loyalty,
                     HealthFraction = m.HealthFraction,
                     UnpaidMissions = m.UnpaidMissions,
@@ -141,7 +147,8 @@ namespace Sinbinder.Core
                     Shell = (int)m.Shell,
                     Title = m.Title,
                     HasSeed = m.Seed != null,
-                    Seed = CopyMemorySeed(m.Seed),
+                    Seed = MemorySeed.Copy(m.Seed),
+                    SeedCaptured = m.SeedCaptured,
                     Deeds = SquadRoster.CopyDeeds(m.Deeds),
                     Respect = m.Respect,
                     Fear = m.Fear,
@@ -154,6 +161,7 @@ namespace Sinbinder.Core
             foreach (var s in save.Survivors) if (!string.IsNullOrEmpty(s.Id)) owners.Add(s.Id);
             save.AosMemories = Sinbinder.AOS.MemoryProcessor.Snapshot(owners);
             save.AosEmotions = Sinbinder.AOS.EmotionSystem.Snapshot(owners);
+            save.HasAosEmotions = true;
 
             var hero = Gameplay.SinbinderPlayer.Exists ? Gameplay.SinbinderPlayer.Instance : null;
             if (hero != null && !hero.IsDead)
@@ -249,6 +257,9 @@ namespace Sinbinder.Core
                 if (scene.name == CryptMap.SceneName && restored.OpensCryptSandbox)
                     CryptMap.Open();
                 RestoreSouls(restored, scene);
+                // Discard late callbacks from the outgoing scene before checkpointing.
+                RestoreMemories(restored, null, null, resetAll: true);
+                Sinbinder.AOS.EmotionSystem.ForgetAll();
                 RestoreEmotions(restored, arrival.Value.EmotionOwners);
             }
 
@@ -343,7 +354,7 @@ namespace Sinbinder.Core
             bool sandboxChanged = save.Scene == CryptMap.SceneName && save.OpensCryptSandbox != CryptMap.Opened;
             bool changeScene = !string.IsNullOrEmpty(save.Scene)
                 && (reload || save.Scene != Here || sandboxChanged || CryptSquadChanged(save) ||
-                    WorkshopRecruitsChanged(save));
+                    WorkshopRecruitsChanged(save) || !CapturedBodiesMatch(save, LivingSquadIn(SceneManager.GetActiveScene())));
             string scene = changeScene ? RaidEvent.HostOf(save.Scene) : null;
             if (changeScene && !Application.CanStreamedLevelBeLoaded(scene))
             {
@@ -395,6 +406,27 @@ namespace Sinbinder.Core
             return presentIds.Count == 0;
         }
 
+        // A known modern snapshot cannot be applied to a namesake or
+        // another binding generation. Reconstruct through ReturnTo if needed.
+        private static bool CapturedBodiesMatch(SaveGame save, IEnumerable<Warrior> living)
+        {
+            if (save?.Squad == null) return false;
+            var bodies = living.ToLookup(w => w.Id);
+            var seen = new HashSet<string>();
+            foreach (var member in save.Squad)
+            {
+                if (member == null) return false;
+                if (!member.HasSoulSpectra || member.IsAway || string.IsNullOrEmpty(member.SoulId)) continue;
+                if (string.IsNullOrEmpty(member.WarriorId) || !seen.Add(member.WarriorId)) return false;
+                var matches = bodies[member.WarriorId];
+                if (matches.Count() != 1) return false;
+                var body = matches.First();
+                if (!body.gameObject.activeInHierarchy || body.Shell != (ShellType)member.Shell ||
+                    !body.Soul.MatchesBoundIdentity(member.SoulId, member.SoulPersonId)) return false;
+            }
+            return true;
+        }
+
         private static bool WorkshopRecruitsChanged(SaveGame save)
         {
             var device = CryptWorkshop.Device;
@@ -423,7 +455,8 @@ namespace Sinbinder.Core
             // Validate before touching the live game. A damaged or hand-edited
             // save must not leave half a squad, shelf, or wager restored.
             if (save.Squad == null || save.Shelf == null ||
-                save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment))) ||
+                save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment)) ||
+                     (m.HasSoulSpectra && !SoulData.IsValidRosterSpectra(m.SoulSpectra))) ||
                 save.Shelf.Exists(s => !IsValidSoul(s)) ||
                 !SoulCustody.IsValid(save.SoulCustody, save.Shelf))
             {
@@ -438,8 +471,19 @@ namespace Sinbinder.Core
                 return false;
             }
 
+            if (keepScene && !CapturedBodiesMatch(save, LivingSquadIn(SceneManager.GetActiveScene())))
+            {
+                Debug.LogWarning("[SAVE] Captured personality needs scene reconstruction; in-place load cancelled.");
+                return false;
+            }
+
             Gameplay.CardTable.BeforeSaveOrLoad();
             var previousEmotionOwners = keepScene ? EmotionOwners() : null;
+            if (!keepScene)
+            {
+                Sinbinder.AOS.EmotionSystem.ForgetAll();
+                Sinbinder.AOS.MemoryProcessor.ResetBodyIdentities();
+            }
             var emotionOwnerIds = keepScene ? new Dictionary<string, string>() : null;
 
             // В той же доле тела остаются на месте, включая ещё не
@@ -471,7 +515,7 @@ namespace Sinbinder.Core
                     ? liveWarriors.FirstOrDefault(w => w.Id == m.WarriorId &&
                         (!restoreCryptCondition || w.gameObject.activeInHierarchy == !m.IsAway)) : null;
                 var namesakes = liveNames[m.Name];
-                if (living == null && (!restoreCryptCondition || string.IsNullOrEmpty(m.WarriorId)) &&
+                if (living == null && !m.HasSoulSpectra && (!restoreCryptCondition || string.IsNullOrEmpty(m.WarriorId)) &&
                     namesakes.Count() == 1 && savedNames[m.Name].Count() == 1)
                     living = namesakes.First();
                 if (living != null && mappedBodies.ContainsKey(living)) living = null;
@@ -490,6 +534,11 @@ namespace Sinbinder.Core
                     Moral = (MoralType)m.Moral,
                     Gender = (Gender)m.Gender,
                     Intensity = m.Intensity,
+                    SoulSpectra = m.HasSoulSpectra ? (float[])m.SoulSpectra.Clone() : null,
+                    SoulLevel = m.SoulLevel,
+                    SoulId = m.SoulId,
+                    SoulPersonId = m.SoulPersonId,
+                    SoulKin = m.SoulKin,
                     Loyalty = m.Loyalty,
                     HealthFraction = m.HealthFraction,
                     UnpaidMissions = m.UnpaidMissions,
@@ -506,7 +555,8 @@ namespace Sinbinder.Core
                     Legend = m.Legend,
                     Shell = (ShellType)m.Shell,
                     Title = m.Title ?? "",
-                    Seed = m.HasSeed ? CopyMemorySeed(m.Seed) : null,
+                    Seed = m.HasSeed ? MemorySeed.Copy(m.Seed) : null,
+                    SeedCaptured = m.SeedCaptured,
                     // Старая запись подвигов не несла: null — тело остаётся со своими.
                     Deeds = m.Deeds != null && m.Deeds.Count > 0 ? SquadRoster.CopyDeeds(m.Deeds) : null,
                     Respect = m.Respect,
@@ -533,7 +583,7 @@ namespace Sinbinder.Core
             Gameplay.Sorties.Restore(save.Sorties);
             Gameplay.ExpeditionReplayArchive.Restore(save.ExpeditionReplays);
             Gameplay.ExpeditionMemoryLedger.Restore(save.ExpeditionMemories);
-            Sinbinder.AOS.MemoryProcessor.Restore(save.AosMemories);
+            RestoreMemories(save, previousEmotionOwners, emotionOwnerIds, resetAll: !keepScene);
             if (keepScene) RestoreEmotions(save, previousEmotionOwners, emotionOwnerIds);
             // Смена сцены: прежний Греховод ещё здесь — здоровье ждёт нового (SinbinderPlayer.Update).
             HeroHealthOnArrival = save.HeroHealth;
@@ -562,6 +612,27 @@ namespace Sinbinder.Core
             return owners;
         }
 
+        private static void RestoreMemories(SaveGame save, HashSet<string> previousOwners,
+            IReadOnlyDictionary<string, string> ownerIds, bool resetAll)
+        {
+            var owners = EmotionOwners();
+            var replace = new HashSet<string>(owners);
+            if (previousOwners != null) replace.UnionWith(previousOwners);
+            var records = new List<Sinbinder.AOS.SavedMemory>();
+            if (save.AosMemories != null)
+                foreach (var saved in save.AosMemories)
+                {
+                    if (saved == null || !saved.IsValidForTransfer()) continue;
+                    string owner = saved.Owner;
+                    if (ownerIds != null && ownerIds.TryGetValue(owner, out var liveId)) owner = liveId;
+                    if (string.IsNullOrEmpty(owner) || !owners.Contains(owner)) continue;
+                    // Copy the event; never modify the save object or remap
+                    // an unidentified target based on a name.
+                    records.Add(saved.CopyAtAge(0f, owner));
+                }
+            Sinbinder.AOS.MemoryProcessor.Restore(records, owners, replace, resetAll);
+        }
+
         private static void RestoreEmotions(SaveGame save, HashSet<string> previousOwners = null,
             IReadOnlyDictionary<string, string> ownerIds = null)
         {
@@ -583,9 +654,10 @@ namespace Sinbinder.Core
 
         private static IEnumerable<Sinbinder.AOS.SavedEmotion> StoredEmotions(SaveGame save)
         {
-            if (save.AosEmotions?.Count > 0)
+            if (save.HasAosEmotions || save.AosEmotions?.Count > 0)
             {
-                foreach (var emotion in save.AosEmotions) yield return emotion;
+                if (save.AosEmotions != null)
+                    foreach (var emotion in save.AosEmotions) yield return emotion;
                 yield break;
             }
 
@@ -637,6 +709,15 @@ namespace Sinbinder.Core
             {
                 if (mappedBodies.TryGetValue(warrior, out var member))
                 {
+                    if (member.SoulSpectra != null && !string.IsNullOrEmpty(member.SoulId) &&
+                        warrior.Soul.MatchesBoundIdentity(member.SoulId, member.SoulPersonId))
+                    {
+                        var captured = SoulData.FromRoster(member.Name, member.Sin, member.Moral,
+                            member.Intensity, member.SoulLevel, member.SoulSpectra, member.Seed,
+                            member.Gender, member.SoulId, member.SoulKin, member.SoulPersonId);
+                        captured.SetTrade(member.Trade);
+                        warrior.Soul.RestoreBoundPersonality(captured, member.SeedCaptured || member.Seed != null);
+                    }
                     warrior.RestoreEquipment(member.Equipment, member.Gear);
                     SquadRoster.ApplyDeeds(warrior, member);
                     if (restoreCryptCondition && !member.IsAway)
@@ -688,6 +769,8 @@ namespace Sinbinder.Core
             return new SavedSoul
             {
                 Id = soul.Id,
+                PersonId = soul.PersonId,
+                Kin = soul.Kin,
                 Name = soul.Name,
                 Moral = (int)soul.Moral,
                 Level = soul.Level,
@@ -696,9 +779,9 @@ namespace Sinbinder.Core
                 Gender = (int)soul.Gender,
                 Trade = (int)soul.Trade,
                 Title = soul.EarnedTitle,
-                Kin = soul.Kin,
                 HasMemorySeed = soul.Memory != null,
                 Memory = CopyMemorySeed(soul.Memory),
+                PastMemories = soul.PastMemoriesAt(Time.time),
             };
         }
 
@@ -713,10 +796,12 @@ namespace Sinbinder.Core
 
             var memory = s.HasMemorySeed ? CopyMemorySeed(s.Memory) : null;
             var soul = new SoulData(s.Name, (MoralType)s.Moral, s.Level,
-                                    s.Spectra, memory, (Gender)s.Gender, s.Id);
+                                    s.Spectra, memory, (Gender)s.Gender, s.Id, s.PersonId);
             soul.SetTrade((Trade)s.Trade);
-            soul.Remember(s.Title);
             soul.SetKin(s.Kin);
+            soul.Remember(s.Title);
+            if (SoulDecay.KeepsMemory((SoulQuality)s.Quality))
+                soul.SetPastMemories(s.PastMemories, Time.time);
             return soul;
         }
 
@@ -726,6 +811,7 @@ namespace Sinbinder.Core
             System.Enum.IsDefined(typeof(Gender), soul.Gender) &&
             System.Enum.IsDefined(typeof(Trade), soul.Trade) &&
             !(soul.HasMemorySeed && soul.Memory == null) &&
+            (soul.PastMemories == null || soul.PastMemories.All(m => m != null && m.IsValidForTransfer())) &&
             (soul.Spectra == null || soul.Spectra.All(value => !float.IsNaN(value) && !float.IsInfinity(value)));
 
         private static MemorySeed CopyMemorySeed(MemorySeed memory) =>

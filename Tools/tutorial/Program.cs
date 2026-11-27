@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Sinbinder.Gameplay;
 using Sinbinder.UI;
 using Sinbinder.AOS;
@@ -129,15 +130,16 @@ internal static class Program
               dreamTrace.Contains("if (EligibleSealWarrior(_zombie)) return true;"),
             "only living active allies count as seal occupants; one warrior holds one seal");
         Check(dreamTrace.Contains("_sealLit[(int)kind] = Fits(kind, _sealOn[(int)kind]);") &&
-              dreamTrace.Contains("DreamTutorialChecks.KinPair(left.Soul?.Kin, left.Soul?.Id, right.Soul?.Kin, right.Soul?.Id)") &&
+              dreamTrace.Contains("DreamTutorialChecks.KinPair(left.Soul?.Kin, left.Soul?.PersonId, right.Soul?.Kin, right.Soul?.PersonId)") &&
               dreamTrace.Contains("DreamTutorialChecks.AdvanceSeals(ref _sealHeld, true, warriors, _sealLit[0], Time.deltaTime)") &&
               dreamTrace.Contains("DreamTutorialChecks.FitsWrath(soul.Sin == SinType.Wrath, soul.Get(SinType.Wrath))") &&
               dreamTrace.Contains("return Trades.OfOrder(soul.Trade);") &&
               dreamTrace.Contains("DreamGuards.Make(_tutorialSeed, names)"),
             "gate opens only when all five seals hold their real condition together");
         string soulData = System.IO.File.ReadAllText("Assets/Scripts/Core/Soul/SoulData.cs");
-        Check(soulData.Contains("_kin = other._kin;") && soulData.Contains("!ReferenceEquals(a, b) && a.Kin.Length > 0 && a.Kin == b.Kin"),
-            "kinship survives soul copy and a soul is never its own brother");
+        Check(soulData.Contains("_kin = other._kin;") && soulData.Contains("_personId = other.PersonId;") &&
+              soulData.Contains("!SamePerson(a, b) &&") && soulData.Contains("a.Kin.Length > 0 && a.Kin == b.Kin"),
+            "kinship survives soul copy; different instances of the same person never count as brothers (source wiring)");
         Check(DreamTutorialChecks.FitsWrath(true, 25f) && DreamTutorialChecks.FitsWrath(true, 90f) &&
               !DreamTutorialChecks.FitsWrath(true, 24.9f) && !DreamTutorialChecks.FitsWrath(true, -70f) &&
               !DreamTutorialChecks.FitsWrath(false, 90f) && !DreamTutorialChecks.FitsWrath(true, float.NaN),
@@ -149,6 +151,18 @@ internal static class Program
               !DreamTutorialChecks.KinPair("k", "a", "j", "b") &&
               !DreamTutorialChecks.KinPair("k", "a", "k", null),
             "brother seals need two different souls sharing one kin mark");
+        Check(DreamTutorialChecks.DistinctSealPeople("w", "o", "b1", "b2") &&
+              !DreamTutorialChecks.DistinctSealPeople("w", "o", "b1", "b1") &&
+              !DreamTutorialChecks.DistinctSealPeople("w", "w", "b1", "b2") &&
+              !DreamTutorialChecks.DistinctSealPeople("w", "o", "w", "b2") &&
+              !DreamTutorialChecks.DistinctSealPeople("w", "o", "b1", null) &&
+              !DreamTutorialChecks.DistinctSealPeople("w", "o", "", "b2"),
+            "four seals require four distinct nonempty personal identities");
+        Check(dreamTrace.Contains("bool warriors = DreamTutorialChecks.DistinctSealPeople(") &&
+              dreamTrace.Contains("_sealOn[(int)DreamRoad.SealKind.Wrath]?.Soul?.PersonId") &&
+              dreamTrace.Contains("_sealOn[(int)DreamRoad.SealKind.Order]?.Soul?.PersonId") &&
+              dreamTrace.Contains("left?.Soul?.PersonId, right?.Soul?.PersonId)"),
+            "gate uses unique personal identities across all four warrior roles (source wiring)");
         Check(DreamTutorialChecks.KinSeal(true, true, true) == 2 &&
               DreamTutorialChecks.KinSeal(true, true, false) == 1 &&
               DreamTutorialChecks.KinSeal(true, false, false) == 0 &&
@@ -624,7 +638,8 @@ internal static class Program
         int validateSave = saveSource.IndexOf("if (save.Squad == null || save.Shelf == null");
         int firstMutation = saveSource.IndexOf("Gameplay.CardTable.BeforeSaveOrLoad();", saveSource.IndexOf("public static bool Restore(SaveGame save)"));
         Check(validateSave >= 0 && firstMutation > validateSave &&
-              saveSource.Contains("save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment)))") &&
+              saveSource.Contains("save.Squad.Exists(m => m == null || (m.HasEquipmentLayout && InvalidEquipment(m.Equipment))") &&
+              saveSource.Contains("(m.HasSoulSpectra && !SoulData.IsValidRosterSpectra(m.SoulSpectra)))") &&
               saveSource.Contains("save.Shelf.Exists(s => !IsValidSoul(s))") &&
               saveSource.Contains("!SoulCustody.IsValid(save.SoulCustody, save.Shelf)"),
               "corrupt squad, equipment and soul ownership rejected before Restore changes live state");

@@ -1,5 +1,7 @@
 // Перевод: текст через Loc
 using UnityEngine;
+using System.Collections.Generic;
+using Sinbinder.AOS;
 
 namespace Sinbinder.Core
 {
@@ -48,6 +50,14 @@ namespace Sinbinder.Core
         [SerializeField] private float _sinIntensity;
 
         public string Id => _id;
+        // Custody Id identifies this instance. PersonId traces the same life
+        // across harvests; it does not imply retained memories after decay.
+        [SerializeField] private string _personId;
+        public string PersonId => string.IsNullOrEmpty(_personId) ? _id : _personId;
+
+        public static bool SamePerson(SoulData a, SoulData b)
+            => a != null && b != null && !string.IsNullOrEmpty(a.PersonId) &&
+               a.PersonId == b.PersonId;
         public string Name => _name;
         public MoralType Moral => (MoralType)_moralType;
         public Gender Gender => (Gender)_gender;
@@ -95,13 +105,46 @@ namespace Sinbinder.Core
 
         /// <summary>Родные ли две разные души.</summary>
         public static bool Kindred(SoulData a, SoulData b)
-            => a != null && b != null && !ReferenceEquals(a, b) && a.Kin.Length > 0 && a.Kin == b.Kin;
+            => a != null && b != null && !ReferenceEquals(a, b) &&
+               !string.IsNullOrEmpty(a.PersonId) && !string.IsNullOrEmpty(b.PersonId) && !SamePerson(a, b) &&
+               a.Kin.Length > 0 && a.Kin == b.Kin;
         public int Level => _level;
         public MemorySeed Memory => _memory;
 
         /// <summary>Дать память душе, у которой её нет (особенностям нужно место, <see cref="AOS.Traits"/>).</summary>
         public void GiveMemory(MemorySeed seed) { if (_memory == null) _memory = seed; }
         public bool HasMemory => _memory != null && !string.IsNullOrEmpty(_memory.Story);
+
+        // Unbound soul carries its own experienced events, separately from
+        // the innate biography. Ages are anchored to the current game clock.
+        // This payload is not a second active ledger.
+        private List<SavedMemory> _pastMemories;
+        private float _pastMemoryClock;
+
+        internal void SetPastMemories(IEnumerable<SavedMemory> records, float now)
+        {
+            _pastMemories = new List<SavedMemory>();
+            _pastMemoryClock = now;
+            if (records == null) return;
+            foreach (var record in records)
+                if (record != null && record.IsValidForTransfer())
+                    _pastMemories.Add(record.CopyAtAge(0f));
+        }
+
+        internal List<SavedMemory> PastMemoriesAt(float now, string newOwner = null)
+        {
+            var result = new List<SavedMemory>();
+            if (_pastMemories == null) return result;
+            float elapsed = System.Math.Max(0f, now - _pastMemoryClock);
+            foreach (var record in _pastMemories)
+            {
+                var copy = record.CopyAtAge(elapsed, newOwner);
+                if (copy.IsValidForTransfer()) result.Add(copy);
+            }
+            return result;
+        }
+
+        internal void ClearPastMemories() => _pastMemories = null;
 
         // ---------- спектры ----------
 
@@ -198,6 +241,70 @@ namespace Sinbinder.Core
                 _spectra[_sinType] = Mathf.Clamp(_sinIntensity, -100f, 100f);
         }
 
+        // A roster snapshot represents a soul that is already bound. It must
+        // have every signed spectrum, including an intentionally all-zero array.
+        public static bool IsValidRosterSpectra(float[] spectra)
+        {
+            if (spectra == null || spectra.Length != SpectrumCount) return false;
+            foreach (float value in spectra)
+                if (float.IsNaN(value) || float.IsInfinity(value) || value < -100f || value > 100f)
+                    return false;
+            return true;
+        }
+
+        public static SoulData FromRoster(string name, SinType legacySin, MoralType moral,
+            float legacyIntensity, int capturedLevel, float[] capturedSpectra,
+            MemorySeed memory, Gender gender, string capturedSoulId = null, string capturedKin = null, string capturedPersonId = null)
+        {
+            // Missing vector means a legacy or not-yet-spawned roster entry.
+            if (capturedSpectra == null)
+                return new SoulData(name, legacySin, moral, 1, legacyIntensity, memory, gender);
+            if (!IsValidRosterSpectra(capturedSpectra))
+                throw new System.ArgumentException("Invalid roster spectra", nameof(capturedSpectra));
+            var restored = new SoulData(name, moral, capturedLevel, capturedSpectra, memory, gender, capturedSoulId, capturedPersonId);
+            restored.SetKin(capturedKin);
+            // Retain the legacy dominant label for a fully neutral soul.
+            restored._sinType = (int)legacySin;
+            return restored;
+        }
+
+        // A historical death snapshot is not another owned or living soul.
+        // Keep its identity and independent mutable data; decay is applied
+        // only later, once, when the fading soul is successfully harvested.
+        internal static SoulData CaptureDeath(SoulData source, string title)
+        {
+            if (source == null) return null;
+            var snapshot = new SoulData(source.Name, source.Moral, source.Level,
+                source.CopySpectra(), MemorySeed.Copy(source.Memory), source.Gender, source.Id, source.PersonId);
+            snapshot._sinType = (int)source.Sin;
+            snapshot.SetTrade(source.Trade);
+            snapshot.SetKin(source.Kin);
+            snapshot.Remember(title);
+            return snapshot;
+        }
+
+        // Restore the same bound instance, not a new shell or person.
+        // Other AOS modules may retain references to this object.
+        internal bool MatchesBoundIdentity(string soulId, string personId)
+            => !string.IsNullOrEmpty(soulId) && Id == soulId &&
+               PersonId == (string.IsNullOrEmpty(personId) ? soulId : personId);
+
+        internal bool RestoreBoundPersonality(SoulData saved, bool restoreSeed)
+        {
+            if (saved == null || !MatchesBoundIdentity(saved.Id, saved.PersonId) ||
+                !IsValidRosterSpectra(saved._spectra)) return false;
+            _spectra = saved.CopySpectra();
+            _sinType = (int)saved.Sin;
+            _sinIntensity = saved.SinIntensity;
+            _moralType = saved._moralType;
+            _gender = saved._gender;
+            _level = saved._level;
+            _trade = saved._trade;
+            _kin = saved.Kin;
+            if (restoreSeed) _memory = MemorySeed.Copy(saved.Memory);
+            return true;
+        }
+
         // ---------- создание ----------
 
         /// <summary>Душа с одним выраженным грехом. Прежняя сигнатура.</summary>
@@ -221,10 +328,11 @@ namespace Sinbinder.Core
 
         /// <summary>Душа со всеми семью спектрами сразу.</summary>
         public SoulData(string name, MoralType moral, int level, float[] spectra,
-            MemorySeed memory = null, Gender gender = Gender.Male, string soulId = null)
+            MemorySeed memory = null, Gender gender = Gender.Male, string soulId = null, string personId = null)
         {
             _gender = (int)gender;
             _id = string.IsNullOrEmpty(soulId) ? System.Guid.NewGuid().ToString() : soulId;
+            _personId = string.IsNullOrEmpty(personId) ? _id : personId;
             _name = name;
             _moralType = (int)moral;
             _level = level;
@@ -249,6 +357,7 @@ namespace Sinbinder.Core
         public SoulData(SoulData other)
         {
             _id = System.Guid.NewGuid().ToString();
+            _personId = other.PersonId;
             _name = other._name;
             _moralType = other._moralType;
             _gender = other._gender;

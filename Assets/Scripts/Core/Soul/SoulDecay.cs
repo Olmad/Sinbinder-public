@@ -101,7 +101,7 @@ namespace Sinbinder.Core
             MemorySeed memory = null;
             if (KeepsMemory(quality) && source.Memory != null)
             {
-                memory = source.Memory;
+                memory = MemorySeed.Copy(source.Memory);
             }
             else if (KeepsPerks(quality) && source.Memory != null)
             {
@@ -110,12 +110,12 @@ namespace Sinbinder.Core
                 memory = new MemorySeed
                 {
                     Story = "",
-                    NarrativePerks = source.Memory.NarrativePerks
+                    NarrativePerks = MemorySeed.Copy(source.Memory).NarrativePerks
                 };
             }
 
             var taken = new SoulData(source.Name, source.Moral, source.Level,
-                                     spectra, memory, source.Gender);
+                                     spectra, memory, source.Gender, personId: source.PersonId);
 
             // Пол и ремесло жатва теряла: конструктор их не берёт, пол
             // по умолчанию мужской, ремесло — никакое. Поднятая заново
@@ -124,18 +124,16 @@ namespace Sinbinder.Core
             // чем он был.
             taken.SetTrade(source.Trade);
 
-            // While the soul still remembers its life, preserve the authored
-            // kinship marker. Late decay keeps its previous behaviour until
-            // the kinship rule for lost memories is explicitly decided.
-            if (KeepsMemory(quality))
-                taken.SetKin(source.Kin);
-
             // Заслуженное имя держится тем же качеством, что и память:
             // взяли вовремя — он помнит, кем был; взяли поздно — имя
             // ушло вместе со всем остальным. Отдельного правила заводить
             // не стали, чтобы у «успей» не было двух разных цен.
             if (KeepsMemory(quality))
+            {
+                taken.SetKin(source.Kin);
                 taken.Remember(source.EarnedTitle);
+                taken.SetPastMemories(source.PastMemoriesAt(Time.time), Time.time);
+            }
 
             return taken;
         }

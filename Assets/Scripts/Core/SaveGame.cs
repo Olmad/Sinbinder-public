@@ -8,6 +8,10 @@ namespace Sinbinder.Core
     public class SavedSoul
     {
         public string Id;
+        public string PersonId;
+        // Authored kin group, independent of custody and personal identity.
+        // Missing in legacy saves: no known kinship, not an inferred relative.
+        public string Kin;
         public string Name;
         public int Moral;
         public int Level;
@@ -15,6 +19,8 @@ namespace Sinbinder.Core
         public int Quality;
         public bool HasMemorySeed;
         public MemorySeed Memory;
+        // Experienced events carried by an unbound soul, not the living roster ledger.
+        public List<Sinbinder.AOS.SavedMemory> PastMemories;
 
         /// <summary>
         /// Пол, ремесло и заслуженное при жизни имя.
@@ -38,8 +44,6 @@ namespace Sinbinder.Core
         public int Gender;
         public int Trade;
         public string Title;
-        // Missing in legacy saves: no known kinship, not an inferred relative.
-        public string Kin;
     }
 
     /// <summary>Запись отряда, как она ложится в файл.</summary>
@@ -55,6 +59,14 @@ namespace Sinbinder.Core
         public int Moral;
         public int Gender;
         public float Intensity;
+        // Explicit presence distinguishes old saves from a captured all-zero vector.
+        public bool HasSoulSpectra;
+        public float[] SoulSpectra;
+        public int SoulLevel;
+        // Absent in legacy saves; do not infer identity or kin from the name.
+        public string SoulId;
+        public string SoulPersonId;
+        public string SoulKin;
         public float Loyalty;
         // New saves preserve a living warrior's injuries. Legacy zero = full.
         public float HealthFraction;
@@ -101,6 +113,8 @@ namespace Sinbinder.Core
         /// </summary>
         public bool HasSeed;
         public MemorySeed Seed;
+        // Legacy records omit this field. Captured absence must not acquire a camp biography.
+        public bool SeedCaptured;
 
         /// <summary>
         /// Подвиги, уважение и страх (ReputationData) — путь к званию. До 23.11 жили только
@@ -199,6 +213,8 @@ namespace Sinbinder.Core
         // До 23.11 не писалась. В старых сохранениях нет — никто ничего не помнит, как и было.
         public List<Sinbinder.AOS.SavedMemory> AosMemories = new List<Sinbinder.AOS.SavedMemory>();
         public List<Sinbinder.AOS.SavedEmotion> AosEmotions = new List<Sinbinder.AOS.SavedEmotion>();
+        // An explicit empty modern snapshot must not revive legacy member emotions.
+        public bool HasAosEmotions;
 
         // Здоровье Греховода. 0 — старая запись: цел (ExpeditionHealthRules.RestoreFraction).
         public float HeroHealth;

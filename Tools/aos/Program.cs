@@ -52,6 +52,14 @@ internal static class Program
             "unknown decisive factor gets neutral advice");
         SoulDescriptionChecks.Run(Check, adviceCatalog);
         SoulKinChecks.Run(Check, adviceRoot);
+        RosterBiographyChecks.Run(Check, adviceRoot);
+        RosterSpectraChecks.Run(Check, adviceRoot);
+        SoulHarvestCustodyChecks.Run(Check, adviceRoot);
+        SoulDeathSnapshotChecks.Run(Check, adviceRoot);
+        SoulPersonIdentityChecks.Run(Check, adviceRoot);
+        SoulPastMemoryChecks.Run(Check, adviceRoot);
+        LivePersonalitySaveChecks.Run(Check, adviceRoot);
+        MemoryRestoreChecks.Run(Check, adviceRoot);
 
         Check(OrderIntegrity.SameKnownTarget("brother-a", "brother-a"), "known rescue target matches");
         Check(!OrderIntegrity.SameKnownTarget("brother-a", "stranger") &&
