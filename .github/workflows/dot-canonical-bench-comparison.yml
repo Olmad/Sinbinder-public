@@ -6,31 +6,57 @@ on:
 permissions:
   contents: read
 jobs:
-  published-bench-fix:
+  compatibility:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 9
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '0672fcee32f7b840eb137f51f25d0ddd49814c1a'
+          ref: '75ee4975a45340e9e8b6efc9d5b1bad815441519'
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Run full bench on the exact published fix
+      - name: Apply Moments test to exact PR26 without publishing a merge
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '0672fcee32f7b840eb137f51f25d0ddd49814c1a'
+          test "$(git rev-parse HEAD)" = '75ee4975a45340e9e8b6efc9d5b1bad815441519'
+          git -c user.name='Sinbinder test' -c user.email='test@users.noreply.github.com' cherry-pick --no-commit '0672fcee32f7b840eb137f51f25d0ddd49814c1a'
+          git diff --cached --check
+          test "$(git diff --cached --name-only)" = 'Tools/bench/Program.cs'
           sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
           test -n "$sdk"
           printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
-          dotnet run --project Tools/bench/bench.csproj -c Release -- 20000 > "$RUNNER_TEMP/moments-exact.log" 2>&1
-          grep -Fx 'ESCAPE_RETELL completed=True attempted=True' "$RUNNER_TEMP/moments-exact.log"
-          grep -F '=== ПОРОГ КОЛЕБАНИЯ ===' "$RUNNER_TEMP/moments-exact.log"
-          if grep -E '^\s*(ПРОВАЛ|FAIL)(\s|:|!|$)' "$RUNNER_TEMP/moments-exact.log"; then exit 1; fi
+      - name: Run both suites and challenge the corrected escape assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="$RUNNER_TEMP/bench-compat"
+          mkdir -p "$result"
+          run_bench() { dotnet run --project Tools/bench/bench.csproj -c Release --no-build -- "$@"; }
+          dotnet build Tools/bench/bench.csproj -c Release
+          run_bench --trait-spectra | tee "$result/traits.log"
+          grep -F 'Trait spectrum checks: 259/259 PASS' "$result/traits.log"
+          run_bench 20000 > "$result/combined.log" 2>&1
+          grep -Fx 'ESCAPE_RETELL completed=True attempted=True' "$result/combined.log"
+          grep -F '=== ПОРОГ КОЛЕБАНИЯ ===' "$result/combined.log"
+          if grep -E '^\s*(ПРОВАЛ|FAIL)(\s|:|!|$)' "$result/combined.log"; then exit 1; fi
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("Assets/Scripts/Crypt/Retelling.cs")
+          src = p.read_bytes()
+          anchor = b"return ev.Resolved"
+          assert src.count(anchor) == 1
+          p.write_bytes(src.replace(anchor, b"return false", 1))
+          PY
+          dotnet build Tools/bench/bench.csproj -c Release --no-restore
+          run_bench 20000 > "$result/mutant.log" 2>&1
+          grep -Fx 'ESCAPE_RETELL completed=False attempted=True' "$result/mutant.log"
+          grep -F 'ПРОВАЛ: завершённый побег выдан за неудавшуюся попытку' "$result/mutant.log"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: exact-Moments-bench-0672fce
-          path: ${{ runner.temp }}/moments-exact.log
+          name: pr26-and-moments-compatibility
+          path: ${{ runner.temp }}/bench-compat
