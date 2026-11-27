@@ -11068,6 +11068,10 @@ msgid "Следуйте к янтарному огню; бирюзовый ог�
 msgstr "Follow the amber fire; the turquoise fire is the way back."
 
 #: Gameplay/PersonalExpedition.cs
+msgid "Следуйте к бирюзовому огню, чтобы вернуться в склеп."
+msgstr "Follow the turquoise fire to return to the crypt."
+
+#: Gameplay/PersonalExpedition.cs
 msgid " · живых стражей: {0}"
 msgstr " · guards alive: {0}"
 
