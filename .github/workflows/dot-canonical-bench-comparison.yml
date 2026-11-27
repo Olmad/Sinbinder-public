@@ -47,9 +47,11 @@ jobs:
           from pathlib import Path
           p = Path("Assets/Scripts/Crypt/Retelling.cs")
           src = p.read_bytes()
-          anchor = b"return ev.Resolved"
-          assert src.count(anchor) == 1
-          p.write_bytes(src.replace(anchor, b"return false", 1))
+          import re
+          changed, count = re.subn(rb"(case ActionType\.Flee:\s*return )ev\.Resolved\b",
+                                   lambda m: m[1] + b"false", src)
+          assert count == 1, count
+          p.write_bytes(changed)
           PY
           dotnet build Tools/bench/bench.csproj -c Release --no-restore
           run_bench 20000 > "$result/mutant.log" 2>&1
