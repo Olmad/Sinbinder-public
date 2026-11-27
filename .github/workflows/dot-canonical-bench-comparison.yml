@@ -6,119 +6,31 @@ on:
 permissions:
   contents: read
 jobs:
-  compare:
+  published-bench-fix:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: '0672fcee32f7b840eb137f51f25d0ddd49814c1a'
           persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Run the unmodified bench on both revisions
+      - name: Run full bench on the exact published fix
         shell: bash
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD)" = '0672fcee32f7b840eb137f51f25d0ddd49814c1a'
           sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
           test -n "$sdk"
-          result="$RUNNER_TEMP/bench-comparison"
-          mkdir -p "$result"
-          run() {
-            local label="$1" sha="$2" wt="$RUNNER_TEMP/sinbinder-$1" rc=0
-            git worktree add --detach "$wt" "$sha"
-            (
-              cd "$wt"
-              printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
-              git log -1 --format='SHA=%H'
-              dotnet --version
-              dotnet build Tools/bench/bench.csproj -c Release && timeout 360 dotnet run --project Tools/bench/bench.csproj -c Release --no-build -- 20000
-            ) > "$result/$label.log" 2>&1 || rc=$?
-            printf '%s\n' "$rc" > "$result/$label.exit"
-            printf '\n=== %s: %s exit=%s ===\n' "$label" "$sha" "$rc"
-            tail -n 14 "$result/$label.log"
-          }
-          run before 'afa1eb6298476b8c34c9c491a18c4b36288b0302'
-          run after '1ab75ae0166234861859149aeacf61399b5d71ae'
-      - name: Compare explicit failures rather than only exit codes
-        shell: bash
-        run: |
-          set -euo pipefail
-          result="$RUNNER_TEMP/bench-comparison"
-          python3 - "$result" <<'PY'
-          from collections import Counter
-          from pathlib import Path
-          import re, sys
-          root = Path(sys.argv[1])
-          def load(label):
-              data = (root / f"{label}.log").read_text(encoding="utf-8", errors="replace")
-              status = int((root / f"{label}.exit").read_text())
-              failures = Counter(line.strip() for line in data.splitlines()
-                  if re.match(r"^\s*(?:ПРОВАЛ|FAIL)(?:\s|:|!|$)", line, re.I)
-                  or "Unhandled exception" in line or re.search(r": error (?:CS|MSB|NETSDK)\d+", line))
-              complete = bool(re.search(r"^\s*доля .*→ колебание", data, re.M)) and status == 0
-              print(f"{label}: exit={status} completed={complete} explicit_failures={sum(failures.values())}")
-              for line, count in failures.items():
-                  print(f"  {count} × {line}")
-              return status, complete, failures
-          before, after = load("before"), load("after")
-          print("AFTER-ONLY MARKERS:")
-          for line, count in (after[2] - before[2]).items():
-              print(f"  {count} × {line}")
-          print("BEFORE-ONLY MARKERS:")
-          for line, count in (before[2] - after[2]).items():
-              print(f"  {count} × {line}")
-          if not before[1] or not after[1]:
-              print("INCOMPLETE: at least one run did not reach the final section.")
-              sys.exit(2)
-          if after[2] - before[2]:
-              sys.exit(1)
-          PY
-      - name: Validate narrow bench-only correction on the integrated revision
-        shell: bash
-        run: |
-          set -euo pipefail
-          result="$RUNNER_TEMP/bench-comparison"
-          cd "$RUNNER_TEMP/sinbinder-after"
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("Tools/bench/Program.cs")
-          src = p.read_bytes()
-          old = '''        Check(story.Contains("сбежал"),
-                        "побег на вылазке назван отходом — а приказов там не отдают");'''
-          new = '''        var failedEscape = new BattleRecord();
-                  failedEscape.AddEvent(new BattleEvent
-                  {
-                      ActorName = "Мясник", Action = ActionType.Flee, Resolved = false
-                  });
-                  var completedEscape = new BattleRecord();
-                  completedEscape.AddEvent(new BattleEvent
-                  {
-                      ActorName = "Мясник", Action = ActionType.Flee, Resolved = true
-                  });
-                  string attempted = Sinbinder.Crypt.Retelling.Tell(failedEscape);
-                  string completed = Sinbinder.Crypt.Retelling.Tell(completedEscape);
-                  bool attemptedOK = attempted.Contains("не смог") && !attempted.Contains("вышел из боя");
-                  bool completedOK = completed.Contains("вышел из боя") && !completed.Contains("не смог");
-                  Check(attemptedOK, "неудавшийся побег выдан за завершённый");
-                  Check(completedOK, "завершённый побег выдан за неудавшуюся попытку");
-                  Console.WriteLine($"ESCAPE_RETELL completed={completedOK} attempted={attemptedOK}");'''
-          oldb, newb = old.encode(), new.encode()
-          if b"\r\n" in src:
-              oldb, newb = oldb.replace(b"\n", b"\r\n"), newb.replace(b"\n", b"\r\n")
-          assert src.count(oldb) == 1, repr(oldb)
-          p.write_bytes(src.replace(oldb, newb, 1))
-          PY
-          git diff -- Tools/bench/Program.cs > "$result/moments-test-only.patch"
-          test -s "$result/moments-test-only.patch"
-          git diff --check -- Tools/bench/Program.cs
-          dotnet build Tools/bench/bench.csproj -c Release > "$result/repair-build.log" 2>&1 || { tail -40 "$result/repair-build.log"; exit 1; }
-          timeout 360 dotnet run --project Tools/bench/bench.csproj -c Release --no-build -- 20000 > "$result/repair.log" 2>&1
-          grep -Fx 'ESCAPE_RETELL completed=True attempted=True' "$result/repair.log"
-          if grep -E '^\s*(ПРОВАЛ|FAIL)(\s|:|!|$)' "$result/repair.log"; then exit 1; fi
+          printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
+          dotnet run --project Tools/bench/bench.csproj -c Release -- 20000 > "$RUNNER_TEMP/moments-exact.log" 2>&1
+          grep -Fx 'ESCAPE_RETELL completed=True attempted=True' "$RUNNER_TEMP/moments-exact.log"
+          grep -F '=== ПОРОГ КОЛЕБАНИЯ ===' "$RUNNER_TEMP/moments-exact.log"
+          if grep -E '^\s*(ПРОВАЛ|FAIL)(\s|:|!|$)' "$RUNNER_TEMP/moments-exact.log"; then exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: canonical-bench-comparison
-          path: ${{ runner.temp }}/bench-comparison
+          name: exact-Moments-bench-0672fce
+          path: ${{ runner.temp }}/moments-exact.log
