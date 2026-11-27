@@ -23,7 +23,17 @@ namespace Sinbinder.Gameplay
                 ? new Vector3(2000f, 0f, 0f)
                 : new Vector3(2500f, 0f, 0f);
 
-        public static GameObject Build(ExpeditionMapPlan plan)
+        /// <summary>Имя повозки на карте обоза: её находит отъезд (CartRoll).</summary>
+        public const string Cart = "Повозка";
+
+        /// <summary>Начало имени света над меткой; дальше — подпись метки.</summary>
+        public const string Beacon = "Световая метка · ";
+
+        /// <summary>
+        /// Карта вылазки. <paramref name="caravanGone"/> — обоз отпустили в прошлый раз:
+        /// он уехал, и повозок на дороге больше нет (место пустует, 69 §7 п.1б).
+        /// </summary>
+        public static GameObject Build(ExpeditionMapPlan plan, bool caravanGone = false)
         {
             bool road = plan.Kind == ExpeditionMapKind.SaltRoad;
             var baseAt = Origin(plan.Kind);
@@ -89,7 +99,11 @@ namespace Sinbinder.Gameplay
             }
 
             int n = 0;
-            foreach (var p in plan.Props) AddProp(root.transform, p, plan.Kind, n++);
+            foreach (var p in plan.Props)
+            {
+                if (caravanGone && p.Kind == ExpeditionPropKind.Wagon) { n++; continue; }
+                AddProp(root.transform, p, plan.Kind, n++);
+            }
 
             // Built after terrain and props but BEFORE warriors. Otherwise
             // moving bodies are baked into the navigation surface.
@@ -124,7 +138,8 @@ namespace Sinbinder.Gameplay
                 new Vector3(local.x, 0.13f, local.z),
                 new Vector3(radius, 0.12f, radius), color);
             // A vertical beacon, visible in both tactical and first person.
-            var beacon = new GameObject("Световая метка");
+            // Имя с подписью метки: убрать цель — значит убрать и её свет (отпущенный обоз).
+            var beacon = new GameObject(Beacon + label);
             beacon.transform.SetParent(parent, false);
             beacon.transform.localPosition = new Vector3(local.x, 3.5f, local.z);
             var light = beacon.AddComponent<Light>();
@@ -327,26 +342,50 @@ namespace Sinbinder.Gameplay
                 }
                 case ExpeditionPropKind.Wagon:
                 {
-                    var body = Part(root, "Обоз · кузов", PrimitiveType.Cube,
+                    // Повозка целиком — один предмет: отпущенный обоз уезжает весь (CartRoll).
+                    var cart = new GameObject(Cart).transform;
+                    cart.SetParent(root, false);
+                    var turn = Quaternion.Euler(0f, p.Yaw, 0f);
+                    var body = Part(cart, "Обоз · кузов", PrimitiveType.Cube,
                         local+Vector3.up*1.2f*s,new Vector3(4.4f*s,1.2f*s,2.7f*s),
                         new Color(0.35f,0.21f,0.13f),p.Yaw);
                     // Доски кузова — того же дерева, что ящики лагеря.
                     Borrow(body, "Crate");
                     for(int i=0;i<4;i++)
                     {
-                        var wheel=Part(root,"Колесо повозки",PrimitiveType.Cylinder,
-                            local+new Vector3((i<2?-1.5f:1.5f)*s,0.62f*s,
-                                              (i%2==0?-1.5f:1.5f)*s),
+                        // Место колеса — в осях кузова: без поворота (до 27.11) на повёрнутой
+                        // повозке колесо торчало из-под передка.
+                        var wheel=Part(cart,"Колесо повозки",PrimitiveType.Cylinder,
+                            local+turn*new Vector3((i<2?-1.5f:1.5f)*s,0.62f*s,
+                                                   (i%2==0?-1.45f:1.45f)*s),
                             new Vector3(0.66f*s,0.12f*s,0.66f*s),
                             new Color(0.15f,0.12f,0.11f));
-                        wheel.transform.rotation=Quaternion.Euler(90f,p.Yaw,0f);
+                        wheel.transform.rotation=root.rotation*Quaternion.Euler(90f,p.Yaw,0f);
                     }
                     // Груз — то, за чем обоз и идёт: ящики и бочка на кузове.
-                    var turn = Quaternion.Euler(0f, p.Yaw, 0f);
                     float top = 1.8f * s;
-                    Model(root, "Crate", local + turn * new Vector3(-1.2f * s, top, 0.35f * s), p.Yaw + 6f, 0f, 1.05f * s, 0f);
-                    Model(root, "Crate", local + turn * new Vector3(0.1f * s, top, -0.4f * s), p.Yaw - 9f, 0f, 0.95f * s, 0f);
-                    Model(root, "Barrel", local + turn * new Vector3(1.35f * s, top, 0.3f * s), p.Yaw, 1.05f * s, 0f, 0f);
+                    Model(cart, "Crate", local + turn * new Vector3(-1.2f * s, top, 0.35f * s), p.Yaw + 6f, 0f, 1.05f * s, 0f);
+                    Model(cart, "Crate", local + turn * new Vector3(0.1f * s, top, -0.4f * s), p.Yaw - 9f, 0f, 0.95f * s, 0f);
+                    Model(cart, "Barrel", local + turn * new Vector3(1.35f * s, top, 0.3f * s), p.Yaw, 1.05f * s, 0f, 0f);
+                    // Фонарь на передке: обоз идёт ночью («Почему едете ночью?»), и ночью
+                    // от первого лица его видно издалека, а не только в пятнадцати шагах.
+                    var lantern = new GameObject("Фонарь обоза");
+                    lantern.transform.SetParent(cart, false);
+                    lantern.transform.localPosition = local + turn * new Vector3(2.3f * s, 2.4f * s, 0f);
+                    var glow = lantern.AddComponent<Light>();
+                    glow.type = LightType.Point;
+                    glow.range = 11f;
+                    glow.intensity = 2.2f;
+                    glow.color = new Color(1f, 0.68f, 0.36f);
+                    var flame = Part(cart, "Огонь фонаря", PrimitiveType.Sphere,
+                        lantern.transform.localPosition, Vector3.one * 0.22f, new Color(1f, 0.62f, 0.25f));
+                    Object.Destroy(flame.GetComponent<Collider>());
+                    var flameRenderer = flame.GetComponent<Renderer>();
+                    if (flameRenderer != null && flameRenderer.material.HasProperty("_EmissionColor"))
+                    {
+                        flameRenderer.material.EnableKeyword("_EMISSION");
+                        flameRenderer.material.SetColor("_EmissionColor", new Color(1f, 0.55f, 0.2f) * 3f);
+                    }
                     break;
                 }
                 case ExpeditionPropKind.Tent:

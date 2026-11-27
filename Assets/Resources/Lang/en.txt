@@ -10861,7 +10861,7 @@ msgstr "The Sinbinder must be there in person."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Сейчас говорят. Дослушайте — потом в путь."
-msgstr ""
+msgstr "Someone is speaking. Hear them out — then set off."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Воин {0} сейчас не может выйти в экспедицию."
@@ -10885,35 +10885,35 @@ msgstr "Expedition “{0}”: reach the marked target and return to the turquois
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Вы ушли отсюда этой ночью: стража не успела залечить раны."
-msgstr ""
+msgstr "You left here this very night: the guards had no time to heal their wounds."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Вы здесь уже были; с тех пор прошло время."
-msgstr ""
+msgstr "You have been here before; time has passed since then."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Обоз разграблен — охрана ушла на дорогу."
-msgstr ""
+msgstr "The caravan was plundered — its guards have taken to the road."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Обоз вы пропустили с миром."
-msgstr ""
+msgstr "You let the caravan pass in peace."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Тайник взят."
-msgstr ""
+msgstr "The cache has been taken."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Место стережёт дозор Ордена: слух о разграблении дошёл до них."
-msgstr ""
+msgstr "An Order patrol guards the place: word of the plundering reached them."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Когда вы уходили, стражи там не осталось."
-msgstr ""
+msgstr "When you left, no guards remained there."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "По слухам, разграбленную часовню занял дозор Ордена."
-msgstr ""
+msgstr "Rumour has it an Order patrol has taken the plundered chapel."
 
 #: Gameplay/PersonalExpedition.cs UI/DialogueUI.cs UI/GearPanel.cs
 msgid "{0}: «{1}»"
@@ -10925,7 +10925,7 @@ msgstr "F — return to the crypt"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "F — говорить: {0}"
-msgstr ""
+msgstr "F — talk: {0}"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "F — исследовать цель"
@@ -10933,51 +10933,55 @@ msgstr "F — explore the target"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "{0} · {1}"
-msgstr ""
+msgstr "{0} · {1}"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "К бою"
-msgstr ""
+msgstr "To battle"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Уйти"
-msgstr ""
+msgstr "Leave"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Взять долю и уйти"
-msgstr ""
+msgstr "Take the share and leave"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "{0} без боя, остальное уедет"
-msgstr ""
+msgstr "{0} without a fight, the rest rides on"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "бой с охраной — серебро ваше, если победите"
-msgstr ""
+msgstr "a fight with the guards — the silver is yours if you win"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "обоз уедет, добычи не будет"
-msgstr ""
+msgstr "the caravan rides on, no loot"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Esc · Пока не решать"
-msgstr ""
+msgstr "Esc · Don't decide yet"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Обоз · старший охраны"
-msgstr ""
+msgstr "Caravan · head of the guard"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Охрана обоза защищает груз настоящим боем."
-msgstr ""
+msgstr "The caravan guards defend the cargo in a real fight."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Обоз отдал долю — {0} — и ушёл по дороге."
-msgstr ""
+msgstr "The caravan gave up a share — {0} — and went on down the road."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Обоз ушёл по дороге. Добычи не будет."
-msgstr ""
+msgstr "The caravan went on down the road. There will be no loot."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Здесь больше нечего делать — вернитесь к бирюзовому знаку."
+msgstr "Nothing more to do here — return to the turquoise sign."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Вы напали на стража. Охрана обоза стала враждебной, мирный исход закрыт."
@@ -10985,7 +10989,7 @@ msgstr "You attacked a guard. The convoy's guards turned hostile; a peaceful out
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Обоз под охраной. Сначала поговорите со старшим."
-msgstr ""
+msgstr "The caravan is guarded. Talk to the head of the guard first."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Охрана не дала добраться до добычи. Сначала разберитесь с ней."
@@ -11045,7 +11049,7 @@ msgstr "You attacked the convoy: the guards are now hostile"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Обоз не тронут. Охрана не нападёт первой — поговорите со старшим"
-msgstr ""
+msgstr "The caravan is untouched. The guards won't strike first — talk to their head"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Тайник изучен"
