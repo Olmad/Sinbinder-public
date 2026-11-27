@@ -2400,7 +2400,7 @@ namespace Sinbinder.Tests
                        "Crypt.MissionBoard.ActiveJourneys Gameplay.ExpeditionMemoryLedger.Entries Gameplay.ExpeditionReplayArchive.Entries " +
                        "Gameplay.PersonalExpedition.Progress Gameplay.SquadRoster._members Gameplay.Survivors._all Gameplay.Lesson._given " +
                        "Gameplay.TrophyChest._restoreContents Gameplay.FallenBag.Live Core.Satchel._jars " +
-                       "Core.Records._have"),   // пластинки — PlayerPrefs, навсегда; тайники забываются новой игрой
+                       "Core.Records._have Core.Controls.Keys Core.Prefs._map"),   // пластинки, клавиши, настройки — Core.Prefs (файл на флешке), навсегда; тайники забываются новой игрой
             // сцена: живые объекты, бой, разговор — строятся заново
             ("сцена", "AOS.AOSStats._actions AOS.AOSStats._voices AOS.RumourManager._rumours Core.LocationManager._offscreenTags " +
                       "Dev.InputHush.Holders Dev.InputHush.Was Gameplay.AltarVisualEnhancer.Decorated Gameplay.Bodyguard.Watched " +
@@ -2415,7 +2415,7 @@ namespace Sinbinder.Tests
                       "Gameplay.TentInterior.Live Gameplay.TowerPost.Live Gameplay.WarriorAnimation._everyone Gameplay.WeaponPickup.Live " +
                       "Gameplay.WeaponPickup._worn Gameplay.Whisper.Last Gameplay.Whisper.Until UI.CommandPanel.Picked UI.GearPanel.Targets " +
                       "UI.Letterbox._hits UI.Modal.Dimmed UI.OverheadWord.Lit UI.ScalesOverhead.NextFor UI.SpeechBubbles.Hits " +
-                      "UI.SalaryPanelUI.Owed UI.OverheadUIPool._pool"),
+                      "UI.SalaryPanelUI.Owed UI.OverheadUIPool._pool Core.Controls.Pretend UI.MiniMap.Marks"),
             // партия «Перетягивание»: до конца партии, партия в запись не идёт
             ("партия", "Core.Allegiance.Toward Core.MapSession.<Seats>k__BackingField Gameplay.Favor.GiftedAt Gameplay.Favor.Gifts " +
                        "Gameplay.Favor.Groups Gameplay.Favor.Purses Gameplay.Favor.SaidAt Gameplay.Remains.Stock Gameplay.Trophies.Got " +
@@ -2427,6 +2427,7 @@ namespace Sinbinder.Tests
             ("кэш", "Gameplay.AutoAttack._shaftMat Gameplay.AutoAttack._featherMat Gameplay.AutoAttack._tipMat Gameplay.AutoAttack._trailMat AOS.AOSWarriorWrapper._iconCache AOS.Counterfactual.Order AOS.Counterfactual.VoiceOrder AOS.PerkResolver._warned " +
                     "AOS.SkillCatalog.Diligence AOS.SkillCatalog.Gluttony AOS.SkillCatalog.Lust AOS.SkillCatalog.None " +
                     "AOS.SkillCatalog.Patience AOS.SkillCatalog.Sloth AOS.SkillCatalog.Wrath AOS.TemptationResolver.Pull " +
+                    "AOS.Traits.All AOS.Traits._byName Core.Controls.Defaults Core.Controls.Shared Gameplay.CaravanStories.All " +
                     "AOS.TitleDatabase.Granted AOS.TitleDatabase.Rules Audio.DeathVoice.VowelFormants Audio.Music.Clips Audio.Music.Told " +
                     "Audio.Sfx.Calls Audio.Sfx.Clips Audio.Sfx.Told Audio.VoiceGenerator.Formants Audio.VoiceGenerator._clips " +
                     "Core.Cost.Spent Core.Grammar.HerEn Core.Grammar.Preposition Core.Loc.LatinOf Core.Loc.Table Core.LocSetup.Languages " +

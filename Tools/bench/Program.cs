@@ -5724,11 +5724,164 @@ static class Bench
         Console.WriteLine($"В одном отряде повторилось имя: {dupName}; прозвище: {dupNick}");
     }
 
+    /// <summary>
+    /// Автор, 27.11: «через сколько сгенерированных воинов появится похожий?» Воины рождаются тем же
+    /// порядком, что на карте (WarriorGenerator.Make по номеру, все происхождения), душа — тем же
+    /// конструктором, что в игре (грех, мораль, сила, история). Каждый проходит одни и те же 60 положений.
+    /// Двойник «на панели» — тот же грех и тот же набор особенностей; «в поступках» — то же действие
+    /// в 57 из 60 положений (95 %) и во всех 60.
+    /// </summary>
+    static void TwinsCheck(AOSConfig cfg)
+    {
+        var modules = Modules();
+        var r = new Random(31337);
+        var dummy = new Warrior { Soul = new SoulData("x", MoralType.Neutral, 1, new float[7]), Loyalty = 60f };
+        var ctx = new List<DecisionContext>();
+        for (int j = 0; j < 60; j++)
+        {
+            var c = MakeContext(r, dummy, r.NextDouble() < 0.5);
+            c.EnemyIsHunter = c.NearbyEnemies > 0 && r.NextDouble() < 0.3;
+            c.AllyDamagedRecently = c.NearbyAllies > 0 && r.NextDouble() < 0.3;
+            ctx.Add(c);
+        }
+
+        const int maps = 100, size = 96;
+        List<ActionType[]> lastActs = null, lastSeven = null;
+        var first = new Dictionary<string, List<int>>();
+        var share56 = new Dictionary<string, List<float>>();
+        string[] kinds = { "на панели", "в поступках 95%", "в поступках 100%", "без особенностей 95%", "жители поля 95%", "все семь 95%", "все семь 100%" };
+        foreach (var kk in kinds) { first[kk] = new List<int>(); share56[kk] = new List<float>(); }
+
+        for (int m = 0; m < maps; m++)
+        {
+            var present = new List<string>();
+            var panel = new List<string>();
+            var acts = new List<ActionType[]>();
+            var plain = new List<ActionType[]>();
+            var field = new List<ActionType[]>();
+            var seven = new List<ActionType[]>();
+            var found = new Dictionary<string, int>();
+            var twin56 = new Dictionary<string, bool[]>();
+            foreach (var kk in kinds) twin56[kk] = new bool[56];
+            for (int i = 0; i < size; i++)
+            {
+                var k = WarriorGenerator.Make(m * 1000 + i, (SoulOrigin)(i % 4), present);
+                present.Add(k.Name);
+                var traits = k.Seed?.NarrativePerks?.FindAll(p => Traits.Find(p.PerkName) != null) ?? new List<NarrativePerk>();
+                panel.Add(k.Sin + ":" + string.Join("+", traits.Select(p => p.PerkName).OrderBy(x => x)));
+                var w = new Warrior { Soul = new SoulData(k.Name, k.Sin, k.Moral, 1, k.Strength, k.Seed), Loyalty = 60f };
+                var a = new ActionType[ctx.Count];
+                var b = new ActionType[ctx.Count];
+                var f = new ActionType[ctx.Count];
+                // Жители поля (Residents.cs:226) и кузня склепа добавляют второй грех ×0,6 — сон и вылазки нет.
+                var wf = new Warrior { Soul = new SoulData(k.Name, k.Sin, k.Moral, 1, k.Strength, k.Seed), Loyalty = 60f };
+                wf.Soul.Set(k.Second, k.Strength * 0.6f);
+                // Замысел автора: влияют все семь, главный сильнее всех. Остальные шесть — по номеру, до половины главного.
+                var sr = new Random(k.Number * 7919 + 17);
+                var sp = new float[7];
+                for (int q = 0; q < 7; q++) sp[q] = (float)(sr.NextDouble() * k.Strength * 0.5);
+                sp[(int)k.Sin] = k.Strength;
+                var ws = new Warrior { Soul = new SoulData(k.Name, k.Moral, 1, sp, k.Seed), Loyalty = 60f };
+                var g = new ActionType[ctx.Count];
+                for (int j = 0; j < ctx.Count; j++)
+                {
+                    a[j] = Vote(modules, w, ctx[j], cfg, SquadStrategy.Balanced, traits).Action;
+                    b[j] = Vote(modules, w, ctx[j], cfg, SquadStrategy.Balanced).Action;
+                    f[j] = Vote(modules, wf, ctx[j], cfg, SquadStrategy.Balanced, traits).Action;
+                    g[j] = Vote(modules, ws, ctx[j], cfg, SquadStrategy.Balanced, traits).Action;
+                }
+                acts.Add(a); plain.Add(b); field.Add(f); seven.Add(g);
+
+                for (int p = 0; p < i; p++)
+                {
+                    int same = 0, samePlain = 0, sameField = 0, sameSeven = 0;
+                    for (int j = 0; j < ctx.Count; j++) { if (acts[p][j] == a[j]) same++; if (plain[p][j] == b[j]) samePlain++; if (field[p][j] == f[j]) sameField++; if (seven[p][j] == g[j]) sameSeven++; }
+                    var hit = new Dictionary<string, bool>
+                    {
+                        ["на панели"] = panel[p] == panel[i],
+                        ["в поступках 95%"] = same >= 57,
+                        ["в поступках 100%"] = same == ctx.Count,
+                        ["без особенностей 95%"] = samePlain >= 57,
+                        ["жители поля 95%"] = sameField >= 57,
+                        ["все семь 95%"] = sameSeven >= 57,
+                        ["все семь 100%"] = sameSeven == ctx.Count,
+                    };
+                    foreach (var kk in kinds)
+                    {
+                        if (!hit[kk]) continue;
+                        if (!found.ContainsKey(kk)) found[kk] = i + 1;
+                        if (i < 56) { twin56[kk][i] = true; twin56[kk][p] = true; }
+                    }
+                }
+            }
+            lastActs = acts; lastSeven = seven;
+            foreach (var kk in kinds)
+            {
+                first[kk].Add(found.TryGetValue(kk, out var at) ? at : size + 1);
+                share56[kk].Add(twin56[kk].Count(x => x) * 100f / 56);
+            }
+        }
+
+        Console.WriteLine($"\n=== ДВОЙНИКИ: через сколько воинов появляется похожий ({maps} карт по {size}, 60 положений) ===");
+
+        // Охотники Ордена (HunterSquadSpawner): 4 вида по кругу, у вида свои грех, мораль и сила; имя — по месту
+        // в строю; особенности — по имени (Warrior.Stamp). Без жребия: в каждой игре те же люди.
+        {
+            string[] hn = { "Ансельм", "Бертрам", "Ульрих", "Готфрид", "Кунрад", "Ортвин", "Вольфрам", "Лотар", "Эберхард",
+                            "Рупрехт", "Хаген", "Дитмар", "Гунтрам", "Адальберт", "Фолькмар", "Зигфрид" };
+            string[] he = { "Рыжий", "Хромой", "Седой", "Рябой", "Щербатый", "Долговязый", "Лысый", "Бородатый" };
+            var kindsH = new (Trade t, SinType s, MoralType m, float i)[]
+            {
+                (Trade.OrderHunter, SinType.Wrath, MoralType.Vicious, 60f), (Trade.Tracker, SinType.Envy, MoralType.Neutral, 45f),
+                (Trade.Inquisitor, SinType.Pride, MoralType.Vicious, 55f), (Trade.Catcher, SinType.Greed, MoralType.Vicious, 50f),
+            };
+            int Stamp(string s) { unchecked { int h = (int)2166136261u; foreach (char ch in s) h = (h ^ ch) * 16777619; return h & 0x7fffffff; } }
+            var hv = new List<ActionType[]>();
+            int firstH = 0, twinsH = 0;
+            const int raid = 24;
+            for (int i = 0; i < raid; i++)
+            {
+                string name = hn[i % hn.Length] + (i / hn.Length == 0 ? "" : " " + he[(i / hn.Length - 1) % he.Length]);
+                var kd = kindsH[i % kindsH.Length];
+                var soul = new SoulData(name, kd.s, kd.m, 1, kd.i);
+                soul.SetTrade(kd.t);
+                var seed = new MemorySeed();
+                Traits.Write(seed, Traits.Pick(TraitSoul.Of(soul, ShellType.Living), Stamp(name)));
+                var tr = seed.NarrativePerks.FindAll(p => Traits.Find(p.PerkName) != null);
+                var w = new Warrior { Soul = soul, Loyalty = 60f };
+                var v = ctx.Select(c => Vote(modules, w, c, cfg, SquadStrategy.Balanced, tr).Action).ToArray();
+                bool twin = hv.Any(o => o.Zip(v, (x, y) => x == y).Count(z => z) >= 57);
+                if (twin) { twinsH++; if (firstH == 0) firstH = i + 1; }
+                hv.Add(v);
+            }
+            Console.WriteLine($"  охотники Ордена: из {raid} подряд похож (57 из 60) на кого-то раньше — {twinsH}; первый такой — {firstH}-й; "
+                            + "в каждой игре это те же люди с теми же особенностями");
+        }
+        foreach (var (label, all) in new[] { ("один грех", lastActs), ("все семь", lastSeven) })
+        {
+            int unanimous = 0;
+            for (int j = 0; j < ctx.Count; j++)
+            {
+                var top = all.GroupBy(v => v[j]).Max(gr => gr.Count());
+                if (top >= all.Count * 0.9) unanimous++;
+            }
+            Console.WriteLine($"  {label}: положений, где 90% людей поступают одинаково, — {unanimous} из {ctx.Count}");
+        }
+        foreach (var kk in kinds)
+        {
+            var s = first[kk].OrderBy(x => x).ToList();
+            int Q(float q) => s[Math.Min(s.Count - 1, (int)(q * s.Count))];
+            string n(int v) => v > size ? $">{size}" : v.ToString();
+            Console.WriteLine($"  {kk,-22} первый двойник: обычно на {n(Q(0.5f))}-м (от {n(Q(0.1f))} до {n(Q(0.9f))}); "
+                            + $"на карте в 56 человек с двойником {share56[kk].Average():F0}% людей");
+        }
+    }
+
     static void Main(string[] args)
     {
         Debug.Mute = true;
         if (args.Length > 0 && args[0] == "генератор") { GeneratorReport(); return; }
-        int n = args.Length > 0 ? int.Parse(args[0]) : 200000;
+        int n = args.Length > 0 && int.TryParse(args[0], out var asked) ? asked : 200000;
         var cfg = ScriptableObject.CreateInstance<AOSConfig>();
         ApplyAsset(cfg);
 
@@ -5736,6 +5889,8 @@ static class Bench
         // Регистрируем наш экземпляр, иначе каждый создаст запасной
         // и правки весов на стенде не дойдут до голосования.
         UnityEngine.Resources.Register(cfg);
+        if ((args.Length > 0 && args[0] == "двойники") || Environment.GetEnvironmentVariable("SINBINDER_TWINS") == "1")
+        { TwinsCheck(cfg); return; }
 
         // Секции перебора весов правят cfg на месте и не возвращают его
         // обратно — всё, что идёт после них, считалось бы на объедках
