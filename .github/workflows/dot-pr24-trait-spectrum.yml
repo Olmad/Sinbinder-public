@@ -1,0 +1,72 @@
+name: Dot PR24 trait spectrum verification
+on:
+  push:
+    branches:
+      - 'dot/verify-pr24'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Select .NET 8
+        shell: bash
+        run: |
+          sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
+          test -n "$sdk"
+          printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
+          dotnet --version
+      - name: Run seven exact PR24 assertions and a negative control
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe_file=Tools/bench/Program.cs
+          traits='Assets/Scripts/AOS Engine/Traits.cs'
+          git show '03f0cfd1d0cc32e4ff6eb6bdbc44585b280e18ce:Tools/bench/Program.cs' > "$probe_file"
+          git show '03f0cfd1d0cc32e4ff6eb6bdbc44585b280e18ce:Assets/Scripts/AOS Engine/Traits.cs' > "$traits"
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("Tools/bench/Program.cs")
+          src = path.read_text(encoding="utf-8-sig")
+          start = src.index('        var signedSoul = ', src.index('static void TraitsCheck('))
+          end = src.index('        // 1.', start)
+          assertions = src[start:end]
+          assert assertions.count("Check(") == 7
+          imports = src[:src.index("static class Bench")]
+          path.write_text(imports + """
+          static class Bench
+          {
+              static int Main()
+              {
+                  int failed = 0, total = 0;
+                  void Check(bool passed, string what)
+                  {
+                      total++;
+                      if (!passed) { failed++; Console.WriteLine("FAIL: " + what); }
+                  }
+          """ + assertions + """
+                  Console.WriteLine($"TRAIT_PROBE total={total} failed={failed}");
+                  return total == 7 && failed == 0 ? 0 : 1;
+              }
+          }
+          """, encoding="utf-8")
+          PY
+          dotnet build Tools/bench/bench.csproj -c Release
+          dotnet run --project Tools/bench/bench.csproj -c Release --no-build | tee /tmp/traits-fixed.log
+          grep -Fx 'TRAIT_PROBE total=7 failed=0' /tmp/traits-fixed.log
+          git show 'afa1eb6298476b8c34c9c491a18c4b36288b0302:Assets/Scripts/AOS Engine/Traits.cs' > "$traits"
+          dotnet build Tools/bench/bench.csproj -c Release --no-restore
+          set +e
+          dotnet run --project Tools/bench/bench.csproj -c Release --no-build | tee /tmp/traits-before.log
+          rc="${PIPESTATUS[0]}"
+          set -e
+          test "$rc" -eq 1
+          grep -Ex 'TRAIT_PROBE total=7 failed=[1-7]' /tmp/traits-before.log
