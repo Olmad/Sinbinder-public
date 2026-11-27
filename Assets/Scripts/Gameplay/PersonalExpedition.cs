@@ -707,6 +707,8 @@ namespace Sinbinder.Gameplay
 
         private Vector3 Gate => ExpeditionMapBuilder.Point(_plan,0f,_plan.EntranceZ);
         private Vector3 Objective => ExpeditionMapBuilder.Point(_plan,0f,_plan.GoalZ);
+        private bool CaravanObjectiveGone => _plan?.Kind==ExpeditionMapKind.SaltRoad &&
+            _state?.CaravanPassed==true;
         private static float Dist(Vector3 a,Vector3 b)
         { a.y=0f; b.y=0f; return Vector3.Distance(a,b); }
 
@@ -730,9 +732,7 @@ namespace Sinbinder.Gameplay
                 offer(Gaze.Miss(captain.transform),
                     Loc.F("F — говорить: {0}",Loc.Name(captain.DisplayName)),expedition.OpenCaravanChoice);
             // У отпущенного обоза цели больше нет: серебро уехало с ним.
-            bool goalGone=expedition._plan!=null && expedition._plan.Kind==ExpeditionMapKind.SaltRoad &&
-                expedition._state!=null && expedition._state.CaravanPassed;
-            if (!goalGone && Dist(SinbinderPlayer.Where,expedition.Objective)<4f)
+            if (!expedition.CaravanObjectiveGone && Dist(SinbinderPlayer.Where,expedition.Objective)<4f)
                 offer(Gaze.Miss(expedition.Objective+Vector3.up*1.4f,1.5f),
                     Loc.T("F — исследовать цель"), expedition.CollectObjective);
         }
@@ -1055,6 +1055,7 @@ namespace Sinbinder.Gameplay
                         : Loc.T("Обоз не тронут. Охрана не нападёт первой — поговорите со старшим"))
                 : (_state.SecretTaken ? Loc.T("Тайник изучен") : Loc.T("Осмотреть алтарь часовни"));
             string prompt=Dist(SinbinderPlayer.Where,Gate)<4f ? Loc.T("F — вернуться в склеп")
+                : CaravanObjectiveGone ? Loc.T("Следуйте к бирюзовому огню, чтобы вернуться в склеп.")
                 : captain!=null && Dist(SinbinderPlayer.Where,captain.transform.position)<TalkReach
                     ? Loc.F("F — говорить: {0}",Loc.Name(captain.DisplayName))
                 : Dist(SinbinderPlayer.Where,Objective)<4f ? Loc.T("F — исследовать цель")
