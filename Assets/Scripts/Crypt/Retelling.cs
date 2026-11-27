@@ -58,8 +58,8 @@ namespace Sinbinder.Crypt
 
         /// <summary>
         /// Что достойно упоминания. Сначала громкое, потом остальное:
-        /// если места хватит только на три случая, побег обязан попасть
-        /// в них раньше, чем поход за добычей.
+        /// внутри одной громкости сохраняется порядок первых событий;
+        /// позже подтверждённый результат заменяет неудачную попытку.
         /// </summary>
         public static List<BattleEvent> Pick(BattleRecord record)
         {
@@ -75,23 +75,30 @@ namespace Sinbinder.Crypt
 
                     // Один воин, повторивший то же самое, — не новость.
                     // Пересказ говорит, что случилось, а не сколько раз.
-                    if (Already(picked, ev)) continue;
+                    int previous = picked.FindIndex(seen => SameAction(seen, ev));
+                    if (previous >= 0)
+                    {
+                        // A later success is more informative than the first failed intent.
+                        if (!picked[previous].Resolved && ev.Resolved) picked[previous] = ev;
+                        continue;
+                    }
 
-                    picked.Add(ev);
-                    if (picked.Count >= Most) return picked;
+                    if (picked.Count < Most) picked.Add(ev);
                 }
+                if (picked.Count >= Most) break;
             }
 
             return picked;
         }
 
-        private static bool Already(List<BattleEvent> picked, BattleEvent ev)
+        private static bool SameAction(BattleEvent seen, BattleEvent ev)
         {
-            foreach (var seen in picked)
-                if (seen.Action == ev.Action && seen.ActorName == ev.ActorName)
-                    return true;
-
-            return false;
+            if (seen.Action != ev.Action) return false;
+            // Modern events carry the actor ID; names alone may collide.
+            if (!string.IsNullOrEmpty(seen.ActorId) || !string.IsNullOrEmpty(ev.ActorId))
+                return !string.IsNullOrEmpty(seen.ActorId) && seen.ActorId == ev.ActorId;
+            // Only legacy events with neither ID fall back to their name.
+            return seen.ActorName == ev.ActorName;
         }
 
         /// <summary>

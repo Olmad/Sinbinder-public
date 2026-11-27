@@ -1,0 +1,36 @@
+name: AOS trait spectrum regressions
+
+on:
+  pull_request:
+    paths:
+      - "Assets/Scripts/AOS Engine/Traits.cs"
+      - "Assets/Scripts/Core/Soul/**"
+      - "Assets/Scripts/Core/WarriorGenerator.cs"
+      - "Tools/bench/**"
+      - ".github/workflows/trait-spectra.yml"
+  push:
+    branches:
+      - "fix/aos-trait-spectrum-signs-2026-11-27"
+      - "fix/aos-trait-spectrum-signs-current-2026-11-27"
+      - "claude/3d-horror-survival-game-ckrslc"
+    paths:
+      - "Assets/Scripts/AOS Engine/Traits.cs"
+      - "Assets/Scripts/Core/Soul/**"
+      - "Assets/Scripts/Core/WarriorGenerator.cs"
+      - "Tools/bench/**"
+      - ".github/workflows/trait-spectra.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  trait-spectra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Run production-linked spectrum checks
+        run: dotnet run --project Tools/bench/bench.csproj -c Release -- --trait-spectra

@@ -66,6 +66,49 @@ internal static class SoulDeathSnapshotChecks
         check(empty.Sin == SinType.Wrath && empty.Memory == null,
             "neutral spectrum retains label and absence of memory");
 
+        // Actual trait keys live in NarrativePerks even after biography fades.
+        var traitOnly = new MemorySeed { Story = "" };
+        traitOnly.NarrativePerks.Add(new NarrativePerk { PerkName = "Глуховат", IsFound = true });
+        traitOnly.NarrativePerks.Add(new NarrativePerk { PerkName = "Не бросит своих", IsFound = true });
+        var personality = new SoulData("Traits without story", SinType.Wrath, MoralType.Neutral, 3, 80f, traitOnly);
+        bool SameTraits(MemorySeed m) => m != null && m.NarrativePerks != null &&
+            m.NarrativePerks.Count == 2 &&
+            m.NarrativePerks[0].PerkName == "Глуховат" && m.NarrativePerks[0].IsFound &&
+            m.NarrativePerks[1].PerkName == "Не бросит своих" && m.NarrativePerks[1].IsFound;
+        check(!personality.HasMemory && SameTraits(personality.Memory),
+            "absence of story is not absence of assigned traits");
+        var traitDeath = SoulData.CaptureDeath(personality, "");
+        check(SameTraits(traitDeath.Memory) && !ReferenceEquals(traitDeath.Memory, traitOnly),
+            "death snapshot preserves assigned traits without biography");
+        var traitFading = SoulDecay.Harvest(traitDeath, SoulQuality.Fading);
+        check(!traitFading.HasMemory && SameTraits(traitFading.Memory) &&
+              traitFading.PersonId == personality.PersonId,
+            "fading retains the same traits and person, even with no story");
+        check(SameTraits(SoulDecay.Harvest(traitDeath, SoulQuality.Shock).Memory) &&
+              SameTraits(SoulDecay.Harvest(traitDeath, SoulQuality.Acceptance).Memory),
+            "early harvest preserves both named traits");
+        check(SoulDecay.Harvest(traitDeath, SoulQuality.Dissolved).Memory == null,
+            "dissolved soul drops trait memory under existing decay policy");
+        int legacyCalls = 0;
+        var rosterSeed = MemorySeed.ForRosterSpawn(traitFading.Memory, true, () =>
+        {
+            legacyCalls++;
+            return new MemorySeed { Story = "wrong biography" };
+        });
+        var projected = SoulData.FromRoster(traitFading.Name, traitFading.Sin, traitFading.Moral,
+            traitFading.SinIntensity, traitFading.Level, traitFading.CopySpectra(), rosterSeed,
+            traitFading.Gender, traitFading.Id, traitFading.Kin, traitFading.PersonId);
+        check(!projected.HasMemory && SameTraits(projected.Memory) && legacyCalls == 0 &&
+              projected.PersonId == traitFading.PersonId,
+            "roster reconstruction of trait-only memory does not substitute a legacy biography");
+        projected.Memory.NarrativePerks[0].IsFound = false;
+        projected.Memory.NarrativePerks.RemoveAt(1);
+        check(SameTraits(traitFading.Memory) && SameTraits(traitDeath.Memory),
+            "projected trait changes do not rewrite harvested or historical personality");
+        check(projected.RestoreBoundPersonality(traitFading, true) &&
+              SameTraits(projected.Memory) && !projected.HasMemory,
+            "same-body rollback restores exact named traits without inventing a story");
+
         string manager = File.ReadAllText(Path.Combine(root, "Assets/Scripts/Gameplay/SoulManager.cs"));
         check(manager.Contains("DeathSnapshot = Core.SoulData.CaptureDeath(warrior.Soul, warrior.Soul.EarnedTitle)") &&
               manager.Contains("Core.SoulDecay.Harvest(closest.DeathSnapshot, closest.SoulQuality)") &&
