@@ -1,0 +1,82 @@
+name: Dot canonical AOS bench comparison
+on:
+  push:
+    branches:
+      - 'dot/verify-baseline'
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Run the unmodified bench on both revisions
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
+          test -n "$sdk"
+          result="$RUNNER_TEMP/bench-comparison"
+          mkdir -p "$result"
+          run() {
+            local label="$1" sha="$2" wt="$RUNNER_TEMP/sinbinder-$1" rc=0
+            git worktree add --detach "$wt" "$sha"
+            (
+              cd "$wt"
+              printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
+              git log -1 --format='SHA=%H'
+              dotnet --version
+              dotnet build Tools/bench/bench.csproj -c Release && timeout 360 dotnet run --project Tools/bench/bench.csproj -c Release --no-build -- 20000
+            ) > "$result/$label.log" 2>&1 || rc=$?
+            printf '%s\n' "$rc" > "$result/$label.exit"
+            printf '\n=== %s: %s exit=%s ===\n' "$label" "$sha" "$rc"
+            tail -n 14 "$result/$label.log"
+          }
+          run before 'afa1eb6298476b8c34c9c491a18c4b36288b0302'
+          run after '1ab75ae0166234861859149aeacf61399b5d71ae'
+      - name: Compare explicit failures rather than only exit codes
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="$RUNNER_TEMP/bench-comparison"
+          python3 - "$result" <<'PY'
+          from collections import Counter
+          from pathlib import Path
+          import re, sys
+          root = Path(sys.argv[1])
+          def load(label):
+              data = (root / f"{label}.log").read_text(encoding="utf-8", errors="replace")
+              status = int((root / f"{label}.exit").read_text())
+              failures = Counter(line.strip() for line in data.splitlines()
+                  if re.match(r"^\s*(?:ПРОВАЛ|FAIL)(?:\s|:|!|$)", line, re.I)
+                  or "Unhandled exception" in line or re.search(r": error (?:CS|MSB|NETSDK)\d+", line))
+              complete = bool(re.search(r"^\s*доля .*→ колебание", data, re.M)) and status == 0
+              print(f"{label}: exit={status} completed={complete} explicit_failures={sum(failures.values())}")
+              for line, count in failures.items():
+                  print(f"  {count} × {line}")
+              return status, complete, failures
+          before, after = load("before"), load("after")
+          print("AFTER-ONLY MARKERS:")
+          for line, count in (after[2] - before[2]).items():
+              print(f"  {count} × {line}")
+          print("BEFORE-ONLY MARKERS:")
+          for line, count in (before[2] - after[2]).items():
+              print(f"  {count} × {line}")
+          if not before[1] or not after[1]:
+              print("INCOMPLETE: at least one run did not reach the final section.")
+              sys.exit(2)
+          if after[2] - before[2]:
+              sys.exit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canonical-bench-comparison
+          path: ${{ runner.temp }}/bench-comparison
