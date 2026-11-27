@@ -27,7 +27,7 @@ namespace Sinbinder.EditorTools
 
         private static string _where = "";
         private static Vector3 _goal;
-        private static float _reach, _started, _nextShot, _lastTick, _stillSince, _lastLeft;
+        private static float _reach, _started, _nextShot, _lastTick, _stillSince, _lastLeft, _nextLook;
         private static int _shots, _clicks;
         private static bool _running, _stepping;
         private static readonly StringBuilder Trace = new StringBuilder();
@@ -84,7 +84,7 @@ namespace Sinbinder.EditorTools
             _clicks = 0;
             _stepping = false;
             _started = _lastTick = _stillSince = Time.realtimeSinceStartup;
-            _nextShot = 0f;
+            _nextShot = _nextLook = 0f;
             _lastLeft = Flat(SinbinderPlayer.Where, _goal);
             _running = true;
             EditorApplication.update -= Tick;
@@ -110,6 +110,14 @@ namespace Sinbinder.EditorTools
             {
                 _nextShot = now + 5f;
                 try { Utilets.Snapshot.Now(Shots, $"{_where} {_shots:00} — {left:0} м"); _shots++; } catch { }
+            }
+
+            // Старший идёт навстречу — игрок ведёт к нему, а не к месту, где тот стоял (27.11: разминулись).
+            if (_where == "старший" && now >= _nextLook)
+            {
+                _nextLook = now + 1f;
+                if (Resolve(_where, out var moved, out _) && Flat(moved, _goal) > 1.5f)
+                { _goal = moved; left = Flat(at, _goal); if (left > _reach) Click(); }
             }
 
             if (left <= _reach) { Stop($"дошёл: {left:0.0} м"); return; }

@@ -10884,6 +10884,10 @@ msgid "Экспедиция «{0}»: доберитесь до отмеченн�
 msgstr "Expedition “{0}”: reach the marked target and return to the turquoise sign."
 
 #: Gameplay/PersonalExpedition.cs
+msgid "Экспедиция «{0}»: обоз уехал, дорога пуста. Вернуться — у бирюзового знака."
+msgstr "Expedition “{0}”: the caravan has gone, the road is empty. The way back is at the turquoise sign."
+
+#: Gameplay/PersonalExpedition.cs
 msgid "Вы ушли отсюда этой ночью: стража не успела залечить раны."
 msgstr "You left here this very night: the guards had no time to heal their wounds."
 
