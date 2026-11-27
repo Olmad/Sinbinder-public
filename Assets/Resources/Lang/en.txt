@@ -1349,423 +1349,423 @@ msgstr "Blood Foe of the Order"
 
 #: AOS Engine/Traits.cs
 msgid "Кровница Ордена"
-msgstr ""
+msgstr "Blood Foe of the Order"
 
 #: AOS Engine/Traits.cs
 msgid "Увидит людей Ордена — бьёт их, даже когда велено отходить."
-msgstr ""
+msgstr "Sees the Order's men and strikes them, even when told to fall back."
 
 #: AOS Engine/Traits.cs
 msgid "Орден сжёг его дом. Он помнит, кто держал факел."
-msgstr ""
+msgstr "The Order burned his home. He remembers who held the torch."
 
 #: AOS Engine/Traits.cs
 msgid "Не уйду, пока они живы!"
-msgstr ""
+msgstr "I'm not leaving while they live!"
 
 #: AOS Engine/Traits.cs
 msgid "Уведите от людей Ордена — при них не отступит."
-msgstr ""
+msgstr "Lead them away from the Order's men: in sight of them they won't retreat."
 
 #: AOS Engine/Traits.cs
 msgid "Боится Ордена"
-msgstr ""
+msgstr "Fears the Order"
 
 #: AOS Engine/Traits.cs
 msgid "Люди Ордена пугают его и после смерти: при них думает, как уйти."
-msgstr ""
+msgstr "The Order's men frighten him even after death: near them he thinks of getting away."
 
 #: AOS Engine/Traits.cs
 msgid "Видел костры Ордена — и тех, кого на них жгли."
-msgstr ""
+msgstr "He saw the Order's pyres — and those burned on them."
 
 #: AOS Engine/Traits.cs
 msgid "Это Орден… Туда не пойду."
-msgstr ""
+msgstr "It's the Order… I'm not going there."
 
 #: AOS Engine/Traits.cs
 msgid "Уберите людей Ордена с пути или пошлите другого."
-msgstr ""
+msgstr "Clear the Order's men from the way, or send someone else."
 
 #: AOS Engine/Traits.cs
 msgid "Только в спину"
-msgstr ""
+msgstr "Only From Behind"
 
 #: AOS Engine/Traits.cs
 msgid "Бьёт, когда враг подставил спину; в лоб идёт неохотно."
-msgstr ""
+msgstr "Strikes when the enemy shows his back; goes in head-on unwillingly."
 
 #: AOS Engine/Traits.cs
 msgid "В лоб ходят дураки — так он говорил при жизни."
-msgstr ""
+msgstr "Only fools go in head-on — so he used to say in life."
 
 #: AOS Engine/Traits.cs
 msgid "В лоб не полезу."
-msgstr ""
+msgstr "I won't go at him head-on."
 
 #: AOS Engine/Traits.cs
 msgid "Зайдите врагу в спину или пошлите другого."
-msgstr ""
+msgstr "Get behind the enemy, or send someone else."
 
 #: AOS Engine/Traits.cs
 msgid "Не бьёт в спину"
-msgstr ""
+msgstr "Won't Strike From Behind"
 
 #: AOS Engine/Traits.cs
 msgid "Врага со спины не тронет — ждёт, пока тот повернётся."
-msgstr ""
+msgstr "Won't touch an enemy from behind — waits for him to turn around."
 
 #: AOS Engine/Traits.cs
 msgid "Так не бьют. Так его учили, и он это помнит."
-msgstr ""
+msgstr "That's not how you strike. He was taught so, and he remembers."
 
 #: AOS Engine/Traits.cs
 msgid "Со спины не бью."
-msgstr ""
+msgstr "I don't strike from behind."
 
 #: AOS Engine/Traits.cs
 msgid "Дождитесь, пока враг повернётся, или пошлите другого."
-msgstr ""
+msgstr "Wait for the enemy to turn around, or send someone else."
 
 #: AOS Engine/Traits.cs
 msgid "Глуховат"
-msgstr ""
+msgstr "Hard of Hearing"
 
 #: AOS Engine/Traits.cs
 msgid "Глуховата"
-msgstr ""
+msgstr "Hard of Hearing"
 
 #: AOS Engine/Traits.cs
 msgid "Тихий приказ издали не слышит; вблизи — слышит всегда."
-msgstr ""
+msgstr "Doesn't hear a quiet order from afar; up close, always hears."
 
 #: AOS Engine/Traits.cs
 msgid "Оглушён обвалом ещё при жизни."
-msgstr ""
+msgstr "Deafened by a rockfall while still alive."
 
 #: AOS Engine/Traits.cs
 msgid "А? Что? Не слышу!"
-msgstr ""
+msgstr "Eh? What? Can't hear you!"
 
 #: AOS Engine/Traits.cs
 msgid "Подойдите ближе — вблизи слышно всегда."
-msgstr ""
+msgstr "Come closer — up close you are always heard."
 
 #: AOS Engine/Traits.cs
 msgid "Не терпит окрика"
-msgstr ""
+msgstr "Hates Being Barked At"
 
 #: AOS Engine/Traits.cs
 msgid "Когда приказ твердят ему раз за разом, злится — назло не сделает."
-msgstr ""
+msgstr "When an order is repeated at him again and again, he gets angry and won't do it out of spite."
 
 #: AOS Engine/Traits.cs
 msgid "Был господином и не привык, чтобы ему повторяли."
-msgstr ""
+msgstr "He was a master once and isn't used to being told twice."
 
 #: AOS Engine/Traits.cs
 msgid "С первого раза понятно."
-msgstr ""
+msgstr "I heard you the first time."
 
 #: AOS Engine/Traits.cs
 msgid "Не торопите — выждите пару секунд и повторите."
-msgstr ""
+msgstr "Don't rush — wait a couple of seconds and repeat."
 
 #: AOS Engine/Traits.cs
 msgid "Клятва"
-msgstr ""
+msgstr "Oath"
 
 #: AOS Engine/Traits.cs
 msgid "Связан клятвой служить: приказ для него весит больше, чем для других."
-msgstr ""
+msgstr "Bound by an oath to serve: an order weighs more for him than for others."
 
 #: AOS Engine/Traits.cs
 msgid "Клялся ещё живым и держит слово и после смерти."
-msgstr ""
+msgstr "He swore it while alive and keeps his word after death."
 
 #: AOS Engine/Traits.cs
 msgid "Слово дано."
-msgstr ""
+msgstr "My word is given."
 
 #: AOS Engine/Traits.cs
 msgid "Свободный"
-msgstr ""
+msgstr "Free"
 
 #: AOS Engine/Traits.cs
 msgid "Свободная"
-msgstr ""
+msgstr "Free"
 
 #: AOS Engine/Traits.cs
 msgid "Неволю помнит: с первого раза приказ пропускает мимо ушей."
-msgstr ""
+msgstr "Remembers bondage: lets the first order go past his ears."
 
 #: AOS Engine/Traits.cs
 msgid "Свобода ему дороже жизни. Жизни уже нет — свобода осталась."
-msgstr ""
+msgstr "Freedom is dearer to him than life. Life is gone — freedom remains."
 
 #: AOS Engine/Traits.cs
 msgid "Я больше ничей."
-msgstr ""
+msgstr "I belong to no one now."
 
 #: AOS Engine/Traits.cs
 msgid "Повторите приказ — со второго раза дойдёт."
-msgstr ""
+msgstr "Repeat the order — the second time it will get through."
 
 #: AOS Engine/Traits.cs
 msgid "Не чувствует боли"
-msgstr ""
+msgstr "Feels No Pain"
 
 #: AOS Engine/Traits.cs
 msgid "Раны не гонят его из боя — он не знает, что умирает."
-msgstr ""
+msgstr "Wounds don't drive him from the fight — he doesn't know he is dying."
 
 #: AOS Engine/Traits.cs
 msgid "Мёртвое тело не болит."
-msgstr ""
+msgstr "A dead body doesn't hurt."
 
 #: AOS Engine/Traits.cs
 msgid "Мне не больно."
-msgstr ""
+msgstr "It doesn't hurt."
 
 #: AOS Engine/Traits.cs
 msgid "Бережёт шкуру"
-msgstr ""
+msgstr "Self-Preserving"
 
 #: AOS Engine/Traits.cs
 msgid "При первой ране думает, как уйти."
-msgstr ""
+msgstr "At the first wound he thinks of getting away."
 
 #: AOS Engine/Traits.cs
 msgid "Тело — всё, что у него было, и он его бережёт."
-msgstr ""
+msgstr "His body is all he ever had, and he takes care of it."
 
 #: AOS Engine/Traits.cs
 msgid "Шкура у меня одна."
-msgstr ""
+msgstr "I've only got one skin."
 
 #: AOS Engine/Traits.cs
 msgid "Последний стоит"
-msgstr ""
+msgstr "Last One Standing"
 
 #: AOS Engine/Traits.cs
 msgid "Последняя стоит"
-msgstr ""
+msgstr "Last One Standing"
 
 #: AOS Engine/Traits.cs
 msgid "Один против всех — не бежит, а дерётся."
-msgstr ""
+msgstr "Alone against all — doesn't run, fights."
 
 #: AOS Engine/Traits.cs
 msgid "Однажды уже остался один из всего отряда — и не простил себе, что выжил."
-msgstr ""
+msgstr "Once before he was the only one of his band left — and never forgave himself for surviving."
 
 #: AOS Engine/Traits.cs
 msgid "Не побегу."
-msgstr ""
+msgstr "I won't run."
 
 #: AOS Engine/Traits.cs
 msgid "Мстит за своих"
-msgstr ""
+msgstr "Avenger of Kin"
 
 #: AOS Engine/Traits.cs
 msgid "Ранили своего рядом — бросается на врага."
-msgstr ""
+msgstr "One of his own is wounded nearby — he throws himself at the enemy."
 
 #: AOS Engine/Traits.cs
 msgid "Не уберёг сына в бою и с тех пор не прощает тех, кто бьёт своих."
-msgstr ""
+msgstr "He failed to save his son in battle and has never since forgiven those who strike his own."
 
 #: AOS Engine/Traits.cs
 msgid "За своих!"
-msgstr ""
+msgstr "For our own!"
 
 #: AOS Engine/Traits.cs
 msgid "Не бросит своих"
-msgstr ""
+msgstr "Leaves No One Behind"
 
 #: AOS Engine/Traits.cs
 msgid "Свой в беде — бежит к нему, даже против приказа."
-msgstr ""
+msgstr "One of his own in trouble — he runs to them, even against orders."
 
 #: AOS Engine/Traits.cs
 msgid "Его самого когда-то бросили умирать."
-msgstr ""
+msgstr "He himself was once left to die."
 
 #: AOS Engine/Traits.cs
 msgid "Сначала помогите раненому."
-msgstr ""
+msgstr "Help the wounded first."
 
 #: AOS Engine/Traits.cs
 msgid "Падок на добро"
-msgstr ""
+msgstr "Covetous"
 
 #: AOS Engine/Traits.cs
 msgid "Падка на добро"
-msgstr ""
+msgstr "Covetous"
 
 #: AOS Engine/Traits.cs
 msgid "Видит, где лежит ценное, и тянется туда."
-msgstr ""
+msgstr "Sees where valuables lie and reaches for them."
 
 #: AOS Engine/Traits.cs
 msgid "Был контрабандистом: чужое добро — его ремесло."
-msgstr ""
+msgstr "He was a smuggler: other people's goods are his trade."
 
 #: AOS Engine/Traits.cs
 msgid "Тут есть чем поживиться."
-msgstr ""
+msgstr "There's something to grab here."
 
 #: AOS Engine/Traits.cs
 msgid "Бессребреник"
-msgstr ""
+msgstr "Unmercenary"
 
 #: AOS Engine/Traits.cs
 msgid "Бессребреница"
-msgstr ""
+msgstr "Unmercenary"
 
 #: AOS Engine/Traits.cs
 msgid "С мёртвых не берёт."
-msgstr ""
+msgstr "Takes nothing from the dead."
 
 #: AOS Engine/Traits.cs
 msgid "Видел, что бывает с теми, кто берёт с мёртвых."
-msgstr ""
+msgstr "He has seen what happens to those who take from the dead."
 
 #: AOS Engine/Traits.cs
 msgid "С мёртвых не беру."
-msgstr ""
+msgstr "I don't take from the dead."
 
 #: AOS Engine/Traits.cs
 msgid "Мёртвых не боится"
-msgstr ""
+msgstr "Unafraid of the Dead"
 
 #: AOS Engine/Traits.cs
 msgid "Против нежити не отступает."
-msgstr ""
+msgstr "Doesn't retreat before the undead."
 
 #: AOS Engine/Traits.cs
 msgid "Всю жизнь хоронил мёртвых. Теперь они встают — что с того."
-msgstr ""
+msgstr "He buried the dead all his life. Now they rise — so what."
 
 #: AOS Engine/Traits.cs
 msgid "Мёртвых не боюсь."
-msgstr ""
+msgstr "I'm not afraid of the dead."
 
 #: AOS Engine/Traits.cs
 msgid "Держит место"
-msgstr ""
+msgstr "Holds the Line"
 
 #: AOS Engine/Traits.cs
 msgid "Велено стоять — стоит, даже когда страшно."
-msgstr ""
+msgstr "Told to stand — stands, even when afraid."
 
 #: AOS Engine/Traits.cs
 msgid "Клал стены. Стена не бегает."
-msgstr ""
+msgstr "He laid walls. A wall doesn't run."
 
 #: AOS Engine/Traits.cs
 msgid "Велено стоять — стою."
-msgstr ""
+msgstr "Told to stand, I stand."
 
 #: AOS Engine/Traits.cs
 msgid "Хладнокровный"
-msgstr ""
+msgstr "Cold-Blooded"
 
 #: AOS Engine/Traits.cs
 msgid "Хладнокровная"
-msgstr ""
+msgstr "Cold-Blooded"
 
 #: AOS Engine/Traits.cs
 msgid "В окружении не мечется — дерётся, где стоит."
-msgstr ""
+msgstr "Surrounded, doesn't panic — fights where he stands."
 
 #: AOS Engine/Traits.cs
 msgid "Терпел и не такое."
-msgstr ""
+msgstr "He's endured worse."
 
 #: AOS Engine/Traits.cs
 msgid "Спокойно."
-msgstr ""
+msgstr "Steady."
 
 #: AOS Engine/Traits.cs
 msgid "Выдыхается"
-msgstr ""
+msgstr "Tires Quickly"
 
 #: AOS Engine/Traits.cs
 msgid "К середине боя устаёт и встаёт передохнуть."
-msgstr ""
+msgstr "By mid-fight he tires and stops to catch his breath."
 
 #: AOS Engine/Traits.cs
 msgid "Всю жизнь берёг силы — и после смерти бережёт."
-msgstr ""
+msgstr "Saved his strength all his life — and still saves it after death."
 
 #: AOS Engine/Traits.cs
 msgid "Дай отдышаться…"
-msgstr ""
+msgstr "Let me catch my breath…"
 
 #: AOS Engine/Traits.cs
 msgid "Дайте передышку."
-msgstr ""
+msgstr "Give them a breather."
 
 #: AOS Engine/Traits.cs
 msgid "Неутомимый"
-msgstr ""
+msgstr "Tireless"
 
 #: AOS Engine/Traits.cs
 msgid "Неутомимая"
-msgstr ""
+msgstr "Tireless"
 
 #: AOS Engine/Traits.cs
 msgid "Усталость его не останавливает."
-msgstr ""
+msgstr "Fatigue doesn't stop him."
 
 #: AOS Engine/Traits.cs
 msgid "Работал от зари до зари — и не помнит, как это: отдыхать."
-msgstr ""
+msgstr "Worked from dawn to dusk — and doesn't remember what resting is."
 
 #: AOS Engine/Traits.cs
 msgid "Отдохну потом."
-msgstr ""
+msgstr "I'll rest later."
 
 #: AOS Engine/Traits.cs
 msgid "Хранитель склепа"
-msgstr ""
+msgstr "Crypt Keeper"
 
 #: AOS Engine/Traits.cs
 msgid "Хранительница склепа"
-msgstr ""
+msgstr "Crypt Keeper"
 
 #: AOS Engine/Traits.cs
 msgid "В склепе — как дома: не отступит."
-msgstr ""
+msgstr "In the crypt he's at home: won't retreat."
 
 #: AOS Engine/Traits.cs
 msgid "При жизни стерёг склеп. Теперь лежит в нём сам — и стережёт."
-msgstr ""
+msgstr "In life he guarded the crypt. Now he lies in it himself — and guards it."
 
 #: AOS Engine/Traits.cs
 msgid "Это мой склеп."
-msgstr ""
+msgstr "This is my crypt."
 
 #: AOS Engine/Traits.cs
 msgid "Первым в бой"
-msgstr ""
+msgstr "First Into Battle"
 
 #: AOS Engine/Traits.cs
 msgid "Первой в бой"
-msgstr ""
+msgstr "First Into Battle"
 
 #: AOS Engine/Traits.cs
 msgid "Рвётся вперёд, пока другие ждут."
-msgstr ""
+msgstr "Rushes ahead while others wait."
 
 #: AOS Engine/Traits.cs
 msgid "Бился на арене: кто ударил первым, тот и жив."
-msgstr ""
+msgstr "He fought in the arena: whoever strikes first stays alive."
 
 #: AOS Engine/Traits.cs
 msgid "Вперёд!"
-msgstr ""
+msgstr "Forward!"
 
 #: Core/Commitment.cs
 msgid "Вы взяли на себя обязательство. Переиграть нельзя — в этом и был уговор."
