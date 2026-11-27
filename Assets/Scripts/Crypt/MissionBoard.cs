@@ -737,14 +737,18 @@ namespace Sinbinder.Crypt
         /// Items, money, HP and AOS are already real scene state, not a
         /// second fake reward from the instant automatic resolver.
         /// </summary>
-        public void RecordPersonal(Mission mission, bool recoveredSomething)
+        public void RecordPersonal(Mission mission, bool recoveredSomething, bool nothingLeft = false)
         {
             Sent++;
             Gameplay.Sorties.Tick();
             LastReplay = null; // no false "automatic" reconstruction of live play
+            // «Из похода «Соляной обоз»», а не «из «Соляной обоз»»: название в кавычках не склоняется
+            // (27.11, обоз руками). Отпущенный обоз уехал — «то, что осталось» про него неправда.
             LastReport = recoveredSomething
-                ? Loc.F("Греховод лично вернулся из «{0}» с находкой.", Loc.Name(mission.Name))
-                : Loc.F("Греховод вернулся из «{0}». То, что осталось, ждёт следующего визита.",
+                ? Loc.F("Греховод лично вернулся из похода «{0}» с находкой.", Loc.Name(mission.Name))
+                : nothingLeft
+                ? Loc.F("Греховод вернулся из похода «{0}».", Loc.Name(mission.Name))
+                : Loc.F("Греховод вернулся из похода «{0}». То, что осталось, ждёт следующего визита.",
                     Loc.Name(mission.Name));
             Object.FindFirstObjectByType<UI.BattleLogUI>()?.Write(LastReport);
         }

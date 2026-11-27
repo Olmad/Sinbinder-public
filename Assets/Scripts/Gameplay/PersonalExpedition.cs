@@ -1106,7 +1106,8 @@ namespace Sinbinder.Gameplay
                 var board = CryptMap.Board ??
                     UnityEngine.Object.FindFirstObjectByType<MissionBoard>();
                 board?.RecordPersonal(_mission,
-                    _state != null && ((_state.CargoTaken && !_state.CaravanPassed) || _state.SecretTaken));
+                    _state != null && ((_state.CargoTaken && !_state.CaravanPassed) || _state.SecretTaken),
+                    _state != null && _state.CaravanPassed);
                 if (board == null) Sorties.Tick(); // возвращение — шаг времени мира и без доски
                 if (_state != null)
                 {

@@ -3720,11 +3720,15 @@ msgid "Отряд вернулся без боя и добычи."
 msgstr "The squad returned without a fight or loot."
 
 #: Crypt/MissionBoard.cs
-msgid "Греховод лично вернулся из «{0}» с находкой."
+msgid "Греховод лично вернулся из похода «{0}» с находкой."
 msgstr "The Sinbinder came back from “{0}” in person with a find."
 
 #: Crypt/MissionBoard.cs
-msgid "Греховод вернулся из «{0}». То, что осталось, ждёт следующего визита."
+msgid "Греховод вернулся из похода «{0}»."
+msgstr "The Sinbinder came back from “{0}”."
+
+#: Crypt/MissionBoard.cs
+msgid "Греховод вернулся из похода «{0}». То, что осталось, ждёт следующего визита."
 msgstr "The Sinbinder came back from “{0}”. What remains awaits the next visit."
 
 #: Crypt/MissionBoard.cs
