@@ -37,7 +37,7 @@ jobs:
           enum ExpeditionMapKind { SaltRoad, Chapel }
           enum Team { Neutral, Enemy }
           class Plan { public ExpeditionMapKind Kind; }
-          class State { public bool CaravanPassed, CargoTaken, CaravanAssaulted; }
+          class State { public bool CaravanPassed, CargoTaken, CaravanAssaulted=false; }
           struct Vector3 {
               public float x,y,z;
               public static Vector3 up => new Vector3 {y=1};
@@ -45,7 +45,7 @@ jobs:
               public static Vector3 operator +(Vector3 a,Vector3 b) => new Vector3 {x=a.x+b.x, y=a.y+b.y, z=a.z+b.z};
           }
           class Transform { public Vector3 position; }
-          class Warrior { public bool IsDead; public Team Team; public readonly Transform transform=new(); public string DisplayName="Captain"; }
+          class Warrior { public bool IsDead=false; public Team Team; public readonly Transform transform=new(); public string DisplayName="Captain"; }
           static class Gaze { public static float Miss(object v,float r=0)=>0; }
           static class SinbinderPlayer { public static bool Exists=true; public static Vector3 Where; }
           static class Loc { public static string T(string s)=>s; public static string F(string s, string t)=>string.Format(s,t); public static string Name(string s)=>s; }
@@ -131,11 +131,12 @@ jobs:
           assert loc.count('msgid "Следуйте к бирюзовому огню, чтобы вернуться в склеп."\nmsgstr "Follow the turquoise fire to return to the crypt."') == 1
           print('PASS exact English localization key')
           PY
+          cp global.json "$FIXTURE/global.json"
           cd "$FIXTURE"
           cp candidate.txt Program.cs
           dotnet run --project Hud.csproj
           cp baseline.txt Program.cs
-          dotnet build --project Hud.csproj
+          dotnet build Hud.csproj
           ulimit -c 0
           if dotnet bin/Debug/net8.0/Hud.dll baseline > baseline.log 2>&1; then cat baseline.log; echo 'Baseline unexpectedly passed'; exit 1; fi
           cat baseline.log
