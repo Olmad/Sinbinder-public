@@ -124,6 +124,12 @@ namespace Sinbinder.Core
             // чем он был.
             taken.SetTrade(source.Trade);
 
+            // While the soul still remembers its life, preserve the authored
+            // kinship marker. Late decay keeps its previous behaviour until
+            // the kinship rule for lost memories is explicitly decided.
+            if (KeepsMemory(quality))
+                taken.SetKin(source.Kin);
+
             // Заслуженное имя держится тем же качеством, что и память:
             // взяли вовремя — он помнит, кем был; взяли поздно — имя
             // ушло вместе со всем остальным. Отдельного правила заводить

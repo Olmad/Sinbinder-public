@@ -51,6 +51,7 @@ internal static class Program
               "Try changing the circumstances or choosing another warrior.",
             "unknown decisive factor gets neutral advice");
         SoulDescriptionChecks.Run(Check, adviceCatalog);
+        SoulKinChecks.Run(Check, adviceRoot);
 
         Check(OrderIntegrity.SameKnownTarget("brother-a", "brother-a"), "known rescue target matches");
         Check(!OrderIntegrity.SameKnownTarget("brother-a", "stranger") &&

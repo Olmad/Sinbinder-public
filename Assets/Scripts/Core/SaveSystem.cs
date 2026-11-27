@@ -696,6 +696,7 @@ namespace Sinbinder.Core
                 Gender = (int)soul.Gender,
                 Trade = (int)soul.Trade,
                 Title = soul.EarnedTitle,
+                Kin = soul.Kin,
                 HasMemorySeed = soul.Memory != null,
                 Memory = CopyMemorySeed(soul.Memory),
             };
@@ -715,6 +716,7 @@ namespace Sinbinder.Core
                                     s.Spectra, memory, (Gender)s.Gender, s.Id);
             soul.SetTrade((Trade)s.Trade);
             soul.Remember(s.Title);
+            soul.SetKin(s.Kin);
             return soul;
         }
 
