@@ -356,7 +356,7 @@ namespace Sinbinder.AOS
         {
             var names = new List<string>();
             if (memory?.NarrativePerks == null) return names;
-            foreach (var p in memory.NarrativePerks) if (Find(p.PerkName) != null) names.Add(p.PerkName);
+            foreach (var p in memory.NarrativePerks) if (p != null && Find(p.PerkName) != null) names.Add(p.PerkName);
             return names;
         }
 
@@ -366,7 +366,7 @@ namespace Sinbinder.AOS
             if (memory == null || names == null) return;
             memory.NarrativePerks ??= new List<NarrativePerk>();
             foreach (var n in names)
-                if (!memory.NarrativePerks.Exists(p => p.PerkName == n))
+                if (!memory.NarrativePerks.Exists(p => p != null && p.PerkName == n))
                     memory.NarrativePerks.Add(new NarrativePerk { PerkName = n, IsFound = true });
         }
 
@@ -380,7 +380,7 @@ namespace Sinbinder.AOS
             if (scores == null || perks == null || c == null) return;
             foreach (var p in perks)
             {
-                if (muted != null && p.PerkName == muted) continue;
+                if (p == null || (muted != null && p.PerkName == muted)) continue;
                 var t = Find(p.PerkName);
                 if (t == null) continue;
                 foreach (var v in t.Votes)

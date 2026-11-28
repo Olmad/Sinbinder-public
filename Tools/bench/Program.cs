@@ -5914,6 +5914,8 @@ static class Bench
 
     static void Main(string[] args)
     {
+        PerkNullChecks.Run();
+        if (args.Length > 0 && args[0] == "perk-null") return;
         Debug.Mute = true;
         if (args.Length > 0 && args[0] == "генератор") { GeneratorReport(); return; }
         int n = args.Length > 0 && int.TryParse(args[0], out var asked) ? asked : 200000;

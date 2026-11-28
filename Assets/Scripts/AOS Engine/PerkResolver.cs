@@ -30,6 +30,7 @@ namespace Sinbinder.AOS
 
             foreach (var activePerk in warrior.Soul.Memory.NarrativePerks)
             {
+                if (activePerk == null) continue;
                 SoulPerk perkData = database.AllPerks.Find(p => p.PerkName == activePerk.PerkName);
                 if (perkData == null) continue;
 
