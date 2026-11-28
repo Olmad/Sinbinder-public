@@ -207,6 +207,28 @@ class CorrectedTextRegressions(unittest.TestCase):
         ):
             self.assertNotIn(unproved, idle)
 
+    def test_f19_camp_view_hint_defers_without_consuming_transition(self):
+        # Source contract, not a Unity frame simulation.
+        source = read("Assets/Scripts/UI/ViewHintUI.cs")
+        update = source.split("void Update()", 1)[1].split("private bool _pending;", 1)[0]
+        self.assertIn('GetActiveScene().name != "Prologue_Camp"', update)
+        self.assertIn("DreamTutorialDirector.Instance != null", update)
+        self.assertIn("OpeningReveal.Busy || Lesson.Holding", update)
+        self.assertIn("Letterbox.Instance != null && Letterbox.Instance.Covering", update)
+        remember = "if (_wasEyes && !eyes) _pending = true;"
+        advance = "_wasEyes = eyes;"
+        show = "if (_pending && !eyes && !busy) Show();"
+        self.assertIn(remember, update)
+        self.assertIn(advance, update)
+        self.assertIn(show, update)
+        self.assertLess(update.index(remember), update.index(advance))
+        self.assertLess(update.index(advance), update.index(show))
+        self.assertEqual(1, update.count("Show();"))
+        self.assertIn("if (cam == null) { _wasEyes = false; _pending = false; return; }", update)
+        self.assertIn("if (Shown) { Destroy(gameObject); return; }", update)
+        self.assertIn("void OnDestroy() => Lesson.Unhint(this);", source)
+        self.assertIn("public static void Forget() => Shown = false;", source)
+
     def test_all_revised_ru_lines_have_single_english_translation(self):
         phrases = (
             "За твой ответ я заплачу три монеты.",
