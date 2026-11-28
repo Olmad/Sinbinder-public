@@ -1,94 +1,53 @@
-name: Dot expedition map gate repair
+name: Dot Windows launcher save safety
 on:
   push:
     branches: ['dot/verify-baseline']
 permissions:
   contents: read
 jobs:
-  combined-caravan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
+  launcher-guard:
+    runs-on: windows-latest
+    timeout-minutes: 7
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '7d5a0ae775e6361b316bd1b4217d78e745f9f7af'
+          ref: '006935617e5e87e8b2cbdf2f3276bb67bca37e17'
           fetch-depth: 2
           persist-credentials: false
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-      - name: Reproduce the obsolete check and verify that its replacement rejects bad routes
-        shell: bash
+      - name: Validate the generated CMD without launching Unity
+        shell: pwsh
         run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = '7d5a0ae775e6361b316bd1b4217d78e745f9f7af'
-          test "$(git diff --name-only '4c4334951a20139e7f57e0a282b3d6c18b0fcb75' HEAD)" = 'Tools/expeditions/check_map_wiring.py'
-          python3 - <<'PY'
-          import pathlib, re, subprocess
-          checker = pathlib.Path('Tools/expeditions/check_map_wiring.py').resolve()
-          stale = subprocess.check_output(['git','show','4c4334951a20139e7f57e0a282b3d6c18b0fcb75:Tools/expeditions/check_map_wiring.py'], text=True)
-          try:
-              exec(compile(stale, str(checker), 'exec'), {'__file__':str(checker)})
-          except AssertionError as exc:
-              assert exc.__traceback__.tb_next.tb_lineno == 11
-              print('PASS: stale checker failed on unmodified production source at old call')
-          else:
-              raise RuntimeError('expected stale checker failure')
-          subprocess.run(['python3', str(checker)], check=True)
-          p = pathlib.Path('Assets/Scripts/Gameplay/PersonalExpedition.cs')
-          source = p.read_bytes()
-          pattern = rb'ExpeditionMapBuilder\.Build\(plan,\s*plan\.Kind == ExpeditionMapKind\.SaltRoad && visit\._state\.CaravanPassed\)'
-          for replacement in (b'Build(plan)', b'Build(plan, true)', b'Build(plan, plan.Kind == ExpeditionMapKind.SaltRoad)'):
-              bad, n = re.subn(pattern, b'ExpeditionMapBuilder.'+replacement, source)
-              assert n == 1
-              try:
-                  p.write_bytes(bad)
-                  result = subprocess.run(['python3', str(checker)], capture_output=True, text=True)
-                  assert result.returncode != 0 and 'AssertionError: hide wagons only after the Salt Road caravan has departed' in result.stderr, result
-                  print('PASS rejects', replacement.decode())
-              finally:
-                  p.write_bytes(source)
-          PY
-          git diff --exit-code
-      - name: Apply the three exact patches in the disposable runner
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = '7d5a0ae775e6361b316bd1b4217d78e745f9f7af'
-          for patch in 'b465c24c2641c835f395a3289fbcf8185c0bbbee' '3847fa32d755bda4e29ff755a548c38a0e125eea' '1de1295cf090450fdcd775c7c08093b7f5bac9bf'; do
-            git fetch --depth=1 origin "$patch"
-            test "$(git rev-parse FETCH_HEAD)" = "$patch"
-            git diff --binary '4c4334951a20139e7f57e0a282b3d6c18b0fcb75' "$patch" -- 'Assets/Scripts/Gameplay/PersonalExpedition.cs' 'Assets/Resources/Lang/en.txt' | git apply --index --3way
-          done
-          git diff --cached --check
-          git diff --cached --stat
-          COMBINED="$(git write-tree)"
-          echo "Combined, unpublished test tree: $COMBINED"
-          echo "COMBINED_TREE=$COMBINED" >> "$GITHUB_ENV"
-          grep -F 'Loc.T("Бой с охраной. После победы исследуйте отмеченную цель."),()=>Decide(Talk.Battle)' 'Assets/Scripts/Gameplay/PersonalExpedition.cs'
-          test "$(grep -Fc 'msgid "Бой с охраной. После победы исследуйте отмеченную цель."' 'Assets/Resources/Lang/en.txt')" = 1
-          test "$(grep -Fc 'msgstr "Fight the guards. After winning, investigate the marked objective."' 'Assets/Resources/Lang/en.txt')" = 1
-      - name: Pin the expedition test SDK
-        run: |
-          sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
-          test -n "$sdk"
-          printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
-      - run: dotnet run --project Tools/expeditions/ExpeditionChecks.csproj -c Release
-      - run: dotnet run --project Tools/expeditions/MapChecks.csproj -c Release
-      - run: dotnet run --project Tools/expeditions/ReplayChecks.csproj -c Release
-      - run: dotnet run --project Tools/expeditions/AosSessionChecks.csproj -c Release
-      - run: dotnet run --project Tools/expeditions/BoardShimChecks.csproj -c Release
-      - run: dotnet run --project Tools/expeditions/RealAosShimChecks.csproj -c Release
-      - run: dotnet run --project Tools/expeditions/BoardRealAosChecks.csproj -c Release
-      - run: dotnet run --project Tools/expeditions/LootChecks.csproj -c Release
-      - run: dotnet run --project Tools/expeditions/MemoryChecks.csproj -c Release
-      - run: python3 Tools/expeditions/check_replay_wiring.py
-      - run: python3 Tools/expeditions/check_map_wiring.py
-      - run: python3 Tools/expeditions/check_wiring.py
-      - name: Compile syntax gate for all Unity gameplay code
-        working-directory: Tools/tutorial
-        run: dotnet build SyntaxChecks.csproj -c Release
-      - name: Parse all Unity gameplay C# (grammar only, not Unity runtime)
-        working-directory: Tools/tutorial
-        run: dotnet run --no-build --project SyntaxChecks.csproj -c Release -- ../../Assets/Scripts
-
+          $ErrorActionPreference = 'Stop'
+          if ((git rev-parse HEAD) -ne '006935617e5e87e8b2cbdf2f3276bb67bca37e17') { throw 'wrong candidate' }
+          if ((git diff --name-only '4c4334951a20139e7f57e0a282b3d6c18b0fcb75' HEAD) -ne 'Tools/play/build-game.ps1') { throw 'unexpected changes' }
+          git diff --check '4c4334951a20139e7f57e0a282b3d6c18b0fcb75' HEAD
+          if ($LASTEXITCODE) { throw 'diff check failed' }
+          $scriptFile = (Resolve-Path 'Tools/play/build-game.ps1').Path
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile($scriptFile,[ref]$tokens,[ref]$parseErrors)
+          if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
+          $baseline = (git show '4c4334951a20139e7f57e0a282b3d6c18b0fcb75:Tools/play/build-game.ps1') -join "`n"
+          if ($baseline -notmatch 'findstr /i /b' -or $baseline -notmatch 'reg delete' -or $baseline -notmatch 'rmdir /s /q') { throw 'baseline signature missing' }
+          $source = Get-Content -LiteralPath $scriptFile -Encoding UTF8 -Raw
+          $match = [regex]::Match($source, '(?ms)^\$launcher = @''\r?\n(.*?)\r?\n''@')
+          if (!$match.Success) { throw 'launcher missing' }
+          $launcher = $match.Groups[1].Value
+          $lines = $launcher.Split("`n").ForEach({$_.TrimEnd([char]13)})
+          if ($lines.Length -ne 7 -or $lines[0] -ne '@echo off' -or $lines[1] -ne 'chcp 65001 >nul' -or $lines[-2] -ne 'pause >nul' -or $lines[-1] -ne 'exit /b 1') { throw 'unexpected wrapper commands' }
+          foreach ($line in $lines[2..4]) {
+            if ($line -notmatch '^echo [^&|<>%^!]+$') { throw "unexpected wrapper command: $line" }
+          }
+          $fixture = Join-Path $env:RUNNER_TEMP 'sinbinder-launcher-fixture'
+          $null = New-Item -ItemType Directory -Path $fixture
+          $sentinel = Join-Path $fixture 'existing-save.json'
+          [IO.File]::WriteAllText($sentinel,'keep me')
+          $launcherPath = Join-Path $fixture 'Играть.cmd'
+          [IO.File]::WriteAllText($launcherPath, $launcher.Replace("`r`n","`n").Replace("`n","`r`n"), [Text.UTF8Encoding]::new($false))
+          Push-Location $fixture
+          try {
+            $output = & $env:ComSpec /d /v:off /c 'echo. | call "Играть.cmd"'
+            if ($LASTEXITCODE -ne 1 -or $output.Count -lt 3) { throw "wrapper did not stop with a visible message: $output" }
+            if ([IO.File]::ReadAllText($sentinel) -ne 'keep me') { throw 'sentinel changed' }
+            Write-Host 'PASS Windows CMD showed the stop notice and exited without game launch or cleanup'
+          } finally { Pop-Location }
