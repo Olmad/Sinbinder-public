@@ -33,11 +33,8 @@ jobs:
           $match = [regex]::Match($source, '(?ms)^\$launcher = @''\r?\n(.*?)\r?\n''@')
           if (!$match.Success) { throw 'launcher missing' }
           $launcher = $match.Groups[1].Value
-          $lines = $launcher.Split("`n").ForEach({$_.TrimEnd([char]13)})
-          if ($lines.Length -ne 7 -or $lines[0] -ne '@echo off' -or $lines[1] -ne 'chcp 65001 >nul' -or $lines[-2] -ne 'pause >nul' -or $lines[-1] -ne 'exit /b 1') { throw 'unexpected wrapper commands' }
-          foreach ($line in $lines[2..4]) {
-            if ($line -notmatch '^echo [^&|<>%^!]+$') { throw "unexpected wrapper command: $line" }
-          }
+          $pattern = '\A@echo off\r?\nchcp 65001 >nul\r?\n(?:echo [^&|<>%^!\r\n]+\r?\n){3}pause >nul\r?\nexit /b 1\z'
+          if ($launcher -notmatch $pattern) { throw "unexpected wrapper commands: $launcher" }
           $fixture = Join-Path $env:RUNNER_TEMP 'sinbinder-launcher-fixture'
           $null = New-Item -ItemType Directory -Path $fixture
           $sentinel = Join-Path $fixture 'existing-save.json'
