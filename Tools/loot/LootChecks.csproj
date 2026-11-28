@@ -13,6 +13,8 @@
 <Compile Include="../../Assets/Scripts/Gameplay/FallenBagTransfer.cs" Link="FallenBagTransfer.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/FallenBagChoice.cs" Link="FallenBagChoice.cs"/>
 <Compile Include="../../Assets/Scripts/Gameplay/HarvestableBody.cs" Link="HarvestableBody.cs"/>
+<Compile Include="../../Assets/Scripts/Gameplay/LootCarrySystem.cs" Link="LootCarrySystem.cs"/>
+<Compile Include="../../Assets/Scripts/Gameplay/LootChain.cs" Link="LootChain.cs"/>
 <Compile Include="../../Assets/Scripts/Inventory/InventoryItem.cs" Link="InventoryItem.cs"/>
 <Compile Include="../../Assets/Scripts/Inventory/PlayerInventory.cs" Link="PlayerInventory.cs"/>
 <Compile Include="../../Assets/Scripts/Inventory/StorageItem.cs" Link="StorageItem.cs"/>
