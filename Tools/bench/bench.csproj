@@ -27,6 +27,12 @@
   <ItemGroup>
     <Compile Include="shim/*.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="PerkNullChecks.cs" />
+    <Compile Include="../../Assets/Scripts/AOS Engine/PerkResolver.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/PerkDatabase.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/SoulPerk.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/PerkEffect.cs" />
+    <Compile Include="../../Assets/Scripts/Core/Soul/PerkType.cs" />
   </ItemGroup>
 
   <!-- Живой код игры, по ссылке -->
