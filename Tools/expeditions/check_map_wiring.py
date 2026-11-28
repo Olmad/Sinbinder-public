@@ -8,7 +8,15 @@ bag=src("Assets/Scripts/Gameplay/FallenBag.cs")
 save=src("Assets/Scripts/Core/SaveSystem.cs")
 s=src("Assets/Scripts/Core/SaveGame.cs")
 board=src("Assets/Scripts/Crypt/MissionBoard.cs")
-assert "ExpeditionMapBuilder.Build(plan)" in p
+# A resolved peaceful caravan must not spawn its wagons on re-entry.
+# Assert the actual state predicate and the builder's selective removal,
+# not the obsolete single-argument spelling.
+assert (
+    "ExpeditionMapBuilder.Build(plan, "
+    "plan.Kind == ExpeditionMapKind.SaltRoad && visit._state.CaravanPassed)"
+) in " ".join(p.split())
+assert "Build(ExpeditionMapPlan plan, bool caravanGone = false)" in m
+assert "if (caravanGone && p.Kind == ExpeditionPropKind.Wagon)" in m
 assert "new GameObject" in m and "surface.BuildNavMesh()" in m
 assert "NavMesh.SamplePosition(entrance, out _, 3f, NavMesh.AllAreas)" in m
 assert "surface.RemoveData();" in m

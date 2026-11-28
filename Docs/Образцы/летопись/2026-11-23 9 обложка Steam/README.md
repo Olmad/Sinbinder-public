@@ -2,7 +2,7 @@
 
 Отдельная сцена Assets/Scenes/SteamCover.unity (в сборку игры не входит): ночь после разгрома, Греховод в багровом за столом совета, рука над шаром с картой и огнями отрядов, посох с огоньком души, банки душ, за спиной в тумане его отряд, позади горит шатёр, над лесом луна. Всё из моделей игры. Кадры всех размеров Steam снимает Editor/SteamCover.Shoot, логотип (английский и русский) кладёт Tools/steam/compose.py; готовые файлы — D:\Claude\Обложка Steam.
 
-Записано: Editor/SteamCover.cs · Tools/steam/compose.py · 06-SELLING.md. коммит [`9bdcf1c0`](https://github.com/Olmad/Sinbinder-public/commit/9bdcf1c0). Автор: ждём.
+Записано: Editor/SteamCover.cs · Tools/steam/compose.py · 06-SELLING.md. Автор: ждём.
 
 [← летопись](../README.md)
 

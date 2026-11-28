@@ -121,13 +121,16 @@ namespace Sinbinder.Crypt
             switch (ev.Action)
             {
                 case ActionType.Flee:
+                    // Приказов на вылазке не отдают: ушёл сам — значит сбежал,
+                    // а не отступил (как PhraseGenerator: «сбежал» без приказа,
+                    // «отступил» по приказу). Удался побег или нет — разные строки.
                     return ev.Resolved
                         ? Core.Grammar.Pick(ev.ActorGender,
-                            Loc.F("{0} вышел из боя и больше не участвовал в схватке.",who),
-                            Loc.F("{0} вышла из боя и больше не участвовала в схватке.",who))
+                            Loc.F("{0} сбежал с поля боя.",who),
+                            Loc.F("{0} сбежала с поля боя.",who))
                         : Core.Grammar.Pick(ev.ActorGender,
-                            Loc.F("{0} попытался отступить, но не смог.",who),
-                            Loc.F("{0} попыталась отступить, но не смогла.",who));
+                            Loc.F("{0} пытался сбежать, но не вырвался.",who),
+                            Loc.F("{0} пыталась сбежать, но не вырвалась.",who));
                 case ActionType.Loot:
                     return Loc.F("{0} отвлёкся на поиски добычи; предмет не был собран.",who);
                 case ActionType.BribeEnemy:

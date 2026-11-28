@@ -1085,6 +1085,27 @@ static class Bench
         Check(PhraseGenerator.Did(ActionType.Flee, ctxNone, Gender.Female) == "сбежала",
               "побег в женском роде назван неверно");
 
+        // ── 3. Отказ женщины целиком: имя, причина, поступок ──
+        // План 69 §7 (20.11): в личной вылазке отказ женщины звучал
+        // «ему… остался». Каждая часть строки по отдельности проверена
+        // выше; здесь — что они сходятся в одной строке журнала.
+        var woman = new Warrior
+        {
+            Soul = new SoulData("Лиска", MoralType.Neutral, 1, new float[7], null, Gender.Female),
+            Loyalty = 50f
+        };
+        foreach (var (voice, act) in new[] { ("Sloth", ActionType.Idle), ("Fear", ActionType.Flee),
+                                             ("Greed", ActionType.Loot), ("Wrath", ActionType.Attack) })
+        {
+            var refusal = new Decision { Action = act, TopModule = voice, RefusedCommand = true };
+            string refusalLine = PhraseGenerator.LogLine(woman, TypicalContext(), refusal);
+            Console.WriteLine($"  отказ женщины ({voice}): «{refusalLine}»");
+            Check(refusalLine.Contains("не выполнила")
+                  && !System.Text.RegularExpressions.Regex.IsMatch(refusalLine,
+                         @"\b([Оо]н|его|ему|нём|него|остался|устал|сбежал|пошёл|бросился|выполнил)\b"),
+                  $"отказ женщины в мужском роде ({voice}): «{refusalLine}»");
+        }
+
         Console.WriteLine(bad == 0 ? "  Род: чисто." : $"  Род: провалов {bad}.");
     }
 
@@ -5532,9 +5553,9 @@ static class Bench
             "confirmed outcome replaces failed attempt even after summary cap; namesakes remain distinct");
         Check(record.Events.Count == 4 && record.Events[0] == fail && !fail.Resolved,
             "selection must not rewrite full event history");
-        Check(Sinbinder.Crypt.Retelling.Describe(fail).Contains("попытался отступить, но не смог"),
+        Check(Sinbinder.Crypt.Retelling.Describe(fail).Contains("пытался сбежать, но не вырвался"),
             "failed escape must be described as failed");
-        Check(Sinbinder.Crypt.Retelling.Describe(success).Contains("вышел из боя и больше не участвовал"),
+        Check(Sinbinder.Crypt.Retelling.Describe(success).Contains("сбежал с поля боя"),
             "confirmed escape must be described as completed");
         var legacy = new BattleRecord();
         legacy.AddEvent(Event(null, "Кир", ActionType.Flee));
@@ -5772,8 +5793,22 @@ static class Bench
                                        && e.ActorName == "Мясник");
         Check(fleeTimes <= 1, "один и тот же побег пересказан дважды");
 
-        Check(story.Contains("попытался отступить, но не смог") && !story.Contains("сбежал"),
-              "неисполненный побег ошибочно пересказан как завершённый");
+        // Приказов на вылазке не отдают: побег — «сбежать», не «отступить».
+        // А удался он или нет — разные строки: попытку не выдать за побег.
+        Check(story.Contains("сбеж") && !story.Contains("отступ"),
+              "побег на вылазке назван отходом — а приказов там не отдают");
+        string Escape(bool done)
+        {
+            var one = new BattleRecord();
+            one.AddEvent(new BattleEvent { ActorName = "Мясник", Action = ActionType.Flee, Resolved = done });
+            return Sinbinder.Crypt.Retelling.Tell(one);
+        }
+        string escaped = Escape(true), tried = Escape(false);
+        Console.WriteLine($"  побег удался: «{escaped}»; не удался: «{tried}»");
+        Check(escaped.Contains("сбежал") && !escaped.Contains("пытал"),
+              "удавшийся побег пересказан как попытка");
+        Check(tried.Contains("пытал") && !tried.Contains("сбежал"),
+              "неудавшийся побег выдан за удавшийся");
 
         Check(Sinbinder.Crypt.Retelling.Tell(null) == "",
               "пересказ пустой записи что-то выдумал");

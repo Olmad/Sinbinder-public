@@ -248,7 +248,9 @@ namespace Sinbinder.Gameplay
             foreach (var hunter in Survivors.JoinHunt(plan.Id))
                 if (visit._state.EnemiesRemaining < 8) visit._state.EnemiesRemaining++;
 
-            visit._mapRoot = ExpeditionMapBuilder.Build(plan);
+            // Отпущенный обоз уехал — его повозок на дороге больше нет.
+            visit._mapRoot = ExpeditionMapBuilder.Build(plan,
+                plan.Kind == ExpeditionMapKind.SaltRoad && visit._state.CaravanPassed);
             if (visit._mapRoot == null)
             {
                 UnityEngine.Object.Destroy(obj);
@@ -259,10 +261,13 @@ namespace Sinbinder.Gameplay
             // the other is the interactive objective with real rewards.
             ExpeditionMapBuilder.Mark(visit._mapRoot.transform, "Возвращение",
                 new Vector3(0f,0f,plan.EntranceZ),new Color(0.2f,0.8f,0.75f));
-            ExpeditionMapBuilder.Mark(visit._mapRoot.transform, "Цель экспедиции",
-                new Vector3(0f,0f,plan.GoalZ),new Color(0.9f,0.65f,0.25f));
+            // Обоз отпустили в прошлый раз — серебро уехало, цели здесь нет.
+            bool goal=!(plan.Kind==ExpeditionMapKind.SaltRoad && visit._state.CaravanPassed);
+            if(goal)
+                ExpeditionMapBuilder.Mark(visit._mapRoot.transform, GoalLabel,
+                    new Vector3(0f,0f,plan.GoalZ),new Color(0.9f,0.65f,0.25f));
             // Те же знаки — на мини-карте: на большой карте легко потеряться (автор, 26.11).
-            UI.MiniMap.Mark(GoalMark,ExpeditionMapBuilder.Point(plan,0f,plan.GoalZ),new Color(0.95f,0.68f,0.28f),"Цель");
+            if(goal) UI.MiniMap.Mark(GoalMark,ExpeditionMapBuilder.Point(plan,0f,plan.GoalZ),new Color(0.95f,0.68f,0.28f),"Цель");
             UI.MiniMap.Mark(GateMark,ExpeditionMapBuilder.Point(plan,0f,plan.EntranceZ),new Color(0.30f,0.85f,0.80f),"Выход");
             visit._state.Visits++;
 
@@ -301,8 +306,10 @@ namespace Sinbinder.Gameplay
                 camera.Pitch = 0f;
             }
             visit.enabled = true;
-            visit.Announce(Loc.F("Экспедиция «{0}»: доберитесь до отмеченной цели и вернитесь к бирюзовому знаку.",
-                Loc.T(plan.Title)));
+            // Отпущенный обоз уехал: цели нет, и журнал не зовёт к ней (27.11, проход руками).
+            visit.Announce(goal
+                ? Loc.F("Экспедиция «{0}»: доберитесь до отмеченной цели и вернитесь к бирюзовому знаку.", Loc.T(plan.Title))
+                : Loc.F("Экспедиция «{0}»: обоз уехал, дорога пуста. Вернуться — у бирюзового знака.", Loc.T(plan.Title)));
             // Перемены места журнал при входе не объявляет (автор, 23.11: «пусть не журнал говорит
             // об изменениях, а меню экспедиций»): их читают в карточке у шара (KnownAbout), а здесь
             // стражи узнают Греховода сами. Объяснения — только в журнал разработчика.
@@ -468,6 +475,10 @@ namespace Sinbinder.Gameplay
             {
                 Vector3 at=ExpeditionMapBuilder.Point(_plan,(i%2==0?-1f:1f)*(5f+i*2f),
                     _plan.GoalZ-13f-(i/2)*5f);
+                // Старший нетронутого обоза встречает на дороге перед повозками: по общей сетке
+                // он стоял за ближней повозкой, и подходивший видел над ней одну голову (27.11).
+                if(i==0 && _plan.Kind==ExpeditionMapKind.SaltRoad && !_state.CaravanAssaulted && !_state.CaravanPassed)
+                    at=ExpeditionMapBuilder.Point(_plan,-1.5f,_plan.GoalZ-25f);
                 var was=i<known.Count ? known[i] : null;
                 // Охотник пришёл издалека и живым (п.2): место не делает его покойником, а обоз,
                 // который ещё не тронули, не делает мирным — он пришёл за Греховодом.
@@ -718,7 +729,10 @@ namespace Sinbinder.Gameplay
             if (captain!=null && Dist(SinbinderPlayer.Where,captain.transform.position)<TalkReach)
                 offer(Gaze.Miss(captain.transform),
                     Loc.F("F — говорить: {0}",Loc.Name(captain.DisplayName)),expedition.OpenCaravanChoice);
-            if (Dist(SinbinderPlayer.Where,expedition.Objective)<4f)
+            // У отпущенного обоза цели больше нет: серебро уехало с ним.
+            bool goalGone=expedition._plan!=null && expedition._plan.Kind==ExpeditionMapKind.SaltRoad &&
+                expedition._state!=null && expedition._state.CaravanPassed;
+            if (!goalGone && Dist(SinbinderPlayer.Where,expedition.Objective)<4f)
                 offer(Gaze.Miss(expedition.Objective+Vector3.up*1.4f,1.5f),
                     Loc.T("F — исследовать цель"), expedition.CollectObjective);
         }
@@ -730,6 +744,7 @@ namespace Sinbinder.Gameplay
 
         private const float TalkReach=6f, HailReach=18f;
         private const string GoalMark="expedition:goal", GateMark="expedition:gate";
+        private const string GoalLabel="Цель экспедиции";
         private enum Talk { Closed, Open, Answer, Battle, Farewell, Toll }
         private Talk _talk;
         private int _answer=-1, _stamp;
@@ -867,10 +882,22 @@ namespace Sinbinder.Gameplay
             foreach (var guard in _guards)
             {
                 if (guard==null) continue;
+                // Уходят приказом, как раньше: выключенный AOSWarriorWrapper (27.11) не мешает общему
+                // ходу решений — «выбрал Idle» сбивал путь, и охрана стояла. Отказ уйти всё ещё попадает
+                // в журнал игрока как «не выполнил приказ» — следующий шаг.
                 if (!guard.IsDead) guard.IssueCommand(CommandKind.Move,away+new Vector3(UnityEngine.Random.Range(-3f,3f),0f,0f));
-                UnityEngine.Object.Destroy(guard.gameObject,12f);
+                UnityEngine.Object.Destroy(guard.gameObject,14f);
             }
             _guards.Clear();
+            // И повозки — с ними: «обоз ушёл», а не охрана ушла от стоящих повозок.
+            // Цель была серебром обоза — уехала с ним: метка не зовёт к пустому месту (27.11).
+            UI.MiniMap.Unmark(GoalMark);
+            if(_mapRoot!=null)
+                foreach(Transform part in _mapRoot.transform)
+                {
+                    if(part.name==ExpeditionMapBuilder.Cart) CartRoll.Send(part.gameObject,away);
+                    else if(part.name==GoalLabel || part.name==ExpeditionMapBuilder.Beacon+GoalLabel) part.gameObject.SetActive(false);
+                }
             if(coins>0)
             {
                 var purse=Inventory.PlayerInventory.Instance;
@@ -878,6 +905,8 @@ namespace Sinbinder.Gameplay
                 Announce(Loc.F("Обоз отдал долю — {0} — и ушёл по дороге.",Grammar.Coins(coins)));
             }
             else Announce(Loc.T("Обоз ушёл по дороге. Добычи не будет."));
+            // Задание звало «до цели и обратно»; цель уехала — остаётся обратно.
+            Announce(Loc.T("Здесь больше нечего делать — вернитесь к бирюзовому знаку."));
         }
 
         /// <summary>Проверке: что сейчас в разговоре у обоза — состояние, реплика старшего, ответы.</summary>
@@ -1106,7 +1135,8 @@ namespace Sinbinder.Gameplay
                 var board = CryptMap.Board ??
                     UnityEngine.Object.FindFirstObjectByType<MissionBoard>();
                 board?.RecordPersonal(_mission,
-                    _state != null && ((_state.CargoTaken && !_state.CaravanPassed) || _state.SecretTaken));
+                    _state != null && ((_state.CargoTaken && !_state.CaravanPassed) || _state.SecretTaken),
+                    _state != null && _state.CaravanPassed);
                 if (board == null) Sorties.Tick(); // возвращение — шаг времени мира и без доски
                 if (_state != null)
                 {

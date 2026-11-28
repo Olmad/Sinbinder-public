@@ -787,7 +787,7 @@ msgstr "The loot won't pick itself up."
 msgid "Опять ходить взад-вперёд?"
 msgstr "Back and forth again?"
 
-#: AOS Engine/RefusalPresenter.cs
+#: AOS Engine/RefusalPresenter.cs AOS Engine/Traits.cs
 msgid "Своих не брошу!"
 msgstr "I won't leave my own!"
 
@@ -1343,6 +1343,430 @@ msgstr "They'll remember the name. I'd rather they remembered the deed."
 msgid "Помнить будут имя. Я бы хотела — дело."
 msgstr "They'll remember the name. I'd rather they remembered the deed."
 
+#: AOS Engine/Traits.cs Gameplay/Champions.cs
+msgid "Кровник Ордена"
+msgstr "Blood Foe of the Order"
+
+#: AOS Engine/Traits.cs
+msgid "Кровница Ордена"
+msgstr "Blood Foe of the Order"
+
+#: AOS Engine/Traits.cs
+msgid "Увидит людей Ордена — бьёт их, даже когда велено отходить."
+msgstr "Sees the Order's men and strikes them, even when told to fall back."
+
+#: AOS Engine/Traits.cs
+msgid "Орден сжёг его дом. Он помнит, кто держал факел."
+msgstr "The Order burned his home. He remembers who held the torch."
+
+#: AOS Engine/Traits.cs
+msgid "Не уйду, пока они живы!"
+msgstr "I'm not leaving while they live!"
+
+#: AOS Engine/Traits.cs
+msgid "Уведите от людей Ордена — при них не отступит."
+msgstr "Lead them away from the Order's men: in sight of them they won't retreat."
+
+#: AOS Engine/Traits.cs
+msgid "Боится Ордена"
+msgstr "Fears the Order"
+
+#: AOS Engine/Traits.cs
+msgid "Люди Ордена пугают его и после смерти: при них думает, как уйти."
+msgstr "The Order's men frighten him even after death: near them he thinks of getting away."
+
+#: AOS Engine/Traits.cs
+msgid "Видел костры Ордена — и тех, кого на них жгли."
+msgstr "He saw the Order's pyres — and those burned on them."
+
+#: AOS Engine/Traits.cs
+msgid "Это Орден… Туда не пойду."
+msgstr "It's the Order… I'm not going there."
+
+#: AOS Engine/Traits.cs
+msgid "Уберите людей Ордена с пути или пошлите другого."
+msgstr "Clear the Order's men from the way, or send someone else."
+
+#: AOS Engine/Traits.cs
+msgid "Только в спину"
+msgstr "Only From Behind"
+
+#: AOS Engine/Traits.cs
+msgid "Бьёт, когда враг подставил спину; в лоб идёт неохотно."
+msgstr "Strikes when the enemy shows his back; goes in head-on unwillingly."
+
+#: AOS Engine/Traits.cs
+msgid "В лоб ходят дураки — так он говорил при жизни."
+msgstr "Only fools go in head-on — so he used to say in life."
+
+#: AOS Engine/Traits.cs
+msgid "В лоб не полезу."
+msgstr "I won't go at him head-on."
+
+#: AOS Engine/Traits.cs
+msgid "Зайдите врагу в спину или пошлите другого."
+msgstr "Get behind the enemy, or send someone else."
+
+#: AOS Engine/Traits.cs
+msgid "Не бьёт в спину"
+msgstr "Won't Strike From Behind"
+
+#: AOS Engine/Traits.cs
+msgid "Врага со спины не тронет — ждёт, пока тот повернётся."
+msgstr "Won't touch an enemy from behind — waits for him to turn around."
+
+#: AOS Engine/Traits.cs
+msgid "Так не бьют. Так его учили, и он это помнит."
+msgstr "That's not how you strike. He was taught so, and he remembers."
+
+#: AOS Engine/Traits.cs
+msgid "Со спины не бью."
+msgstr "I don't strike from behind."
+
+#: AOS Engine/Traits.cs
+msgid "Дождитесь, пока враг повернётся, или пошлите другого."
+msgstr "Wait for the enemy to turn around, or send someone else."
+
+#: AOS Engine/Traits.cs
+msgid "Глуховат"
+msgstr "Hard of Hearing"
+
+#: AOS Engine/Traits.cs
+msgid "Глуховата"
+msgstr "Hard of Hearing"
+
+#: AOS Engine/Traits.cs
+msgid "Тихий приказ издали не слышит; вблизи — слышит всегда."
+msgstr "Doesn't hear a quiet order from afar; up close, always hears."
+
+#: AOS Engine/Traits.cs
+msgid "Оглушён обвалом ещё при жизни."
+msgstr "Deafened by a rockfall while still alive."
+
+#: AOS Engine/Traits.cs
+msgid "А? Что? Не слышу!"
+msgstr "Eh? What? Can't hear you!"
+
+#: AOS Engine/Traits.cs
+msgid "Подойдите ближе — вблизи слышно всегда."
+msgstr "Come closer — up close you are always heard."
+
+#: AOS Engine/Traits.cs
+msgid "Не терпит окрика"
+msgstr "Hates Being Barked At"
+
+#: AOS Engine/Traits.cs
+msgid "Когда приказ твердят ему раз за разом, злится — назло не сделает."
+msgstr "When an order is repeated at him again and again, he gets angry and won't do it out of spite."
+
+#: AOS Engine/Traits.cs
+msgid "Был господином и не привык, чтобы ему повторяли."
+msgstr "He was a master once and isn't used to being told twice."
+
+#: AOS Engine/Traits.cs
+msgid "С первого раза понятно."
+msgstr "I heard you the first time."
+
+#: AOS Engine/Traits.cs
+msgid "Не торопите — выждите пару секунд и повторите."
+msgstr "Don't rush — wait a couple of seconds and repeat."
+
+#: AOS Engine/Traits.cs
+msgid "Клятва"
+msgstr "Oath"
+
+#: AOS Engine/Traits.cs
+msgid "Связан клятвой служить: приказ для него весит больше, чем для других."
+msgstr "Bound by an oath to serve: an order weighs more for him than for others."
+
+#: AOS Engine/Traits.cs
+msgid "Клялся ещё живым и держит слово и после смерти."
+msgstr "He swore it while alive and keeps his word after death."
+
+#: AOS Engine/Traits.cs
+msgid "Слово дано."
+msgstr "My word is given."
+
+#: AOS Engine/Traits.cs
+msgid "Свободный"
+msgstr "Free"
+
+#: AOS Engine/Traits.cs
+msgid "Свободная"
+msgstr "Free"
+
+#: AOS Engine/Traits.cs
+msgid "Неволю помнит: с первого раза приказ пропускает мимо ушей."
+msgstr "Remembers bondage: lets the first order go past his ears."
+
+#: AOS Engine/Traits.cs
+msgid "Свобода ему дороже жизни. Жизни уже нет — свобода осталась."
+msgstr "Freedom is dearer to him than life. Life is gone — freedom remains."
+
+#: AOS Engine/Traits.cs
+msgid "Я больше ничей."
+msgstr "I belong to no one now."
+
+#: AOS Engine/Traits.cs
+msgid "Повторите приказ — со второго раза дойдёт."
+msgstr "Repeat the order — the second time it will get through."
+
+#: AOS Engine/Traits.cs
+msgid "Не чувствует боли"
+msgstr "Feels No Pain"
+
+#: AOS Engine/Traits.cs
+msgid "Раны не гонят его из боя — он не знает, что умирает."
+msgstr "Wounds don't drive him from the fight — he doesn't know he is dying."
+
+#: AOS Engine/Traits.cs
+msgid "Мёртвое тело не болит."
+msgstr "A dead body doesn't hurt."
+
+#: AOS Engine/Traits.cs
+msgid "Мне не больно."
+msgstr "It doesn't hurt."
+
+#: AOS Engine/Traits.cs
+msgid "Бережёт шкуру"
+msgstr "Self-Preserving"
+
+#: AOS Engine/Traits.cs
+msgid "При первой ране думает, как уйти."
+msgstr "At the first wound he thinks of getting away."
+
+#: AOS Engine/Traits.cs
+msgid "Тело — всё, что у него было, и он его бережёт."
+msgstr "His body is all he ever had, and he takes care of it."
+
+#: AOS Engine/Traits.cs
+msgid "Шкура у меня одна."
+msgstr "I've only got one skin."
+
+#: AOS Engine/Traits.cs
+msgid "Последний стоит"
+msgstr "Last One Standing"
+
+#: AOS Engine/Traits.cs
+msgid "Последняя стоит"
+msgstr "Last One Standing"
+
+#: AOS Engine/Traits.cs
+msgid "Один против всех — не бежит, а дерётся."
+msgstr "Alone against all — doesn't run, fights."
+
+#: AOS Engine/Traits.cs
+msgid "Однажды уже остался один из всего отряда — и не простил себе, что выжил."
+msgstr "Once before he was the only one of his band left — and never forgave himself for surviving."
+
+#: AOS Engine/Traits.cs
+msgid "Не побегу."
+msgstr "I won't run."
+
+#: AOS Engine/Traits.cs
+msgid "Мстит за своих"
+msgstr "Avenger of Kin"
+
+#: AOS Engine/Traits.cs
+msgid "Ранили своего рядом — бросается на врага."
+msgstr "One of his own is wounded nearby — he throws himself at the enemy."
+
+#: AOS Engine/Traits.cs
+msgid "Не уберёг сына в бою и с тех пор не прощает тех, кто бьёт своих."
+msgstr "He failed to save his son in battle and has never since forgiven those who strike his own."
+
+#: AOS Engine/Traits.cs
+msgid "За своих!"
+msgstr "For our own!"
+
+#: AOS Engine/Traits.cs
+msgid "Не бросит своих"
+msgstr "Leaves No One Behind"
+
+#: AOS Engine/Traits.cs
+msgid "Свой в беде — бежит к нему, даже против приказа."
+msgstr "One of his own in trouble — he runs to them, even against orders."
+
+#: AOS Engine/Traits.cs
+msgid "Его самого когда-то бросили умирать."
+msgstr "He himself was once left to die."
+
+#: AOS Engine/Traits.cs
+msgid "Сначала помогите раненому."
+msgstr "Help the wounded first."
+
+#: AOS Engine/Traits.cs
+msgid "Падок на добро"
+msgstr "Covetous"
+
+#: AOS Engine/Traits.cs
+msgid "Падка на добро"
+msgstr "Covetous"
+
+#: AOS Engine/Traits.cs
+msgid "Видит, где лежит ценное, и тянется туда."
+msgstr "Sees where valuables lie and reaches for them."
+
+#: AOS Engine/Traits.cs
+msgid "Был контрабандистом: чужое добро — его ремесло."
+msgstr "He was a smuggler: other people's goods are his trade."
+
+#: AOS Engine/Traits.cs
+msgid "Тут есть чем поживиться."
+msgstr "There's something to grab here."
+
+#: AOS Engine/Traits.cs
+msgid "Бессребреник"
+msgstr "Unmercenary"
+
+#: AOS Engine/Traits.cs
+msgid "Бессребреница"
+msgstr "Unmercenary"
+
+#: AOS Engine/Traits.cs
+msgid "С мёртвых не берёт."
+msgstr "Takes nothing from the dead."
+
+#: AOS Engine/Traits.cs
+msgid "Видел, что бывает с теми, кто берёт с мёртвых."
+msgstr "He has seen what happens to those who take from the dead."
+
+#: AOS Engine/Traits.cs
+msgid "С мёртвых не беру."
+msgstr "I don't take from the dead."
+
+#: AOS Engine/Traits.cs
+msgid "Мёртвых не боится"
+msgstr "Unafraid of the Dead"
+
+#: AOS Engine/Traits.cs
+msgid "Против нежити не отступает."
+msgstr "Doesn't retreat before the undead."
+
+#: AOS Engine/Traits.cs
+msgid "Всю жизнь хоронил мёртвых. Теперь они встают — что с того."
+msgstr "He buried the dead all his life. Now they rise — so what."
+
+#: AOS Engine/Traits.cs
+msgid "Мёртвых не боюсь."
+msgstr "I'm not afraid of the dead."
+
+#: AOS Engine/Traits.cs
+msgid "Держит место"
+msgstr "Holds the Line"
+
+#: AOS Engine/Traits.cs
+msgid "Велено стоять — стоит, даже когда страшно."
+msgstr "Told to stand — stands, even when afraid."
+
+#: AOS Engine/Traits.cs
+msgid "Клал стены. Стена не бегает."
+msgstr "He laid walls. A wall doesn't run."
+
+#: AOS Engine/Traits.cs
+msgid "Велено стоять — стою."
+msgstr "Told to stand, I stand."
+
+#: AOS Engine/Traits.cs
+msgid "Хладнокровный"
+msgstr "Cold-Blooded"
+
+#: AOS Engine/Traits.cs
+msgid "Хладнокровная"
+msgstr "Cold-Blooded"
+
+#: AOS Engine/Traits.cs
+msgid "В окружении не мечется — дерётся, где стоит."
+msgstr "Surrounded, doesn't panic — fights where he stands."
+
+#: AOS Engine/Traits.cs
+msgid "Терпел и не такое."
+msgstr "He's endured worse."
+
+#: AOS Engine/Traits.cs
+msgid "Спокойно."
+msgstr "Steady."
+
+#: AOS Engine/Traits.cs
+msgid "Выдыхается"
+msgstr "Tires Quickly"
+
+#: AOS Engine/Traits.cs
+msgid "К середине боя устаёт и встаёт передохнуть."
+msgstr "By mid-fight he tires and stops to catch his breath."
+
+#: AOS Engine/Traits.cs
+msgid "Всю жизнь берёг силы — и после смерти бережёт."
+msgstr "Saved his strength all his life — and still saves it after death."
+
+#: AOS Engine/Traits.cs
+msgid "Дай отдышаться…"
+msgstr "Let me catch my breath…"
+
+#: AOS Engine/Traits.cs
+msgid "Дайте передышку."
+msgstr "Give them a breather."
+
+#: AOS Engine/Traits.cs
+msgid "Неутомимый"
+msgstr "Tireless"
+
+#: AOS Engine/Traits.cs
+msgid "Неутомимая"
+msgstr "Tireless"
+
+#: AOS Engine/Traits.cs
+msgid "Усталость его не останавливает."
+msgstr "Fatigue doesn't stop him."
+
+#: AOS Engine/Traits.cs
+msgid "Работал от зари до зари — и не помнит, как это: отдыхать."
+msgstr "Worked from dawn to dusk — and doesn't remember what resting is."
+
+#: AOS Engine/Traits.cs
+msgid "Отдохну потом."
+msgstr "I'll rest later."
+
+#: AOS Engine/Traits.cs
+msgid "Хранитель склепа"
+msgstr "Crypt Keeper"
+
+#: AOS Engine/Traits.cs
+msgid "Хранительница склепа"
+msgstr "Crypt Keeper"
+
+#: AOS Engine/Traits.cs
+msgid "В склепе — как дома: не отступит."
+msgstr "In the crypt he's at home: won't retreat."
+
+#: AOS Engine/Traits.cs
+msgid "При жизни стерёг склеп. Теперь лежит в нём сам — и стережёт."
+msgstr "In life he guarded the crypt. Now he lies in it himself — and guards it."
+
+#: AOS Engine/Traits.cs
+msgid "Это мой склеп."
+msgstr "This is my crypt."
+
+#: AOS Engine/Traits.cs
+msgid "Первым в бой"
+msgstr "First Into Battle"
+
+#: AOS Engine/Traits.cs
+msgid "Первой в бой"
+msgstr "First Into Battle"
+
+#: AOS Engine/Traits.cs
+msgid "Рвётся вперёд, пока другие ждут."
+msgstr "Rushes ahead while others wait."
+
+#: AOS Engine/Traits.cs
+msgid "Бился на арене: кто ударил первым, тот и жив."
+msgstr "He fought in the arena: whoever strikes first stays alive."
+
+#: AOS Engine/Traits.cs
+msgid "Вперёд!"
+msgstr "Forward!"
+
 #: Core/Commitment.cs
 msgid "Вы взяли на себя обязательство. Переиграть нельзя — в этом и был уговор."
 msgstr "You took on a commitment. No second chances — that was the deal."
@@ -1354,6 +1778,114 @@ msgstr "Committed: one save, no second chances"
 #: Core/Commitment.cs
 msgid "Свободно: сохраняйтесь и грузитесь когда угодно"
 msgstr "Free: save and load whenever you like"
+
+#: Core/Controls.cs
+msgid "Пробел"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Колесо"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Мышь 4"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Мышь 5"
+msgstr ""
+
+#: Core/Controls.cs UI/ExpeditionReplayViewer.cs
+msgid "Вперёд"
+msgstr "Forward"
+
+#: Core/Controls.cs UI/ExpeditionReplayViewer.cs UI/PauseMenu.cs
+msgid "Назад"
+msgstr "Back"
+
+#: Core/Controls.cs
+msgid "Влево"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Вправо"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Взаимодействие"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Собрать душу"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Поднять из банки"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Следующая банка"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Бросить вещь из рук"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Вещи и снаряжение"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Мини-карта"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Сверху или глазами"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Командир или Воин"
+msgstr ""
+
+#: Core/Controls.cs Gameplay/Whisper.cs
+msgid "Шёпот"
+msgstr "Whisper"
+
+#: Core/Controls.cs
+msgid "Умение выбранного"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Приказ: идти"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Приказ: атаковать"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Приказ: отступить"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Приказ: дозор"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Стойка: стоять"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Стойка: защищать"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Стойка: свободно"
+msgstr ""
+
+#: Core/Controls.cs
+msgid "Пересмотреть суд"
+msgstr ""
 
 #: Core/Cost.cs
 msgid "{0} {1:F0} мс/{2}"
@@ -1743,19 +2275,19 @@ msgstr "{0} are owed"
 msgid "Где-то"
 msgstr "Somewhere"
 
-#: Core/SaveSystem.cs UI/CommanderCouncilUI.cs
+#: Core/SaveSystem.cs UI/CommanderCouncilUI.cs UI/MiniMap.cs
 msgid "Лагерь"
 msgstr "Camp"
 
-#: Core/SaveSystem.cs
+#: Core/SaveSystem.cs UI/MiniMap.cs
 msgid "Набег"
 msgstr "Raid"
 
-#: Core/SaveSystem.cs
+#: Core/SaveSystem.cs UI/MiniMap.cs UI/MissionMapUI.cs
 msgid "Склеп"
 msgstr "Crypt"
 
-#: Core/SaveSystem.cs
+#: Core/SaveSystem.cs UI/MiniMap.cs UI/PauseMenu.cs
 msgid "Полигон"
 msgstr "Proving ground"
 
@@ -1923,7 +2455,7 @@ msgstr "Konrad"
 msgid "Дитрих"
 msgstr "Dietrich"
 
-#: Core/WarriorGenerator.cs Gameplay/HunterSquadSpawner.cs
+#: Core/WarriorGenerator.cs Gameplay/HunterSquadSpawner.cs Gameplay/Survivors.cs
 msgid "Готфрид"
 msgstr "Gottfried"
 
@@ -3188,11 +3720,15 @@ msgid "Отряд вернулся без боя и добычи."
 msgstr "The squad returned without a fight or loot."
 
 #: Crypt/MissionBoard.cs
-msgid "Греховод лично вернулся из «{0}» с находкой."
+msgid "Греховод лично вернулся из похода «{0}» с находкой."
 msgstr "The Sinbinder came back from “{0}” in person with a find."
 
 #: Crypt/MissionBoard.cs
-msgid "Греховод вернулся из «{0}». То, что осталось, ждёт следующего визита."
+msgid "Греховод вернулся из похода «{0}»."
+msgstr "The Sinbinder came back from “{0}”."
+
+#: Crypt/MissionBoard.cs
+msgid "Греховод вернулся из похода «{0}». То, что осталось, ждёт следующего визита."
 msgstr "The Sinbinder came back from “{0}”. What remains awaits the next visit."
 
 #: Crypt/MissionBoard.cs
@@ -3264,6 +3800,10 @@ msgid "Отряд направился к месту «{0}»."
 msgstr "The squad headed for “{0}”."
 
 #: Crypt/MissionBoard.cs
+msgid "Решение командира: {0}"
+msgstr "Commander's decision: {0}"
+
+#: Crypt/MissionBoard.cs
 msgid "Обоз разгрузили без боя и отпустили возчиков."
 msgstr "The convoy was unloaded without a fight and the drivers let go."
 
@@ -3282,10 +3822,6 @@ msgstr "Kept {0} coins."
 #: Crypt/MissionBoard.cs
 msgid "Доля добычи для кошеля Греховода: {0} монет."
 msgstr "Share allocated to the Sinbinder's purse: {0} coins."
-
-#: Crypt/MissionBoard.cs
-msgid "Решение командира: {0}"
-msgstr "Commander's decision: {0}"
 
 #: Crypt/MissionBoard.cs
 msgid "Охрана удержала груз. Отряд отступил без добычи."
@@ -3316,12 +3852,12 @@ msgid "Вернулись: "
 msgstr "Returned: "
 
 #: Crypt/MissionBoard.cs
-msgid " Ему вы должны плату за эту вылазку."
-msgstr " You owe him pay for this raid."
-
-#: Crypt/MissionBoard.cs
 msgid " Ей вы должны плату за эту вылазку."
 msgstr " You owe her pay for this raid."
+
+#: Crypt/MissionBoard.cs
+msgid " Ему вы должны плату за эту вылазку."
+msgstr " You owe him pay for this raid."
 
 #: Crypt/MissionBoard.cs
 msgid " Каждому из них вы должны плату за эту вылазку."
@@ -3448,20 +3984,20 @@ msgid "неизвестного участника"
 msgstr "an unknown participant"
 
 #: Crypt/Retelling.cs
-msgid "{0} вышел из боя и больше не участвовал в схватке."
-msgstr "{0} left the fight and took no further part in it."
+msgid "{0} сбежал с поля боя."
+msgstr "{0} fled the battle."
 
 #: Crypt/Retelling.cs
-msgid "{0} вышла из боя и больше не участвовала в схватке."
-msgstr "{0} left the fight and took no further part in it."
+msgid "{0} сбежала с поля боя."
+msgstr "{0} fled the battle."
 
 #: Crypt/Retelling.cs
-msgid "{0} попытался отступить, но не смог."
-msgstr "{0} tried to retreat but could not."
+msgid "{0} пытался сбежать, но не вырвался."
+msgstr "{0} tried to flee but could not break away."
 
 #: Crypt/Retelling.cs
-msgid "{0} попыталась отступить, но не смогла."
-msgstr "{0} tried to retreat but could not."
+msgid "{0} пыталась сбежать, но не вырвалась."
+msgstr "{0} tried to flee but could not break away."
 
 #: Crypt/Retelling.cs
 msgid "{0} отвлёкся на поиски добычи; предмет не был собран."
@@ -3534,6 +4070,22 @@ msgstr "Nothing to make it from: {0}. Bring bodies from the field."
 #: Crypt/ShellStand.cs
 msgid "Взято тело: {0}."
 msgstr "Body taken: {0}."
+
+#: Crypt/ShootingRange.cs
+msgid "Мишень"
+msgstr "Target"
+
+#: Crypt/ShootingRange.cs
+msgid "Свой в схватке"
+msgstr "Ally in the fray"
+
+#: Crypt/ShootingRange.cs
+msgid "Мишень на ходу"
+msgstr "Moving target"
+
+#: Crypt/ShootingRange.cs
+msgid "Дальняя мишень"
+msgstr "Far target"
 
 #: Crypt/SoulJar.cs
 msgid "Пустая банка"
@@ -3784,6 +4336,38 @@ msgid "Площадка снова пуста — девять лагеря ос
 msgstr "The yard is empty again — the camp's nine stay."
 
 #: Crypt/WarriorForge.cs
+msgid "Стрельбище — поставить мишени заново"
+msgstr "Shooting range — set up targets again"
+
+#: Crypt/WarriorForge.cs
+msgid "Стрельбище — поставить мишени"
+msgstr "Shooting range — set up targets"
+
+#: Crypt/WarriorForge.cs
+msgid "Перед Греховодом: враг в схватке со своим, мишень на ходу, дальняя мишень."
+msgstr "Before the Sinbinder: a foe fighting an ally, a moving target, a far target."
+
+#: Crypt/WarriorForge.cs
+msgid "Лук лучников: {0}"
+msgstr "Archers' bow: {0}"
+
+#: Crypt/WarriorForge.cs
+msgid "небесный"
+msgstr "skyward"
+
+#: Crypt/WarriorForge.cs
+msgid "обычный"
+msgstr "ordinary"
+
+#: Crypt/WarriorForge.cs
+msgid "Вверх, к цели на высоте, отвесно вниз; бьёт на 22 м и наводится сам."
+msgstr "Up, over to the target at height, straight down; reaches 22 m and seeks its mark."
+
+#: Crypt/WarriorForge.cs
+msgid "Дугой на 11 м; свой на линии — навесом над его головой."
+msgstr "An arc to 11 m; an ally in the line — lobbed over his head."
+
+#: Crypt/WarriorForge.cs
 msgid "Закрыть"
 msgstr "Close"
 
@@ -3870,6 +4454,10 @@ msgstr "skeleton"
 #: Crypt/WarriorForge.cs
 msgid "{0} встал на площадке."
 msgstr "{0} stands in the yard."
+
+#: Crypt/WarriorForge.cs
+msgid "Мишени встали перед Греховодом."
+msgstr "The targets stand before the Sinbinder."
 
 #: Crypt/WarriorForge.cs
 msgid "Создатель воинов"
@@ -6784,10 +7372,6 @@ msgid "Тот, кто вернулся"
 msgstr "The One Who Returned"
 
 #: Gameplay/Champions.cs
-msgid "Кровник Ордена"
-msgstr "Blood Foe of the Order"
-
-#: Gameplay/Champions.cs
 msgid "Бродячий Клинок"
 msgstr "Wandering Blade"
 
@@ -6926,6 +7510,22 @@ msgstr "The road leads to the crypt. Go to the gate."
 #: Gameplay/DreamTutorialDirector.cs
 msgid "За мостом и расщелиной, у колонн, — камень с банками. Идите к нему."
 msgstr "Past the bridge and the chasm, by the columns, there is a stone with jars. Go to it."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Забери душу."
+msgstr "Take the soul."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Отдай приказ."
+msgstr "Give the order."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Опусти мост."
+msgstr "Lower the bridge."
+
+#: Gameplay/DreamTutorialDirector.cs Gameplay/SoulCourt.cs
+msgid "Бог Смерти"
+msgstr "God of Death"
 
 #: Gameplay/DreamTutorialDirector.cs Gameplay/Lesson.cs
 msgid "ЛКМ"
@@ -7080,6 +7680,10 @@ msgid "Подойди к душе и нажми E. Свежая душа сох�
 msgstr "Walk up to the soul and press E. A fresh soul keeps its memory."
 
 #: Gameplay/DreamTutorialDirector.cs
+msgid "Возьмите банку с душой в руку (J)"
+msgstr "Take the jar with the soul in hand (J)"
+
+#: Gameplay/DreamTutorialDirector.cs
 msgid "Сначала забери душу в банку."
 msgstr "First take the soul into a jar."
 
@@ -7088,8 +7692,8 @@ msgid "Не удалось поднять тело. Душа осталась в
 msgstr "The body could not be raised. The soul stays in the jar."
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Выдели его и отдай приказ ПКМ по земле — он пойдёт."
-msgstr "Select him and give an order with RMB on the ground — he will go."
+msgid "Выделите воина и отдайте приказ ПКМ по земле. Исполнит ли — решает душа."
+msgstr "Select the warrior and right-click the ground to give an order. Whether it is obeyed is the soul's decision."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Его убийцы вернулись."
@@ -7304,8 +7908,24 @@ msgid "Сцена лагеря отсутствует в Build Settings: {0}"
 msgstr "The camp scene is missing from Build Settings: {0}"
 
 #: Gameplay/DreamTutorialDirector.cs
+msgid "Tab — посмотрите глазами Греховода."
+msgstr "Tab — switch to the Sinbinder's first-person view."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "V — переключитесь с Командира на Воина."
+msgstr "V — switch from Commander to Warrior."
+
+#: Gameplay/DreamTutorialDirector.cs
 msgid "Умирающий"
 msgstr "The dying man"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Тело"
+msgstr "Body"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Воин"
+msgstr "Warrior"
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Чучело"
@@ -7440,28 +8060,20 @@ msgid "Идите к воротам склепа"
 msgstr "Go to the crypt gate"
 
 #: Gameplay/DreamTutorialDirector.cs
-msgid "Поднимите павшего стража (E)"
-msgstr "Raise a fallen guard (E)"
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Рядом павший страж. Нажмите E, чтобы поднять его."
-msgstr "A fallen guard is nearby. Press E to raise them."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Он не встаёт на печать — это его воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."
-msgstr "He won't step onto the seal — that is his will, no need to persuade him. Fallen guards lie by the seals: go to one and press E — raise another."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Она не встаёт на печать — это её воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."
-msgstr "She won't step onto the seal — that is her will, no need to persuade her. Fallen guards lie by the seals: go to one and press E — raise another."
-
-#: Gameplay/DreamTutorialDirector.cs
 msgid "Зажгите пять печатей: венец — ваша, четыре — для воинов"
 msgstr "Light the five seals: the crown is yours, four are for warriors"
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Горят печати: {0} из 5"
 msgstr "Seals lit: {0} of 5"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Поднимите павшего стража (E)"
+msgstr "Raise a fallen guard (E)"
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Рядом павший страж. Нажмите E, чтобы поднять его."
+msgstr "A fallen guard is nearby. Press E to raise them."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Печать с венцом — ваша: встаньте на неё."
@@ -7484,12 +8096,24 @@ msgid "Ворота ждут пятерых: венец — ваша печат�
 msgstr "The gate waits for five: the crown is your seal, four are for warriors. Step up to a seal to learn whom it waits for. Fallen guards can be raised: E by the body."
 
 #: Gameplay/DreamTutorialDirector.cs
+msgid "Он не встаёт на печать — это его воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."
+msgstr "He won't step onto the seal — that is his will, no need to persuade him. Fallen guards lie by the seals: go to one and press E — raise another."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Она не встаёт на печать — это её воля, уговаривать не нужно. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите другого."
+msgstr "She won't step onto the seal — that is her will, no need to persuade her. Fallen guards lie by the seals: go to one and press E — raise another."
+
+#: Gameplay/DreamTutorialDirector.cs
 msgid "Четыре печати ждут воинов, а ваших нет. У печатей лежат павшие стражи: подойдите к одному и нажмите E — поднимите его."
 msgstr "Four seals wait for warriors, and yours are gone. Fallen guards lie by the seals: go to one and press E — raise him."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Воинов на печатях всё нет. Их можно поставить приказом — или поднять павших стражей: подойдите и нажмите E."
 msgstr "Still no warriors on the seals. Put them there with an order — or raise the fallen guards: go to one and press E."
+
+#: Gameplay/DreamTutorialDirector.cs
+msgid "Не удалось поднять тело."
+msgstr "The body could not be raised."
 
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Страж поднят. Рядом лежит его брат — {0}. Поднимите и его."
@@ -7510,18 +8134,6 @@ msgstr "The guard is raised. Select her and RMB on a seal."
 #: Gameplay/DreamTutorialDirector.cs
 msgid "Горят все пять печатей. F — открыть ворота."
 msgstr "All five seals are lit. F — open the gate."
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "брат — {0}"
-msgstr "brother — {0}"
-
-#: UI/SelectedUnitPanelUI.cs
-msgid "сестра — {0}"
-msgstr "sister — {0}"
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Не удалось поднять тело."
-msgstr "The body could not be raised."
 
 #: Gameplay/EscapeZone.cs
 msgid "{0}: «Криком меня не уведёте, владыка. Идите — я останусь здесь и выиграю вам время»."
@@ -7779,7 +8391,7 @@ msgstr "Tear it down and burn it"
 msgid "Забрать — на обмен"
 msgstr "Take it — for trade"
 
-#: Gameplay/ExpeditionBook.cs UI/CommanderCouncilUI.cs
+#: Gameplay/ExpeditionBook.cs
 msgid "Каменоломня"
 msgstr "Quarry"
 
@@ -8343,7 +8955,7 @@ msgstr "F — take off the record"
 msgid "Пластинки — на полке"
 msgstr "The records are on the shelf"
 
-#: Gameplay/Gramophone.cs
+#: Gameplay/Gramophone.cs UI/PauseMenu.cs
 msgid "«{0}» — {1}."
 msgstr "“{0}” — {1}."
 
@@ -8495,19 +9107,19 @@ msgstr "Anselm"
 msgid "Бертрам"
 msgstr "Bertram"
 
-#: Gameplay/HunterSquadSpawner.cs
+#: Gameplay/HunterSquadSpawner.cs Gameplay/Survivors.cs
 msgid "Кунрад"
 msgstr "Kunrad"
 
-#: Gameplay/HunterSquadSpawner.cs
+#: Gameplay/HunterSquadSpawner.cs Gameplay/Survivors.cs
 msgid "Ортвин"
 msgstr "Ortwin"
 
-#: Gameplay/HunterSquadSpawner.cs
+#: Gameplay/HunterSquadSpawner.cs Gameplay/Survivors.cs
 msgid "Вольфрам"
 msgstr "Wolfram"
 
-#: Gameplay/HunterSquadSpawner.cs
+#: Gameplay/HunterSquadSpawner.cs Gameplay/Survivors.cs
 msgid "Лотар"
 msgstr "Lothar"
 
@@ -8531,11 +9143,11 @@ msgstr "Guntram"
 msgid "Адальберт"
 msgstr "Adalbert"
 
-#: Gameplay/HunterSquadSpawner.cs
+#: Gameplay/HunterSquadSpawner.cs Gameplay/Survivors.cs
 msgid "Фолькмар"
 msgstr "Volkmar"
 
-#: Gameplay/HunterSquadSpawner.cs
+#: Gameplay/HunterSquadSpawner.cs Gameplay/Survivors.cs
 msgid "Зигфрид"
 msgstr "Siegfried"
 
@@ -9471,7 +10083,7 @@ msgstr "Save a copy"
 msgid "Режим: {0}"
 msgstr "Mode: {0}"
 
-#: Gameplay/MapEditor.cs
+#: Gameplay/MapEditor.cs UI/MiniMap.cs
 msgid "Карта"
 msgstr "Map"
 
@@ -10249,7 +10861,7 @@ msgstr "The Sinbinder must be there in person."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Сейчас говорят. Дослушайте — потом в путь."
-msgstr ""
+msgstr "Someone is speaking. Hear them out — then set off."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Воин {0} сейчас не может выйти в экспедицию."
@@ -10271,7 +10883,43 @@ msgstr "Could not build the expedition map."
 msgid "Экспедиция «{0}»: доберитесь до отмеченной цели и вернитесь к бирюзовому знаку."
 msgstr "Expedition “{0}”: reach the marked target and return to the turquoise sign."
 
-#: Gameplay/PersonalExpedition.cs UI/GearPanel.cs
+#: Gameplay/PersonalExpedition.cs
+msgid "Экспедиция «{0}»: обоз уехал, дорога пуста. Вернуться — у бирюзового знака."
+msgstr "Expedition “{0}”: the caravan has gone, the road is empty. The way back is at the turquoise sign."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Вы ушли отсюда этой ночью: стража не успела залечить раны."
+msgstr "You left here this very night: the guards had no time to heal their wounds."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Вы здесь уже были; с тех пор прошло время."
+msgstr "You have been here before; time has passed since then."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Обоз разграблен — охрана ушла на дорогу."
+msgstr "The caravan was plundered — its guards have taken to the road."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Обоз вы пропустили с миром."
+msgstr "You let the caravan pass in peace."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Тайник взят."
+msgstr "The cache has been taken."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Место стережёт дозор Ордена: слух о разграблении дошёл до них."
+msgstr "An Order patrol guards the place: word of the plundering reached them."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Когда вы уходили, стражи там не осталось."
+msgstr "When you left, no guards remained there."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "По слухам, разграбленную часовню занял дозор Ордена."
+msgstr "Rumour has it an Order patrol has taken the plundered chapel."
+
+#: Gameplay/PersonalExpedition.cs UI/DialogueUI.cs UI/GearPanel.cs
 msgid "{0}: «{1}»"
 msgstr "{0}: “{1}”"
 
@@ -10280,24 +10928,72 @@ msgid "F — вернуться в склеп"
 msgstr "F — return to the crypt"
 
 #: Gameplay/PersonalExpedition.cs
-msgid "F — решить судьбу обоза"
-msgstr "F — decide the convoy's fate"
+msgid "F — говорить: {0}"
+msgstr "F — talk: {0}"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "F — исследовать цель"
 msgstr "F — explore the target"
 
 #: Gameplay/PersonalExpedition.cs
-msgid "Греховод приказал напасть. Охрана защищает обоз настоящим боем."
-msgstr "The Sinbinder ordered an attack. The guards defend the convoy in a real fight."
+msgid "{0} · {1}"
+msgstr "{0} · {1}"
 
 #: Gameplay/PersonalExpedition.cs
-msgid "Греховод пропустил обоз. Возчики увезли серебро; добычи не будет."
-msgstr "The Sinbinder let the convoy pass. The drivers took the silver away; there will be no loot."
+msgid "К бою"
+msgstr "To battle"
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Уйти"
+msgstr "Leave"
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Взять долю и уйти"
+msgstr "Take the share and leave"
+
+#: Gameplay/PersonalExpedition.cs
+msgid "{0} без боя, остальное уедет"
+msgstr "{0} without a fight, the rest rides on"
+
+#: Gameplay/PersonalExpedition.cs
+msgid "бой с охраной — серебро ваше, если победите"
+msgstr "a fight with the guards — the silver is yours if you win"
+
+#: Gameplay/PersonalExpedition.cs
+msgid "обоз уедет, добычи не будет"
+msgstr "the caravan rides on, no loot"
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Esc · Пока не решать"
+msgstr "Esc · Don't decide yet"
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Обоз · старший охраны"
+msgstr "Caravan · head of the guard"
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Охрана обоза защищает груз настоящим боем."
+msgstr "The caravan guards defend the cargo in a real fight."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Обоз отдал долю — {0} — и ушёл по дороге."
+msgstr "The caravan gave up a share — {0} — and went on down the road."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Обоз ушёл по дороге. Добычи не будет."
+msgstr "The caravan went on down the road. There will be no loot."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Здесь больше нечего делать — вернитесь к бирюзовому знаку."
+msgstr "Nothing more to do here — return to the turquoise sign."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Вы напали на стража. Охрана обоза стала враждебной, мирный исход закрыт."
 msgstr "You attacked a guard. The convoy's guards turned hostile; a peaceful outcome is closed."
+
+#: Gameplay/PersonalExpedition.cs
+msgid "Обоз под охраной. Сначала поговорите со старшим."
+msgstr "The caravan is guarded. Talk to the head of the guard first."
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Охрана не дала добраться до добычи. Сначала разберитесь с ней."
@@ -10356,8 +11052,8 @@ msgid "Вы напали на обоз: охрана теперь враждеб
 msgstr "You attacked the convoy: the guards are now hostile"
 
 #: Gameplay/PersonalExpedition.cs
-msgid "Обоз не тронут. Охрана нейтральна, пока вы не нападёте"
-msgstr "The convoy is untouched. The guards stay neutral until you attack"
+msgid "Обоз не тронут. Охрана не нападёт первой — поговорите со старшим"
+msgstr "The caravan is untouched. The guards won't strike first — talk to their head"
 
 #: Gameplay/PersonalExpedition.cs
 msgid "Тайник изучен"
@@ -10370,22 +11066,6 @@ msgstr "Examine the chapel altar"
 #: Gameplay/PersonalExpedition.cs
 msgid "Следуйте к янтарному огню; бирюзовый огонь — путь назад."
 msgstr "Follow the amber fire; the turquoise fire is the way back."
-
-#: Gameplay/PersonalExpedition.cs
-msgid "Соляной обоз. Возчики безоружны. Охрана готова защищать груз."
-msgstr "A salt convoy. The drivers are unarmed. The guards are ready to defend the cargo."
-
-#: Gameplay/PersonalExpedition.cs
-msgid "Напасть на охрану и забрать серебро"
-msgstr "Attack the guards and take the silver"
-
-#: Gameplay/PersonalExpedition.cs
-msgid "Пропустить обоз без добычи"
-msgstr "Let the convoy pass without loot"
-
-#: Gameplay/PersonalExpedition.cs
-msgid "Пока не решать"
-msgstr "Don't decide yet"
 
 #: Gameplay/PersonalExpedition.cs
 msgid " · живых стражей: {0}"
@@ -10698,6 +11378,38 @@ msgstr "My name was {0}. Someone will answer for that."
 #: Gameplay/RisingWords.cs
 msgid "{0}. Это имя я помню лучше своего."
 msgstr "{0}. I remember that name better than my own."
+
+#: Gameplay/RisingWords.cs
+msgid "Где {0}? Мы с братом всегда стояли рядом."
+msgstr "Where is {0}? My brother and I always stood side by side."
+
+#: Gameplay/RisingWords.cs
+msgid "Где моё? Я помню каждую монету, что не успел забрать."
+msgstr "Where is mine? I remember every coin I never got to take."
+
+#: Gameplay/RisingWords.cs
+msgid "Поднять меня — честь для вас. Запомните это."
+msgstr "Raising me is an honour for you. Remember that."
+
+#: Gameplay/RisingWords.cs
+msgid "Злость не умерла со мной. Она проснулась первой."
+msgstr "The anger did not die with me. It woke up first."
+
+#: Gameplay/RisingWords.cs
+msgid "У других и тела получше. Я вижу."
+msgstr "Others got better bodies too. I can see it."
+
+#: Gameplay/RisingWords.cs
+msgid "Тепло… Хоть кто-нибудь здесь тёплый?"
+msgstr "Warmth… Is anyone here warm?"
+
+#: Gameplay/RisingWords.cs
+msgid "Есть. Сначала — есть."
+msgstr "Eat. First — eat."
+
+#: Gameplay/RisingWords.cs
+msgid "Зачем было будить? Я только лёг."
+msgstr "Why wake me? I had only just lain down."
 
 #: Gameplay/RisingWords.cs
 msgid "Руки помнят больше, чем на них осталось."
@@ -11188,10 +11900,6 @@ msgid "Вердикт"
 msgstr "Verdict"
 
 #: Gameplay/SoulCourt.cs
-msgid "Бог Смерти"
-msgstr "God of Death"
-
-#: Gameplay/SoulCourt.cs
 msgid "Так решила душа без Шёпота. Уговор изменил выбор воина: тот согласился следовать приказу."
 msgstr "This is what the soul decided without the Whisper. Persuaded by the Whisper, the warrior agreed to follow the order."
 
@@ -11550,6 +12258,10 @@ msgstr "Another soul in his place might have decided otherwise."
 #: Gameplay/SoulCourt.cs
 msgid "Решило одно: {0}. Не будь этого — {1}."
 msgstr "One thing decided it: {0}. Without it, {1}."
+
+#: Gameplay/SoulCourt.cs
+msgid "Решила его особенность — «{0}»: {1}. Без неё {2}."
+msgstr ""
 
 #: Gameplay/SoulCourt.cs
 msgid "Решил один голос — {0}. Без него {1}."
@@ -12456,35 +13168,31 @@ msgid "Любим Кистень"
 msgstr ""
 
 #: Gameplay/Survivors.cs
-msgid "Брат Евсей"
+msgid "Слух: {0} ищет Греховода сам — от его руки погибли ваши: {1}. Куда пойдёте вы, туда придёт и он."
 msgstr ""
 
 #: Gameplay/Survivors.cs
-msgid "Брат Корнил"
+msgid "{0} — от его руки пали: {1}."
 msgstr ""
 
 #: Gameplay/Survivors.cs
-msgid "Брат Игнат"
+msgid "{0} — охранял обоз, теперь служит Ордену."
 msgstr ""
 
 #: Gameplay/Survivors.cs
-msgid "Брат Аким"
+msgid "{0} — бежал от отряда."
 msgstr ""
 
 #: Gameplay/Survivors.cs
-msgid "Брат Пимен"
+msgid "{0} — кости с прошлой встречи не срослись."
 msgstr ""
 
 #: Gameplay/Survivors.cs
-msgid "Брат Варлаам"
+msgid "{0} — из дозора Ордена."
 msgstr ""
 
 #: Gameplay/Survivors.cs
-msgid "Брат Сысой"
-msgstr ""
-
-#: Gameplay/Survivors.cs
-msgid "Брат Феогност"
+msgid "{0} — видел Греховода и остался жив."
 msgstr ""
 
 #: Gameplay/Survivors.cs
@@ -12509,6 +13217,10 @@ msgstr ""
 
 #: Gameplay/Survivors.cs
 msgid "Слух о разграбленной часовне дошёл до Ордена: у алтаря теперь их дозор."
+msgstr ""
+
+#: Gameplay/Survivors.cs
+msgid "{0} пришёл не за добычей, а за вами: слух в склепе не врал."
 msgstr ""
 
 #: Gameplay/Survivors.cs
@@ -12940,10 +13652,6 @@ msgid "Греховод, шёпотом"
 msgstr "Sinbinder, whispering"
 
 #: Gameplay/Whisper.cs
-msgid "Шёпот"
-msgstr "Whisper"
-
-#: Gameplay/Whisper.cs
 msgid "{0} поддался — исполнит приказ."
 msgstr "{0} gave in and will carry out the order."
 
@@ -13144,10 +13852,6 @@ msgid "В вылазке под её началом: {0}"
 msgstr "On the raid under her command: {0}"
 
 #: UI/CommanderCouncilUI.cs
-msgid "Огни на карте — два отряда уже в пути: у часовни и у каменоломни. Брошенная застава свободна — туда и пойдёт отряд."
-msgstr "The lights on the map are two parties already on the road: at the chapel and at the quarry. The abandoned outpost is free — that is where this party will go."
-
-#: UI/CommanderCouncilUI.cs
 msgid "Разведка донесла: за холмами стоит брошенная застава. Взять там есть что, и потому там небезопасно."
 msgstr "Scouts report an abandoned outpost beyond the hills. There is something to take there — and so it isn't safe."
 
@@ -13160,16 +13864,68 @@ msgid "Отряд уйдёт сразу и вернётся не скоро — 
 msgstr "The party leaves at once and won't be back soon — only those you don't send will stay in the camp with you. Not all of them will return, and not as they left."
 
 #: UI/CommanderCouncilUI.cs
-msgid "Часовня"
-msgstr "Chapel"
+msgid "Военный совет: куда послать отряд"
+msgstr ""
 
 #: UI/CommanderCouncilUI.cs
-msgid "Застава"
-msgstr "Outpost"
+msgid "вы здесь"
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs UI/MissionMapUI.cs
+msgid "там ваш отряд"
+msgstr ""
 
 #: UI/CommanderCouncilUI.cs
-msgid "Цель вылазки"
-msgstr "Raid target"
+msgid "Туда уже ушёл ваш отряд — огонь над местом его. Вернутся — расскажут, что нашли."
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "Брошенная застава"
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "Туда не ушёл никто. Нажмите — прочтёте, что о ней известно."
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "свободна"
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "Окрестности лагеря"
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "Карган: «Вот наши края, владыка. Огни в шаре — наши отряды: один ушёл к придорожной часовне, другой — к затопленной каменоломне. Пока огонь горит — они живы. Свободна одна брошенная застава — туда и пошлём»."
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "Нажмите на заставу в шаре — прочтёте, что о ней известно."
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "Брошенная застава →"
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "Военный совет: брошенная застава"
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "Отряд поведёт старший — вы останетесь в лагере. Бой там решат сами души: как кто поступит, когда станет трудно, сказано у каждого имени."
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "Сперва выберите старшего, потом — кого он возьмёт с собой."
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "← К карте"
+msgstr ""
+
+#: UI/CommanderCouncilUI.cs
+msgid "Решить, кто поведёт →"
+msgstr ""
 
 #: UI/CommanderCouncilUI.cs
 msgid "Больше за ним не пойдут. Чтобы взять этого, сперва оставьте кого-нибудь в лагере."
@@ -13324,8 +14080,20 @@ msgid "Выход"
 msgstr "Exit"
 
 #: UI/ExpeditionReplayViewer.cs
-msgid "←/→: событие · PgUp/PgDn: бой · Home/End: начало/конец · Space: воспроизведение"
-msgstr "←/→: event · PgUp/PgDn: combat · Home/End: start/end · Space: play/pause"
+msgid "ПОЛНЫЙ ПРОТОКОЛ"
+msgstr "FULL RECORD"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Закрыть (Esc)"
+msgstr "Close (Esc)"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Событие {0} из {1}"
+msgstr "Event {0} of {1}"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Ход AOS: {0}"
+msgstr "AOS turn: {0}"
 
 #: UI/ExpeditionReplayViewer.cs
 msgid "3D-показ всех записанных AOS-событий. Расстановка условная: автобой не хранит координаты."
@@ -13334,6 +14102,66 @@ msgstr "3D view of every recorded AOS event. Positions are approximate: the auto
 #: UI/ExpeditionReplayViewer.cs
 msgid "Схематическая хронология: точные координаты в старой записи отсутствуют."
 msgstr "Schematic timeline: this older record has no exact coordinates."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "←/→: событие · PgUp/PgDn: бой · Home/End: начало/конец · Space: воспроизведение"
+msgstr "←/→: event · PgUp/PgDn: combat · Home/End: start/end · Space: play/pause"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Приостановить"
+msgstr "Pause"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Играть"
+msgstr "Play"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Ход {0}"
+msgstr "Turn {0}"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "исполнено"
+msgstr "completed"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "без результата"
+msgstr "no confirmed outcome"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "СХЕМА МАРШРУТА"
+msgstr "ROUTE SCHEMATIC"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Цель"
+msgstr "Objective"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Выход / возврат"
+msgstr "Departure / return"
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Итог: действие действительно исполнено."
+msgstr "Outcome: action was confirmed as executed."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Итог: действие не дало подтверждённого эффекта."
+msgstr "Outcome: no confirmed effect from the action."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Цель: {0}."
+msgstr "Target: {0}."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Реальная потеря HP: {0}."
+msgstr "Actual HP lost: {0}."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Реальное лечение: {0}."
+msgstr "Actual healing: {0}."
+
+#: UI/ExpeditionReplayViewer.cs
+msgid "Гибель цели подтверждена."
+msgstr "Target death confirmed."
 
 #: UI/ExpeditionReplayViewer.cs
 msgid "Выступление"
@@ -13627,17 +14455,13 @@ msgstr "LMB — next"
 msgid "Esc — пропустить"
 msgstr "Esc — skip"
 
+#: UI/MiniMap.cs
+msgid "Сон"
+msgstr ""
+
 #: UI/MissionMapUI.cs
 msgid "Куда послать отряд?"
 msgstr "Where should the squad go?"
-
-#: UI/MissionMapUI.cs
-msgid "Продолжить игру"
-msgstr "Resume game"
-
-#: UI/MissionMapUI.cs
-msgid "Время вылазок остановлено, пока открыта карта."
-msgstr "Expedition timers are paused while the map is open."
 
 #: UI/MissionMapUI.cs
 msgid "AOS-бой остановлен: снимок требует проверки"
@@ -13740,8 +14564,44 @@ msgid "Новые записи доступны выше в архиве"
 msgstr "Newer records are further up in the archive"
 
 #: UI/MissionMapUI.cs
+msgid "Экспедиция"
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "  Esc — назад"
+msgstr "  Esc — back"
+
+#: UI/MissionMapUI.cs
 msgid "У вас сейчас только {0}."
 msgstr "You have only {0} right now."
+
+#: UI/MissionMapUI.cs
+msgid "Слух"
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "Что известно"
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "Здесь ещё никто из ваших не был. Кто там — узнаете на месте."
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "Выйти"
+msgstr ""
+
+#: UI/MissionMapUI.cs UI/PauseMenu.cs UI/StartPanel.cs
+msgid "Продолжить"
+msgstr "Continue"
+
+#: UI/MissionMapUI.cs
+msgid "Вести некому"
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "Все бойцы в пути или не могут идти."
+msgstr ""
 
 #: UI/MissionMapUI.cs
 msgid "{0}. Кто поведёт отряд?  Esc — назад"
@@ -13774,10 +14634,6 @@ msgstr "Advised: send {0}, but {1} are going — the guards won't be any fewer f
 #: UI/MissionMapUI.cs
 msgid "{0}. Кого {1} возьмёт."
 msgstr "{0}. Who goes with {1}."
-
-#: UI/MissionMapUI.cs
-msgid "  Esc — назад"
-msgstr "  Esc — back"
 
 #: UI/MissionMapUI.cs
 msgid "Войти на карту лично"
@@ -13827,6 +14683,46 @@ msgstr "Let the commander decide"
 msgid "Не отправлять рекомендацию"
 msgstr "Don't send a recommendation"
 
+#: UI/MissionMapUI.cs
+msgid "Пепелище лагеря"
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "там ждут знакомые"
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "вы там были"
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "Окрестности склепа"
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "Места в шаре — куда можно идти. Нажмите на место — прочтёте слух и что о нём известно. Повести можно старшего — отряд уйдёт сам, бой решат души; а можно повести самому."
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "Нажмите на место в шаре, чтобы прочесть о нём."
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "Наведите на место — здесь будет, что о нём говорят."
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "Ищет Греховода: {0}. Куда пойдёте вы, туда придёт и он."
+msgstr ""
+
+#: UI/MissionMapUI.cs
+msgid "Время вылазок остановлено, пока открыта карта."
+msgstr "Expedition timers are paused while the map is open."
+
+#: UI/MissionMapUI.cs
+msgid "Продолжить игру"
+msgstr "Resume game"
+
 #: UI/MovementHintUI.cs
 msgid "W, A, S, D — идти. Мышь — оглядеться."
 msgstr "W, A, S, D — walk. Mouse — look around."
@@ -13854,10 +14750,6 @@ msgstr "Paused.  A committed game — no second chances"
 #: UI/PauseMenu.cs
 msgid "Пауза"
 msgstr "Paused"
-
-#: UI/PauseMenu.cs UI/StartPanel.cs
-msgid "Продолжить"
-msgstr "Continue"
 
 #: UI/PauseMenu.cs UI/QuickSave.cs
 msgid "Записано."
@@ -13898,6 +14790,14 @@ msgstr "Screen"
 #: UI/PauseMenu.cs
 msgid "Поворот взгляда"
 msgstr "Look sensitivity"
+
+#: UI/PauseMenu.cs
+msgid "Управление"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "переназначить клавиши"
+msgstr ""
 
 #: UI/PauseMenu.cs
 msgid "Графика"
@@ -13956,12 +14856,36 @@ msgid "обучение и суд души"
 msgstr "tutorial and the court of the soul"
 
 #: UI/PauseMenu.cs
+msgid "создатель воинов (N) и стрельбище"
+msgstr "warrior maker (N) and shooting range"
+
+#: UI/PauseMenu.cs
 msgid "Игра с обязательством — записывайте перед выходом"
 msgstr "A committed game — save before you quit"
 
 #: UI/PauseMenu.cs
-msgid "Назад"
-msgstr "Back"
+msgid "«{0}» — {1}; «{2}» теперь на {3}."
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Нажмите клавишу для «{0}» · Esc — отмена"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Щёлкните действие и нажмите новую клавишу. Esc, цифры и F1–F12 заняты игрой."
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Сбросить всё"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "клавиши как задумано"
+msgstr ""
+
+#: UI/PauseMenu.cs
+msgid "Клавиши — как задумано."
+msgstr ""
 
 #: UI/PauseMenu.cs
 msgid "Папка карт"
@@ -14328,6 +15252,10 @@ msgid "Его собственное решение совпало с прика
 msgstr "His own decision matched the order."
 
 #: UI/SelectedUnitPanelUI.cs
+msgid "Особенность: {0}"
+msgstr ""
+
+#: UI/SelectedUnitPanelUI.cs
 msgid "Он решает сам"
 msgstr "He decides for himself"
 
@@ -14342,6 +15270,14 @@ msgstr "Refused the order"
 #: UI/SelectedUnitPanelUI.cs
 msgid "Решает самостоятельно"
 msgstr "Deciding on his own"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "брат — {0}"
+msgstr "brother — {0}"
+
+#: UI/SelectedUnitPanelUI.cs
+msgid "сестра — {0}"
+msgstr "sister — {0}"
 
 #: UI/SelectedUnitPanelUI.cs
 msgid "{0}, {1}"
@@ -14796,6 +15732,58 @@ msgid "Пусть говорят. Может, обойдётся."
 msgstr "Let them talk. Maybe it'll blow over."
 
 # ───── нет в коде: строку переписали или убрали. Перевод — подсказка для новой ─────
+
+#. нет в коде
+msgid "Выдели его и отдай приказ ПКМ по земле — он пойдёт."
+msgstr "Select him and give an order with RMB on the ground — he will go."
+
+#. нет в коде
+msgid "F — решить судьбу обоза"
+msgstr "F — decide the convoy's fate"
+
+#. нет в коде
+msgid "Греховод приказал напасть. Охрана защищает обоз настоящим боем."
+msgstr "The Sinbinder ordered an attack. The guards defend the convoy in a real fight."
+
+#. нет в коде
+msgid "Греховод пропустил обоз. Возчики увезли серебро; добычи не будет."
+msgstr "The Sinbinder let the convoy pass. The drivers took the silver away; there will be no loot."
+
+#. нет в коде
+msgid "Обоз не тронут. Охрана нейтральна, пока вы не нападёте"
+msgstr "The convoy is untouched. The guards stay neutral until you attack"
+
+#. нет в коде
+msgid "Соляной обоз. Возчики безоружны. Охрана готова защищать груз."
+msgstr "A salt convoy. The drivers are unarmed. The guards are ready to defend the cargo."
+
+#. нет в коде
+msgid "Напасть на охрану и забрать серебро"
+msgstr "Attack the guards and take the silver"
+
+#. нет в коде
+msgid "Пропустить обоз без добычи"
+msgstr "Let the convoy pass without loot"
+
+#. нет в коде
+msgid "Пока не решать"
+msgstr "Don't decide yet"
+
+#. нет в коде
+msgid "Огни на карте — два отряда уже в пути: у часовни и у каменоломни. Брошенная застава свободна — туда и пойдёт отряд."
+msgstr "The lights on the map are two parties already on the road: at the chapel and at the quarry. The abandoned outpost is free — that is where this party will go."
+
+#. нет в коде
+msgid "Часовня"
+msgstr "Chapel"
+
+#. нет в коде
+msgid "Застава"
+msgstr "Outpost"
+
+#. нет в коде
+msgid "Цель вылазки"
+msgstr "Raid target"
 
 #. нет в коде
 msgid "Причины больше нет — что решит душа теперь?"
@@ -16517,386 +17505,190 @@ msgstr "…Well, if she's watching."
 msgid "…Половина. Запомню."
 msgstr "…Half. I'll remember."
 
-#: UI/ExpeditionReplayViewer.cs
-msgid "ПОЛНЫЙ ПРОТОКОЛ"
-msgstr "FULL RECORD"
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Закрыть (Esc)"
-msgstr "Close (Esc)"
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Играть"
-msgstr "Play"
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Вперёд"
-msgstr "Forward"
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Приостановить"
-msgstr "Pause"
-
-msgid "СХЕМА МАРШРУТА"
-msgstr "ROUTE SCHEMATIC"
-
-msgid "Цель"
-msgstr "Objective"
-
-msgid "Выход / возврат"
-msgstr "Departure / return"
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Событие {0} из {1}"
-msgstr "Event {0} of {1}"
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Ход AOS: {0}"
-msgstr "AOS turn: {0}"
-
-#: UI/ExpeditionReplayViewer.cs
+#. нет в коде
 msgid "Схематическая реконструкция: боевые решения из движка, точные координаты в старой записи отсутствуют."
 msgstr "Schematic reconstruction: combat decisions come from the engine; exact coordinates are absent from the legacy record."
 
-#: UI/ExpeditionReplayViewer.cs
-msgid "Ход {0}"
-msgstr "Turn {0}"
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "исполнено"
-msgstr "completed"
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "без результата"
-msgstr "no confirmed outcome"
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Итог: действие действительно исполнено."
-msgstr "Outcome: action was confirmed as executed."
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Итог: действие не дало подтверждённого эффекта."
-msgstr "Outcome: no confirmed effect from the action."
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Цель: {0}."
-msgstr "Target: {0}."
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Реальная потеря HP: {0}."
-msgstr "Actual HP lost: {0}."
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Реальное лечение: {0}."
-msgstr "Actual healing: {0}."
-
-#: UI/ExpeditionReplayViewer.cs
-msgid "Гибель цели подтверждена."
-msgstr "Target death confirmed."
-
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Подойдите ближе"
 msgstr "Move closer"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Выплатите долг"
 msgstr "Pay the outstanding wages"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Обсудите его долю"
 msgstr "Discuss their share"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Проверьте снаряжение"
 msgstr "Check their equipment"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Уведите от добычи"
 msgstr "Lead them away from the loot"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Смените приказ или воина"
 msgstr "Change the order or the warrior"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Помогите раненому"
 msgstr "Help the wounded ally"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Выберите здорового воина"
 msgstr "Choose a healthy warrior"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Выведите из окружения"
 msgstr "Get them out of the encirclement"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Дайте передышку"
 msgstr "Let them rest"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Уберите угрозу убийц"
 msgstr "Remove the threat from their killers"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Проверьте долги и добычу"
 msgstr "Check wages and loot"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Смените задачу или воина"
 msgstr "Change the task or the warrior"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Измените обстановку боя"
 msgstr "Change the battle situation"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Снизьте опасность"
 msgstr "Reduce the danger"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Уберите напоминание о прошлом"
 msgstr "Remove the reminder of the past"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Укрепите доверие"
 msgstr "Build trust"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Измените спорный приказ"
 msgstr "Change the questionable order"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Измените условия или воина"
 msgstr "Change the circumstances or the warrior"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Подойдите ближе и повторите приказ."
 msgstr "Move closer and repeat the order."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Поговорите с воином и выплатите долг."
 msgstr "Speak to the warrior and pay the outstanding wages."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Проверьте его добычу и договоритесь о доле."
 msgstr "Check their loot and agree on a share."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Проверьте предмет-искуситель и попробуйте другое снаряжение."
 msgstr "Check the tempting item and try different equipment."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Измените маршрут, чтобы увести его от добычи."
 msgstr "Change the route to lead them away from the loot."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Попробуйте более короткий приказ или другого воина."
 msgstr "Try a shorter order or another warrior."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Сначала обезопасьте раненого товарища."
 msgstr "First make the wounded ally safe."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Дайте раненому передышку или выберите здорового воина."
 msgstr "Let the wounded warrior rest or choose a healthy one."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Помогите ему выйти из окружения."
 msgstr "Help them escape the encirclement."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Дайте ему передышку или выберите свежего воина."
 msgstr "Let them rest or choose a fresh warrior."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Уберите угрозу его убийц или выберите другого воина."
 msgstr "Remove the threat from their killers or choose another warrior."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Проверьте долги, добычу и снаряжение."
 msgstr "Check wages, loot and equipment."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Попробуйте другую задачу или другого воина."
 msgstr "Try a different task or another warrior."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Измените обстановку боя или выберите спокойного воина."
 msgstr "Change the battle situation or choose a calmer warrior."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Дайте передышку или поручите дело более деятельному."
 msgstr "Let them rest or assign the task to a more active warrior."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Снизьте опасность или выберите смелого воина."
 msgstr "Reduce the danger or choose a braver warrior."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Уберите напоминание о прошлом или выберите другую душу."
 msgstr "Remove the reminder of the past or choose another soul."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Попробуйте укрепить доверие к командиру."
 msgstr "Try to build trust in the commander."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Попробуйте приказ, который не идёт против его убеждений."
 msgstr "Try an order that does not conflict with their convictions."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Попробуйте изменить обстоятельства или выбрать другого воина."
 msgstr "Try changing the circumstances or choosing another warrior."
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Учитывайте обе причины отказа"
 msgstr "Consider both reasons for refusal"
 
-#: Gameplay/OrderAdvice.cs
+#. нет в коде
 msgid "Две причины — попробуйте изменить обе: {0}; {1}."
 msgstr "Two reasons — try addressing both: {0}; {1}."
 
-#: Gameplay/RisingWords.cs
-msgid "Где {0}? Мы с братом всегда стояли рядом."
-msgstr "Where is {0}? My brother and I always stood side by side."
-
-#: Gameplay/RisingWords.cs
-msgid "Где моё? Я помню каждую монету, что не успел забрать."
-msgstr "Where is mine? I remember every coin I never got to take."
-
-#: Gameplay/RisingWords.cs
-msgid "Поднять меня — честь для вас. Запомните это."
-msgstr "Raising me is an honour for you. Remember that."
-
-#: Gameplay/RisingWords.cs
-msgid "Злость не умерла со мной. Она проснулась первой."
-msgstr "The anger did not die with me. It woke up first."
-
-#: Gameplay/RisingWords.cs
-msgid "У других и тела получше. Я вижу."
-msgstr "Others got better bodies too. I can see it."
-
-#: Gameplay/RisingWords.cs
-msgid "Тепло… Хоть кто-нибудь здесь тёплый?"
-msgstr "Warmth… Is anyone here warm?"
-
-#: Gameplay/RisingWords.cs
-msgid "Есть. Сначала — есть."
-msgstr "Eat. First — eat."
-
-#: Gameplay/RisingWords.cs
-msgid "Зачем было будить? Я только лёг."
-msgstr "Why wake me? I had only just lain down."
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "создатель воинов (N) и стрельбище"
-msgstr "warrior maker (N) and shooting range"
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Мишень"
-msgstr "Target"
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Свой в схватке"
-msgstr "Ally in the fray"
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Мишень на ходу"
-msgstr "Moving target"
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Дальняя мишень"
-msgstr "Far target"
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Мишени встали перед Греховодом."
-msgstr "The targets stand before the Sinbinder."
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Стрельбище — поставить мишени"
-msgstr "Shooting range — set up targets"
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Стрельбище — поставить мишени заново"
-msgstr "Shooting range — set up targets again"
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Перед Греховодом: враг в схватке со своим, мишень на ходу, дальняя мишень."
-msgstr "Before the Sinbinder: a foe fighting an ally, a moving target, a far target."
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Лук лучников: {0}"
-msgstr "Archers' bow: {0}"
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "небесный"
-msgstr "skyward"
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "обычный"
-msgstr "ordinary"
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Вверх, к цели на высоте, отвесно вниз; бьёт на 22 м и наводится сам."
-msgstr "Up, over to the target at height, straight down; reaches 22 m and seeks its mark."
-
-#: UI/PauseMenu.cs Crypt/WarriorForge.cs Crypt/ShootingRange.cs
-msgid "Дугой на 11 м; свой на линии — навесом над его головой."
-msgstr "An arc to 11 m; an ally in the line — lobbed over his head."
-
-#: Gameplay/DreamTutorialDirector.cs
+#. нет в коде
 msgid "В руке пустая банка. Возьмите банку с душой — J."
 msgstr "The jar in your hand is empty. Take the jar with the soul — J."
 
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Возьмите банку с душой в руку (J)"
-msgstr "Take the jar with the soul in hand (J)"
-#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
-msgid "Забери душу."
-msgstr "Take the soul."
-
-#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+#. нет в коде
 msgid "Прикажи ему."
 msgstr "Give him an order."
 
-#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
-msgid "Опусти мост."
-msgstr "Lower the bridge."
-
-#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
+#. нет в коде
 msgid "Неповиновение."
 msgstr "Disobedience."
 
-#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
-msgid "Выделите воина и отдайте приказ ПКМ по земле. Исполнит ли — решает душа."
-msgstr "Select the warrior and right-click the ground to give an order. Whether it is obeyed is the soul's decision."
-
-#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
-msgid "Тело"
-msgstr "Body"
-
-#: Gameplay/DreamTutorialDirector.cs / Gameplay/SoulCourtVerdict.cs
-msgid "Воин"
-msgstr "Warrior"
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Отдай приказ."
-msgstr "Give the order."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "Tab — посмотрите глазами Греховода."
-msgstr "Tab — switch to the Sinbinder's first-person view."
-
-#: Gameplay/DreamTutorialDirector.cs
-msgid "V — переключитесь с Командира на Воина."
-msgstr "V — switch from Commander to Warrior."
-
-#: Gameplay/DreamTutorialDirector.cs
+#. нет в коде
 msgid "Посох всегда в руке. Впереди у дороги — чучело: подойдите к нему."
 msgstr "Your staff is always in your hand. There is a practice dummy by the road ahead: approach it."
 
-#: Gameplay/DreamTutorialDirector.cs
+#. нет в коде
 msgid "Впереди у дороги — чучело: подойдите к нему."
 msgstr "There is a practice dummy by the road ahead: approach it."
