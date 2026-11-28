@@ -48,3 +48,4 @@ jobs:
             if ([IO.File]::ReadAllText($sentinel) -ne 'keep me') { throw 'sentinel changed' }
             Write-Host 'PASS Windows CMD showed the stop notice and exited without game launch or cleanup'
           } finally { Pop-Location }
+          exit 0
