@@ -882,10 +882,17 @@ namespace Sinbinder.Gameplay
             foreach (var guard in _guards)
             {
                 if (guard==null) continue;
-                // Уходят приказом, как раньше: выключенный AOSWarriorWrapper (27.11) не мешает общему
-                // ходу решений — «выбрал Idle» сбивал путь, и охрана стояла. Отказ уйти всё ещё попадает
-                // в журнал игрока как «не выполнил приказ» — следующий шаг.
-                if (!guard.IsDead) guard.IssueCommand(CommandKind.Move,away+new Vector3(UnityEngine.Random.Range(-3f,3f),0f,0f));
+                // Мирный исход уже принят в разговоре. Это уход обоза, не приказ Греховода.
+                // Останавливаем именно такт решений (а не Wrapper, который такт вызывает
+                // напрямую): Idle не собьёт путь и старый отказ не исполнится после паузы.
+                if (!guard.IsDead)
+                {
+                    var tick = guard.GetComponent<AOS.AutoAttackAOS>();
+                    if (tick != null) tick.enabled = false;
+                    guard.ClearCommand();
+                    guard.GetComponent<UnitMover>()?.CommandMove(
+                        away + new Vector3(UnityEngine.Random.Range(-3f,3f),0f,0f));
+                }
                 UnityEngine.Object.Destroy(guard.gameObject,14f);
             }
             _guards.Clear();

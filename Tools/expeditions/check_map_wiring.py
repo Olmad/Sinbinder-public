@@ -36,6 +36,24 @@ assert "private void OpenCaravanChoice()" in p
 # 26.11 (автор: «выбор во время диалога, как в Ведьмаке 3»): окно с двумя кнопками заменено
 # разговором со старшим охраны (CaravanStories): решение — ответом, исход — когда разговор закрыт.
 assert "private void EndTalk()" in p and "private void LetCaravanGo(int coins)" in p
+# Agreed peaceful departure is a resolved narrative outcome, not a player order.
+# Disable the scheduler that calls Decide/Execute, then invalidate any old command
+# and move using the existing NavMesh pipeline. Combat/ordinary AOS stay untouched.
+departure = p.split("private void LetCaravanGo(int coins)", 1)[1].split("public static string TalkNow", 1)[0]
+assert "guard.IssueCommand(" not in departure
+assert "_state.CaravanPassed=true;" in departure and "if (!guard.IsDead)" in departure
+assert "guard.GetComponent<AOS.AutoAttackAOS>()" in departure
+assert departure.index("_state.CaravanPassed=true;") < departure.index("tick.enabled = false;")
+assert departure.index("tick.enabled = false;") < departure.index("guard.ClearCommand();") < departure.index("guard.GetComponent<UnitMover>()?.CommandMove(")
+assert "UnityEngine.Object.Destroy(guard.gameObject,14f);" in departure
+assert "CartRoll.Send(part.gameObject,away)" in departure
+tick = src("Assets/Scripts/AOS Engine/AutoAttackAOS.cs")
+assert "void OnDisable()" in tick and "StopAllCoroutines();" in tick
+assert "_wrapper.Decide()" in tick and "_wrapper.Execute(action)" in tick
+warrior = src("Assets/Scripts/Gameplay/Warrior.cs")
+clear = warrior.split("public void ClearCommand()", 1)[1].split("/// <summary>", 1)[0]
+assert "CommandRevision++" in clear and "_command = default;" in clear
+print("PASS: peaceful departure is not a player order; scheduler and stale orders are stopped before movement")
 assert "UI.TalkView.Show(" in p and "CaravanStories.Get(" in p
 # The caravan is a PLAYABLE choice, not a fake two-button dialogue
 # while hostile guards are already attacking the player. A returning hunter
