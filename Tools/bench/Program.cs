@@ -3858,11 +3858,73 @@ static class Bench
     /// жителей больше, чем примет); меняет ли каждая особенность решение (иначе это декоративное обещание,
     /// 69-PLAN Э1.07); у каждого ли греха и добродетели есть свои.
     /// </summary>
+    // A deterministic production-linked regression gate, independent of balance sweeps.
+    static int TraitSpectrumChecks()
+    {
+        int bad = 0, checks = 0;
+        void Check(bool ok, string what)
+        {
+            checks++;
+            if (!ok) { bad++; Console.WriteLine($"  FAIL: {what}"); }
+        }
+
+        // 0. Знаки двух спектров независимы; ноль не даёт греховных особенностей.
+        var signedSoul = new SoulData("Знаки", SinType.Wrath, MoralType.Neutral, 1, 80f);
+        signedSoul.Set(SinType.Greed, -60f);
+        var signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(signed.Is(SinType.Wrath) && !signed.Has(SinType.Greed),
+              "щедрость ошибочно считается вторичной жадностью");
+        Check(!Traits.Fitting(signed).Exists(t => t.Name == "Падок на добро"),
+              "щедрая душа получает особенность жадности");
+
+        signedSoul.Set(SinType.Wrath, -80f);
+        signedSoul.Set(SinType.Greed, 60f);
+        signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(signed.Virtue && !signed.Is(SinType.Wrath) && signed.Has(SinType.Greed),
+              "главная добродетель скрывает настоящий вторичный грех");
+        Check(Traits.Fitting(signed).Exists(t => t.Name == "Падок на добро"),
+              "вторичная жадность не учитывается при подборе особенностей");
+
+        signedSoul.Set(SinType.Greed, 0f);
+        signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(!signed.Has(signed.Second), "нулевой второй спектр считается грехом");
+        signedSoul.Set(SinType.Wrath, 0f);
+        signed = TraitSoul.Of(signedSoul, ShellType.Ghost);
+        Check(!Enum.GetValues(typeof(SinType)).Cast<SinType>().Any(signed.Has),
+              "нулевая душа имеет вымышленный грех");
+        var sketchSigns = TraitSoul.Of(new Sketch { Sin = SinType.Wrath, Second = SinType.Greed, Strength = 80f });
+        Check(sketchSigns.Is(SinType.Wrath) && sketchSigns.Has(SinType.Greed),
+              "генератор положительных грехов потерял вторичный грех");
+
+        // Exhaust every ordered pair of distinct axes and both independent signs.
+        foreach (SinType primary in Enum.GetValues(typeof(SinType)))
+        foreach (SinType secondary in Enum.GetValues(typeof(SinType)))
+        {
+            if (primary == secondary) continue;
+            foreach (int p in new[] { -1, 1 })
+            foreach (int q in new[] { -1, 0, 1 })
+            {
+                var soul = new SoulData("Matrix", primary, MoralType.Neutral, 1, p * 80f);
+                soul.Set(secondary, q * 60f);
+                var t = TraitSoul.Of(soul, ShellType.Ghost);
+                Check(t.Is(primary) == (p > 0) && t.Has(primary) == (p > 0)
+                      && t.Has(secondary) == (q > 0)
+                      && !Enum.GetValues(typeof(SinType)).Cast<SinType>()
+                          .Any(axis => axis != primary && axis != secondary && t.Has(axis)),
+                      $"spectrum matrix {primary}:{p}, {secondary}:{q}");
+            }
+        }
+        Console.WriteLine($"Trait spectrum checks: {checks - bad}/{checks} PASS");
+        return bad;
+    }
+
     static void TraitsCheck(AOSConfig cfg)
     {
         Console.WriteLine("\n=== ОСОБЕННОСТИ: пустых нет, каждая меняет решение ===");
         int bad = 0;
         void Check(bool ok, string what) { if (!ok) { bad++; Console.WriteLine($"  ПРОВАЛ: {what}"); } }
+
+        bad += TraitSpectrumChecks();
 
         // 1. Карта, где людей больше, чем примет: 8 очагов по 12 жителей, все происхождения.
         int people = 0, noTrait = 0, noLines = 0, noNick = 0, two = 0;
@@ -4000,7 +4062,7 @@ static class Bench
             foreach (bool virtue in new[] { false, true })
             {
                 var s = new TraitSoul { Sin = sin, Second = sin == SinType.Greed ? SinType.Pride : SinType.Greed,
-                                        Virtue = virtue, Moral = virtue ? MoralType.Pious : MoralType.Neutral,
+                                        Virtue = virtue, SecondIsVice = !virtue, Moral = virtue ? MoralType.Pious : MoralType.Neutral,
                                         Trade = Trade.Hunter, Shell = ShellType.Ghost };
                 int fits = Traits.Fitting(s).Count;
                 string label = (virtue ? "добродетель " : "") + sin;
@@ -5467,6 +5529,57 @@ static class Bench
     //  то есть это ровно тот случай, ради которого Moment заведён.
     // ──────────────────────────────────────────────────────────────
 
+    // Production-linked regression: concise summaries do not replace the full replay.
+    static int RetellingOutcomeChecks()
+    {
+        int bad = 0, count = 0;
+        void Check(bool ok, string message)
+        {
+            count++;
+            if (!ok) { bad++; Console.WriteLine("FAIL: " + message); }
+        }
+        BattleEvent Event(string id, string name, ActionType action, bool resolved = false)
+            => new BattleEvent { ActorId = id, ActorName = name, Action = action, Resolved = resolved };
+        var fail = Event("A", "Мясник", ActionType.Flee);
+        var success = Event("A", "Мясник", ActionType.Flee, true);
+        var namesake = Event("B", "Мясник", ActionType.Flee);
+        var record = new BattleRecord();
+        record.AddEvent(fail);
+        record.AddEvent(namesake);
+        record.AddEvent(Event("C", "Ловчий", ActionType.Loot));
+        record.AddEvent(success);
+        var picked = Sinbinder.Crypt.Retelling.Pick(record);
+        Check(picked.Count == 3 && picked[0] == success && picked[1] == namesake,
+            "confirmed outcome replaces failed attempt even after summary cap; namesakes remain distinct");
+        Check(record.Events.Count == 4 && record.Events[0] == fail && !fail.Resolved,
+            "selection must not rewrite full event history");
+        Check(Sinbinder.Crypt.Retelling.Describe(fail).Contains("пытался сбежать, но не вырвался"),
+            "failed escape must be described as failed");
+        Check(Sinbinder.Crypt.Retelling.Describe(success).Contains("сбежал с поля боя"),
+            "confirmed escape must be described as completed");
+        var legacy = new BattleRecord();
+        legacy.AddEvent(Event(null, "Кир", ActionType.Flee));
+        legacy.AddEvent(Event(null, "Кир", ActionType.Flee, true));
+        Check(Sinbinder.Crypt.Retelling.Pick(legacy).Count == 1 &&
+              Sinbinder.Crypt.Retelling.Pick(legacy)[0].Resolved,
+            "legacy records deduplicate by name and keep confirmed result");
+        var mixed = new BattleRecord();
+        mixed.AddEvent(Event(null, "Кир", ActionType.Flee));
+        mixed.AddEvent(Event("known", "Кир", ActionType.Flee, true));
+        Check(Sinbinder.Crypt.Retelling.Pick(mixed).Count == 2,
+            "unknown legacy identity must not be attributed to known actor by name");
+        var order = new BattleRecord();
+        order.AddEvent(Event("D", "D", ActionType.Berserk));
+        order.AddEvent(Event("A", "A", ActionType.Flee, true));
+        order.AddEvent(Event("A", "A", ActionType.Flee));
+        Check(Sinbinder.Crypt.Retelling.Pick(order).Select(e => e.Action)
+                .SequenceEqual(new[] { ActionType.Flee, ActionType.Berserk }) &&
+              Sinbinder.Crypt.Retelling.Pick(order)[0].Resolved,
+            "louder actions first; later failed event cannot erase success");
+        Console.WriteLine($"Retelling outcomes: {count - bad}/{count} PASS");
+        return bad;
+    }
+
     static void MomentsCheck(AOSConfig cfg)
     {
         Console.WriteLine("\n=== МОМЕНТЫ: сколько их за бой ===");
@@ -5705,6 +5818,7 @@ static class Bench
         Check(Sinbinder.Crypt.Retelling.Tell(dull) == "",
               "из боя, где все просто дрались, выжат рассказ");
 
+        bad += RetellingOutcomeChecks();
         Console.WriteLine(bad == 0 ? "  Моменты: чисто." : $"  Моменты: провалов {bad}.");
     }
 
@@ -5916,6 +6030,16 @@ static class Bench
     {
         Debug.Mute = true;
         if (args.Length > 0 && args[0] == "генератор") { GeneratorReport(); return; }
+        if (args.Length == 1 && args[0] == "--trait-spectra")
+        {
+            Environment.ExitCode = TraitSpectrumChecks() == 0 ? 0 : 1;
+            return;
+        }
+        if (args.Length == 1 && args[0] == "--retelling-outcomes")
+        {
+            Environment.ExitCode = RetellingOutcomeChecks() == 0 ? 0 : 1;
+            return;
+        }
         int n = args.Length > 0 && int.TryParse(args[0], out var asked) ? asked : 200000;
         var cfg = ScriptableObject.CreateInstance<AOSConfig>();
         ApplyAsset(cfg);

@@ -110,6 +110,8 @@ jobs:
       - run: dotnet run --project Tools/expeditions/ExpeditionChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/MapChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/ReplayChecks.csproj -c Release
+      - name: Check truthful condensed AOS battle summaries
+        run: dotnet run --project Tools/bench/bench.csproj -c Release -- --retelling-outcomes
       - run: dotnet run --project Tools/expeditions/AosSessionChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/BoardShimChecks.csproj -c Release
       - run: dotnet run --project Tools/expeditions/RealAosShimChecks.csproj -c Release
