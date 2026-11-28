@@ -24,6 +24,9 @@ namespace Sinbinder.Gameplay
         public bool IsCollected => _collected;
         internal bool HasLoot => !_collected && !_gatheringLoot && (_goldValue > 0 || HasLootEquipment);
 
+        // Carrying a body may not hide resources whose transfer was rejected.
+        internal bool CanCarryRemains => !_collected && !_gatheringLoot && _goldValue <= 0 && !HasLootEquipment;
+
         private bool HasLootEquipment => _hasEquipment && !string.IsNullOrWhiteSpace(_equipmentName);
 
         /// <summary>
@@ -83,7 +86,16 @@ namespace Sinbinder.Gameplay
 
         /// <summary>Переносит имущество. Само тело остаётся доступно для других действий.</summary>
         internal (int gold, string equipment) GatherLoot(Warrior collector)
+            => GatherSelectedLoot(collector, true, true, out _, out _, out _);
+
+        // Both live AOS and post-battle distribution use the same custody boundary.
+        // The latter selects only its assigned resource, preserving sin-specific choices.
+        internal (int gold, string equipment) GatherSelectedLoot(Warrior collector,
+            bool takeGold, bool takeEquipment, out bool equipped, out string refusal, out int keptGold)
         {
+            equipped = false;
+            refusal = "";
+            keptGold = 0;
             if (!CanLoot(collector)) return (0, null);
 
             // Inventory callbacks can observe the corpse during a transfer.
@@ -92,12 +104,12 @@ namespace Sinbinder.Gameplay
             {
                 bool sharesWithPlayer = collector.Team == Team.Player;
                 var store = sharesWithPlayer ? PlayerInventory.Instance : null;
-                int gold = TransferGold(collector, sharesWithPlayer, store);
-                if (!HasLootEquipment) return (gold, null);
+                int gold = takeGold ? TransferGold(collector, sharesWithPlayer, store, out keptGold) : 0;
+                if (!takeEquipment || !HasLootEquipment) return (gold, null);
 
                 var trophy = LootChain.Trophy(_equipmentName);
-                if (!SquadGear.Pick(collector, trophy, store, out _) &&
-                    (store == null || !store.AddItem(trophy))) return (gold, null);
+                equipped = SquadGear.Pick(collector, trophy, store, out refusal);
+                if (!equipped && (store == null || !store.AddItem(trophy))) return (gold, null);
 
                 _hasEquipment = false;
                 return (gold, _equipmentName);
@@ -108,8 +120,9 @@ namespace Sinbinder.Gameplay
             }
         }
 
-        private int TransferGold(Warrior collector, bool sharesWithPlayer, PlayerInventory store)
+        private int TransferGold(Warrior collector, bool sharesWithPlayer, PlayerInventory store, out int keptGold)
         {
+            keptGold = 0;
             int gold = _goldValue;
             if (gold <= 0 || (sharesWithPlayer && store == null)) return 0;
 
@@ -123,6 +136,7 @@ namespace Sinbinder.Gameplay
             _goldValue = 0;
             collector.Pocket(kept);
             if (toPurse > 0) store.AddGold(toPurse);
+            keptGold = kept;
             return gold;
         }
 

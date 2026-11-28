@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Sinbinder.Core;
+using Sinbinder.Inventory;
 
 namespace Sinbinder.Gameplay
 {
@@ -13,10 +14,10 @@ namespace Sinbinder.Gameplay
         public List<string> Equipment = new();
 
         /// <summary>Кто какой трофей забрал — чтобы вложить его в руки ему, а не отряду.</summary>
-        public List<(Warrior Who, string What)> Trophies = new();
+        public List<(Warrior Who, string What, bool Equipped, string Refusal, InventoryItem Old)> Trophies = new();
 
         /// <summary>Кто подобрал золото и сколько — для строки журнала.</summary>
-        public List<(Warrior Who, int Gold)> GoldBy = new();
+        public List<(Warrior Who, int Gold, int Kept)> GoldBy = new();
     }
 
     public static class LootCarrySystem
@@ -25,39 +26,47 @@ namespace Sinbinder.Gameplay
         {
             var loot = new CarriedLoot();
 
+            if (warriors == null || bodies == null) return loot;
             foreach (var warrior in warriors)
             {
-                if (warrior.IsDead) continue;
+                if (warrior == null || warrior.IsDead || warrior.Soul == null ||
+                    warrior.Team != Team.Player || warrior is SinbinderPlayer) continue;
 
                 switch (warrior.Soul.Sin)
                 {
                     case SinType.Greed:
-                        var bodyWithGold = bodies.Find(b => b != null && !b.IsCollected && b.GoldValue > 0);
+                        var bodyWithGold = bodies.Find(b => b != null && b.Foe && b.GoldValue > 0 && b.CanLoot(warrior));
                         if (bodyWithGold != null)
                         {
-                            int gold = bodyWithGold.CollectGold();
-                            loot.Gold += gold;
-                            loot.GoldBy.Add((warrior, gold));
-                            Debug.Log($"[CARRY] {warrior.DisplayName} (Жадный) собирает золото");
+                            var (gold, _) = bodyWithGold.GatherSelectedLoot(warrior, true, false, out _, out _, out int kept);
+                            if (gold > 0)
+                            {
+                                loot.Gold += gold;
+                                loot.GoldBy.Add((warrior, gold, kept));
+                                Debug.Log($"[CARRY] {warrior.DisplayName} (Жадный) собирает золото");
+                            }
                         }
                         break;
 
                     case SinType.Pride:
-                        var bodyWithEquip = bodies.Find(b => b != null && !b.IsCollected && b.HasEquipment);
+                        var bodyWithEquip = bodies.Find(b => b != null && b.Foe && b.HasEquipment &&
+                            !string.IsNullOrWhiteSpace(b.EquipmentName) && b.CanLoot(warrior));
                         if (bodyWithEquip != null)
                         {
-                            string equip = bodyWithEquip.CollectEquipment();
+                            SquadGear.Place(warrior, LootChain.Trophy(bodyWithEquip.EquipmentName), out _, out var old);
+                            var (_, equip) = bodyWithEquip.GatherSelectedLoot(warrior, false, true,
+                                out bool equipped, out string refusal, out _);
                             if (equip != null)
                             {
                                 loot.Equipment.Add(equip);
-                                loot.Trophies.Add((warrior, equip));
+                                loot.Trophies.Add((warrior, equip, equipped, refusal, old));
+                                Debug.Log($"[CARRY] {warrior.DisplayName} (Гордый) собирает трофей: {equip}");
                             }
-                            Debug.Log($"[CARRY] {warrior.DisplayName} (Гордый) забирает трофей: {equip}");
                         }
                         break;
 
                     case SinType.Gluttony:
-                        var body = bodies.Find(b => b != null && !b.IsCollected);
+                        var body = bodies.Find(b => b != null && b.Foe && b.CanCarryRemains);
                         if (body != null)
                         {
                             body.MarkCollected();
@@ -75,7 +84,7 @@ namespace Sinbinder.Gameplay
                         break;
 
                     default:
-                        var anyBody = bodies.Find(b => b != null && !b.IsCollected);
+                        var anyBody = bodies.Find(b => b != null && b.Foe && b.CanCarryRemains);
                         if (anyBody != null)
                         {
                             anyBody.MarkCollected();

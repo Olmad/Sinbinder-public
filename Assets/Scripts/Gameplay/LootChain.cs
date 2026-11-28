@@ -59,15 +59,12 @@ namespace Sinbinder.Gameplay
             if (squad.Count == 0 || foes.Count == 0) return;
 
             var loot = LootCarrySystem.DistributeLoot(squad, foes);
-            var store = PlayerInventory.Instance;
             var log = Object.FindFirstObjectByType<UI.BattleLogUI>();
 
-            foreach (var (who, what) in loot.Trophies)
+            // Distribution already committed accepted transfers. This layer only reports them.
+            foreach (var (who, what, equipped, word, old) in loot.Trophies)
             {
-                var trophy = Trophy(what);
-
-                SquadGear.Place(who, trophy, out _, out var old);
-                if (SquadGear.Pick(who, trophy, store, out string word))
+                if (equipped)
                 {
                     string swap = old == null ? "" : Loc.F(" Прежнее — {0} — уходит в мешок Греховода.", Loc.Name(old.Name).ToLowerInvariant());
                     log?.Write(Grammar.For(who.Gender,
@@ -75,7 +72,6 @@ namespace Sinbinder.Gameplay
                 }
                 else
                 {
-                    store?.AddItem(trophy);
                     string would = Grammar.Pick(who.Gender, Loc.T("взял бы"), Loc.T("взяла бы"));
                     log?.Write(Grammar.For(who.Gender,
                         Loc.F("{0} {1} трофей, но {2} — {3} уходит в мешок Греховода.", Loc.Name(who.DisplayName), would, word, Loc.Name(what).ToLowerInvariant())));
@@ -84,19 +80,12 @@ namespace Sinbinder.Gameplay
 
             // Золото делит тот, кто подобрал: часть себе в карман, остальное —
             // в кошель Греховода (docs/34-GEAR.md §9.3). Журнал — словами.
-            if (store != null)
+            foreach (var (who, gold, kept) in loot.GoldBy)
             {
-                foreach (var (who, gold) in loot.GoldBy)
-                {
-                    int kept = SquadGear.Kept(who, gold);
-                    who.Pocket(kept);
-                    store.AddGold(gold - kept);
-
-                    string found = SquadGear.GoldWord(gold);
-                    log?.Write(Grammar.For(who.Gender, kept == 0
-                        ? Loc.F("{0} подбирает {1} и отдаёт всё в кошель Греховода.", Loc.Name(who.DisplayName), found)
-                        : Loc.F("{0} подбирает {1}: часть — в кошель Греховода, остальное — себе в карман.", Loc.Name(who.DisplayName), found)));
-                }
+                string found = SquadGear.GoldWord(gold);
+                log?.Write(Grammar.For(who.Gender, kept == 0
+                    ? Loc.F("{0} подбирает {1} и отдаёт всё в кошель Греховода.", Loc.Name(who.DisplayName), found)
+                    : Loc.F("{0} подбирает {1}: часть — в кошель Греховода, остальное — себе в карман.", Loc.Name(who.DisplayName), found)));
             }
         }
 
