@@ -44,12 +44,12 @@ namespace Sinbinder.Gameplay
             {
                 case "Loyalty":  return P(w, Loc.T("Воздерживаюсь: владыке он ни предан, ни чужд."),
                                              Loc.T("Воздерживаюсь: владыке она ни предана, ни чужда."));
-                case "Fear":     return Grammar.For(w.Gender, Loc.T("Воздерживаюсь: его жизни этот приказ не грозит."));
-                case "Memory":   return Loc.T("Воздерживаюсь: обид и долгов тут нет.");
+                case "Fear":     return Loc.T("Воздерживаюсь: страх слишком тих, чтобы склонить чашу.");
+                case "Memory":   return Loc.T("Воздерживаюсь: память не дала решающего перевеса.");
                 case "Morality": return Loc.T("Воздерживаюсь: ни добра, ни зла тут нет.");
                 case "Virtue":   return Loc.T("Воздерживаюсь: добрые и грешные черты тут не спорят.");
                 case "Patience": return Loc.T("Воздерживаюсь: ждать тут нечего.");
-                case "Greed":    return Loc.T("Воздерживаюсь: делить тут нечего.");
+                case "Greed":    return Loc.T("Воздерживаюсь: жадность не выторговала перевеса.");
                 case "Pride":    return Grammar.For(w.Gender, Loc.T("Воздерживаюсь: честь его тут не задета."));
                 case "Wrath":    return Sin(w, SinType.Wrath) < 0f ? Loc.T("Воздерживаюсь: гасить тут нечего.")
                                                                    // Не «мстить некому»: во сне убийцы рядом, и месть — суть сцены

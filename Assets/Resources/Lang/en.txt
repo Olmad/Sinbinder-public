@@ -12284,12 +12284,12 @@ msgid "Воздерживаюсь: владыке она ни предана, н
 msgstr "I abstain: she is neither devoted nor a stranger to her lord."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: его жизни этот приказ не грозит."
-msgstr "I abstain: this order does not threaten his life."
+msgid "Воздерживаюсь: страх слишком тих, чтобы склонить чашу."
+msgstr "I abstain: fear is too quiet to tip the scales."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: обид и долгов тут нет."
-msgstr "I abstain: there are no grudges or debts here."
+msgid "Воздерживаюсь: память не дала решающего перевеса."
+msgstr "I abstain: memory did not give either side enough weight."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "Воздерживаюсь: ни добра, ни зла тут нет."
@@ -12304,8 +12304,8 @@ msgid "Воздерживаюсь: ждать тут нечего."
 msgstr "I abstain: there is nothing to wait for here."
 
 #: Gameplay/SoulCourtReasons.cs
-msgid "Воздерживаюсь: делить тут нечего."
-msgstr "I abstain: there is nothing to share here."
+msgid "Воздерживаюсь: жадность не выторговала перевеса."
+msgstr "I abstain: greed could not bargain for enough weight."
 
 #: Gameplay/SoulCourtReasons.cs
 msgid "Воздерживаюсь: честь его тут не задета."
