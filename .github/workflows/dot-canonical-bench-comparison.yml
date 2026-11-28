@@ -1,4 +1,4 @@
-name: Dot combined caravan baseline comparison
+name: Dot expedition map gate repair
 on:
   push:
     branches: ['dot/verify-baseline']
@@ -11,17 +11,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '4c4334951a20139e7f57e0a282b3d6c18b0fcb75'
-          fetch-depth: 1
+          ref: '7d5a0ae775e6361b316bd1b4217d78e745f9f7af'
+          fetch-depth: 2
           persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+      - name: Reproduce the obsolete check and verify that its replacement rejects bad routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '7d5a0ae775e6361b316bd1b4217d78e745f9f7af'
+          test "$(git diff --name-only '4c4334951a20139e7f57e0a282b3d6c18b0fcb75' HEAD)" = 'Tools/expeditions/check_map_wiring.py'
+          python3 - <<'PY'
+          import pathlib, re, subprocess
+          checker = pathlib.Path('Tools/expeditions/check_map_wiring.py').resolve()
+          stale = subprocess.check_output(['git','show','4c4334951a20139e7f57e0a282b3d6c18b0fcb75:Tools/expeditions/check_map_wiring.py'], text=True)
+          try:
+              exec(compile(stale, str(checker), 'exec'), {'__file__':str(checker)})
+          except AssertionError as exc:
+              assert exc.__traceback__.tb_next.tb_lineno == 11
+              print('PASS: stale checker failed on unmodified production source at old call')
+          else:
+              raise RuntimeError('expected stale checker failure')
+          subprocess.run(['python3', str(checker)], check=True)
+          p = pathlib.Path('Assets/Scripts/Gameplay/PersonalExpedition.cs')
+          source = p.read_bytes()
+          pattern = rb'ExpeditionMapBuilder\.Build\(plan,\s*plan\.Kind == ExpeditionMapKind\.SaltRoad && visit\._state\.CaravanPassed\)'
+          for replacement in (b'Build(plan)', b'Build(plan, true)', b'Build(plan, plan.Kind == ExpeditionMapKind.SaltRoad)'):
+              bad, n = re.subn(pattern, b'ExpeditionMapBuilder.'+replacement, source)
+              assert n == 1
+              try:
+                  p.write_bytes(bad)
+                  result = subprocess.run(['python3', str(checker)], capture_output=True, text=True)
+                  assert result.returncode != 0 and 'AssertionError: hide wagons only after the Salt Road caravan has departed' in result.stderr, result
+                  print('PASS rejects', replacement.decode())
+              finally:
+                  p.write_bytes(source)
+          PY
+          git diff --exit-code
       - name: Apply the three exact patches in the disposable runner
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '4c4334951a20139e7f57e0a282b3d6c18b0fcb75'
+          test "$(git rev-parse HEAD)" = '7d5a0ae775e6361b316bd1b4217d78e745f9f7af'
           for patch in 'b465c24c2641c835f395a3289fbcf8185c0bbbee' '3847fa32d755bda4e29ff755a548c38a0e125eea' '1de1295cf090450fdcd775c7c08093b7f5bac9bf'; do
             git fetch --depth=1 origin "$patch"
             test "$(git rev-parse FETCH_HEAD)" = "$patch"
@@ -35,34 +68,23 @@ jobs:
           grep -F 'Loc.T("Бой с охраной. После победы исследуйте отмеченную цель."),()=>Decide(Talk.Battle)' 'Assets/Scripts/Gameplay/PersonalExpedition.cs'
           test "$(grep -Fc 'msgid "Бой с охраной. После победы исследуйте отмеченную цель."' 'Assets/Resources/Lang/en.txt')" = 1
           test "$(grep -Fc 'msgstr "Fight the guards. After winning, investigate the marked objective."' 'Assets/Resources/Lang/en.txt')" = 1
-      - name: Compare wiring failures to the unchanged working branch
-        shell: bash
+      - name: Pin the expedition test SDK
         run: |
-          set -euo pipefail
-          test "$COMBINED_TREE" = b69fb9d90449be42dac56eb41c28e062c4eda8d1
-          for script in check_replay_wiring.py check_map_wiring.py check_wiring.py; do
-            base_code=0
-            candidate_code=0
-            python3 "Tools/expeditions/$script" > "$RUNNER_TEMP/candidate.log" 2>&1 || candidate_code=$?
-            git restore --worktree --source=HEAD -- 'Assets/Scripts/Gameplay/PersonalExpedition.cs'
-            python3 "Tools/expeditions/$script" > "$RUNNER_TEMP/base.log" 2>&1 || base_code=$?
-            git checkout-index -f -- 'Assets/Scripts/Gameplay/PersonalExpedition.cs'
-            cat "$RUNNER_TEMP/candidate.log"
-            if [[ "$base_code" != "$candidate_code" ]]; then
-              cat "$RUNNER_TEMP/base.log"
-              exit 1
-            fi
-            diff -u "$RUNNER_TEMP/base.log" "$RUNNER_TEMP/candidate.log"
-            if [[ "$candidate_code" != 0 ]]; then
-              echo "PREEXISTING: $script failed identically before and after all three patches"
-            else
-              echo "PASS: $script on baseline and candidate"
-            fi
-          done
-          git diff --exit-code
           sdk="$(dotnet --list-sdks | awk '$1 ~ /^8[.]/ {v=$1} END {print v}')"
           test -n "$sdk"
           printf '{"sdk":{"version":"%s"}}\n' "$sdk" > global.json
+      - run: dotnet run --project Tools/expeditions/ExpeditionChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/MapChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/ReplayChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/AosSessionChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/BoardShimChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/RealAosShimChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/BoardRealAosChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/LootChecks.csproj -c Release
+      - run: dotnet run --project Tools/expeditions/MemoryChecks.csproj -c Release
+      - run: python3 Tools/expeditions/check_replay_wiring.py
+      - run: python3 Tools/expeditions/check_map_wiring.py
+      - run: python3 Tools/expeditions/check_wiring.py
       - name: Compile syntax gate for all Unity gameplay code
         working-directory: Tools/tutorial
         run: dotnet build SyntaxChecks.csproj -c Release
