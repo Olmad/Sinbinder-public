@@ -8,7 +8,10 @@ bag=src("Assets/Scripts/Gameplay/FallenBag.cs")
 save=src("Assets/Scripts/Core/SaveSystem.cs")
 s=src("Assets/Scripts/Core/SaveGame.cs")
 board=src("Assets/Scripts/Crypt/MissionBoard.cs")
-assert "ExpeditionMapBuilder.Build(plan)" in p
+assert (
+    "ExpeditionMapBuilder.Build(plan, "
+    "plan.Kind == ExpeditionMapKind.SaltRoad && visit._state.CaravanPassed)"
+) in " ".join(p.split()), "hide wagons only after the Salt Road caravan has departed"
 assert "new GameObject" in m and "surface.BuildNavMesh()" in m
 assert "NavMesh.SamplePosition(entrance, out _, 3f, NavMesh.AllAreas)" in m
 assert "surface.RemoveData();" in m
